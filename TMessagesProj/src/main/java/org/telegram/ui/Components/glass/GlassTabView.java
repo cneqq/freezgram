@@ -543,6 +543,12 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
     private boolean selfMeasure;
     private int additionalWidth;
 
+    /** Use the parent's allocated width in bounded previews instead of measuring by label. */
+    public void setUseParentWidth(boolean enabled) {
+        selfMeasure = !enabled;
+        requestLayout();
+    }
+
     public void setAdditionalWidth(int additionalWidth) {
         this.additionalWidth = additionalWidth;
         this.selfMeasure = true;

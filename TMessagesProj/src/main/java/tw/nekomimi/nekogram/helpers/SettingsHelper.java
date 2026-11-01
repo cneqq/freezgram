@@ -44,7 +44,7 @@ import tw.nekomimi.nekogram.settings.NekoTranslatorSettingsActivity;
 public class SettingsHelper {
 
     private static final String HOST_NAGRAM = "nasettings";
-    private static final String HOST_EXTERALESS = "exteraless";
+    private static final String HOST_EXTERALESS = "freezgram";
 
     private static final Map<String, String> SEARCH_TITLE_ALIASES = new HashMap<>();
     private static final Map<String, String> TRANSLATOR_ROWS = new HashMap<>();
@@ -148,6 +148,7 @@ public class SettingsHelper {
         if (path == null) {
             return false;
         }
+        if (path.startsWith("exteraless/")) path = HOST_EXTERALESS + path.substring("exteraless".length());
         if (path.startsWith(HOST_NAGRAM + "/")) {
             return true;
         }
@@ -199,7 +200,7 @@ public class SettingsHelper {
             unknown.run();
             return;
         }
-        final boolean exteraless = HOST_EXTERALESS.equals(segments.get(0));
+        final boolean exteraless = HOST_EXTERALESS.equals(segments.get(0)) || "exteraless".equals(segments.get(0));
         if (!exteraless && !HOST_NAGRAM.equals(segments.get(0))) {
             unknown.run();
             return;

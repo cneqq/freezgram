@@ -65,7 +65,22 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
         BaseFragment editor = editorFor(key);
         if (editor != null) presentFragment(editor);
     }
-    private void refreshRows() { updateRows(); if (listAdapter != null) listAdapter.notifyDataSetChanged(); }
+    private void refreshRows() {
+        int oldCount = rowCount;
+        java.util.HashMap<Integer, String> oldRows = new java.util.HashMap<>(rowMapReverse);
+        updateRows();
+        if (listAdapter == null) return;
+        androidx.recyclerview.widget.DiffUtil.calculateDiff(new androidx.recyclerview.widget.DiffUtil.Callback() {
+            @Override public int getOldListSize() { return oldCount; }
+            @Override public int getNewListSize() { return rowCount; }
+            @Override public boolean areItemsTheSame(int oldPosition, int newPosition) {
+                String key = oldRows.get(oldPosition);
+                return key != null && key.equals(rowMapReverse.get(newPosition));
+            }
+            @Override public boolean areContentsTheSame(int oldPosition, int newPosition) { return false; }
+            @Override public Object getChangePayload(int oldPosition, int newPosition) { return PARTIAL; }
+        }, false).dispatchUpdatesTo(listAdapter);
+    }
     private int label(String key) {
         switch (key) {
             case "interface": return R.string.FreezgramStyleInterface;
@@ -121,7 +136,9 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
                             : key.equals("motionStandard") ? AppearanceConfig.transitionStyle() == 0
                             : key.equals("snowOff") ? !snowEnabled
                             : snowEnabled && (key.equals("snowDots") ? AppearanceConfig.snowStyle() == 1 : AppearanceConfig.snowStyle() == 0);
-                    ((TextRadioCell) holder.itemView).setTextAndValueAndCheck(text(label(key)), "", checked, false, false);
+                    TextRadioCell cell = (TextRadioCell) holder.itemView;
+                    if (partial) cell.setChecked(checked);
+                    else cell.setTextAndValueAndCheck(text(label(key)), "", checked, false, false);
                 }
                 else if (getItemViewType(position) == TYPE_SETTINGS) ((TextSettingsCell) holder.itemView).setTextAndValue(text(label(key)), value(key), position + 1 < rowCount && getItemViewType(position + 1) == TYPE_SETTINGS);
             }

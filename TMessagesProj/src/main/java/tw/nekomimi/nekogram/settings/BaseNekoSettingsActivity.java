@@ -163,7 +163,7 @@ public abstract class BaseNekoSettingsActivity extends BaseFragment {
             var holder = listView.findViewHolderForAdapterPosition(position);
             var key = getKey();
             if (key != null && holder != null && listAdapter.isEnabled(holder) && rowMapReverse.containsKey(position)) {
-                app.exteraless.settings.utils.SettingsRowMenu.show(this, view, String.format(Locale.getDefault(), "https://%s/%s?r=%s", getMessagesController().linkPrefix, tw.nekomimi.nekogram.helpers.SettingsHelper.linkPathFor(getKey()), rowMapReverse.get(position)));
+                app.exteraless.settings.utils.SettingsRowMenu.show(this, view, String.format(Locale.getDefault(), "%s/%s?r=%s", getMessagesController().linkPrefix, tw.nekomimi.nekogram.helpers.SettingsHelper.linkPathFor(getKey()), rowMapReverse.get(position)));
                 return true;
             }
             return false;

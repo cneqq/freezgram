@@ -186,7 +186,7 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
         chatListHeaderRow = addRow("chatListHeader");
         chatListPreviewRow = addRow("chatListPreview");
         forceSnowRow = addRow("forceSnow");
-        snowStyleRow = addRow("snowStyle");
+        snowStyleRow = -1;
         centerTitleRow = addRow("centerTitle");
         senderMiniAvatarsRow = addRow("senderMiniAvatars");
         titleTextRow = addRow("titleText");
@@ -210,7 +210,7 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
         linksDividerRow = addRow();
 
         appearanceHeaderRow = addRow("appearanceHeader");
-        transitionStyleRow = addRow("transitionStyle");
+        transitionStyleRow = -1;
         fabShapeRow = addRow("fabShape");
         useSystemFontsRow = addRow("useSystemFonts");
         // Material Design 3 — сворачиваемая группа, как у exteraGram
@@ -231,20 +231,9 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
             md3LoadingRow = md3SliderRow = md3SwitchRow = md3ChatHeaderRow = md3NavBarRow = md3ListItemsRow = -1;
             md3PlayerRow = md3MiniPlayerRow = -1;
         }
-        iosGroupRow = addRow("iosStyles");
-        if (iosExpanded) {
-            iosNavBarRow = addRow("iosNavBar");
-            iosLiquidGlassRow = -1;
-            iosPanelSettingsRow = -1;
-            iosChatHeaderRow = addRow("iosChatHeader");
-            chatComposerStyleRow = addRow("chatComposerStyle");
-            composerSettingsRow = AppearanceConfig.chatComposerStyle() == 1 ? addRow("composerSettings") : -1;
-            sharedGlassSettingsRow = -1;
-        } else {
-            iosNavBarRow = iosLiquidGlassRow = iosPanelSettingsRow = iosChatHeaderRow = -1;
-            chatComposerStyleRow = composerSettingsRow = sharedGlassSettingsRow = -1;
-        }
-        sharedGlassSettingsRow = addRow("sharedGlassSettings");
+        iosGroupRow = iosNavBarRow = iosLiquidGlassRow = iosPanelSettingsRow = iosChatHeaderRow = -1;
+        chatComposerStyleRow = composerSettingsRow = -1;
+        sharedGlassSettingsRow = addRow("freezgramStyle", "sharedGlassSettings", "iosStyles", "iosNavBar", "iosChatHeader", "chatComposerStyle", "composerSettings");
         gooeyAvatarRow = addRow("gooeyAvatar");
         customThemesRow = addRow("customThemes");
         appearanceDividerRow = addRow();
@@ -668,8 +657,8 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
             rebuildAllAndSelf(view, AppearanceConfig.iosChatHeader.Bool());
             return;
         } else if (position == composerSettingsRow || position == sharedGlassSettingsRow) {
-            presentFragment(new app.freezgram.NavigationGlassSettingsActivity(position == composerSettingsRow
-                    ? app.freezgram.NavigationGlassSettingsActivity.COMPOSER : app.freezgram.NavigationGlassSettingsActivity.SHARED));
+            presentFragment(position == sharedGlassSettingsRow ? new app.freezgram.FreezgramStyleActivity()
+                    : new app.freezgram.NavigationGlassSettingsActivity(app.freezgram.NavigationGlassSettingsActivity.COMPOSER));
             return;
         } else if (position == chatComposerStyleRow) {
             AppearanceConfig.chatComposerStyle.setConfigInt(AppearanceConfig.chatComposerStyle() == 1 ? 0 : 1);
@@ -1100,8 +1089,8 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
                         String[] styles = {getString(R.string.FreezgramChatComposerDefault), getString(R.string.FreezgramChatComposerIos), getString(R.string.FreezgramChatComposerAndroid)};
                         cell.setTextAndValueAndIcon(getString(R.string.FreezgramComposerSettings), styles[AppearanceConfig.chatComposerStyle()], R.drawable.msg_newphone, true);
                     } else if (position == composerSettingsRow || position == sharedGlassSettingsRow) {
-                        cell.setTextAndValueAndIcon(getString(position == composerSettingsRow ? R.string.FreezgramComposerSettings : R.string.FreezgramSharedGlassSettings),
-                                getString(position == composerSettingsRow ? R.string.FreezgramComposerSettingsInfo : R.string.FreezgramSharedGlassSettingsInfo), R.drawable.msg_newphone, true);
+                        cell.setTextAndValueAndIcon(getString(position == composerSettingsRow ? R.string.FreezgramComposerSettings : R.string.FreezgramStyleTitle),
+                                getString(position == composerSettingsRow ? R.string.FreezgramComposerSettingsInfo : R.string.FreezgramStyleEntryInfo), R.drawable.msg_newphone, true);
                     } else if (position == iosPanelSettingsRow) {
                         cell.setTextAndValueAndIcon(getString(R.string.FreezgramPanelSettings), getString(R.string.FreezgramPanelSettingsInfo), R.drawable.msg_newphone, true);
                     } else if (position == appNavigationRow) {

@@ -1,9 +1,23 @@
 # Freezgram Liquid Glass
 
-The **iOS Design** group contains three switches (0/3): navigation panel,
-chat header and input panel. An enabled input switch exposes a Configure row. The separate
-**Liquid Glass settings** entry opens shared optics, navigation settings and a
-chat-folder glass switch. The navigation switch is also available directly in iOS Design; its geometry remains in the Liquid Glass editor.
+**Freezgram settings → Appearance → Freezgram style** is the single entry point
+for Freezgram's visual additions. A grouped native list separates Interface
+(navigation, chat header, input, chat list/folders), Chat (messages, gifts,
+menus/buttons/attachments), and Effects (glass, dividers, transitions, snow).
+Inherited Appearance settings retain their existing screens. Old iOS/composer
+search keys resolve to this entry; stored style values and backup keys are unchanged.
+
+Editors use themed sections and compact opt-in sliders. The existing avatar
+and inherited settings sliders keep their previous layout. Shared optics no
+longer doubles as a destination list or a surface opt-in page. Color enhancement
+and wallpaper dimming are under Advanced; header dimming is in Chat header.
+Reset in the shared editor does not reset the header's separate dim preference.
+The existing navigation/composer material previews, native message cells and
+catalog gift preview are retained, with collapsible preview sections. The new
+header preview uses the actual ActionBar/ChatAvatarContainer, the current user
+avatar and wallpaper, with chat actions blocked. Folder glass uses the actual
+FilterTabsView and a live drawable connected to its opt-in switch. No HTML mockup
+or decorative replacement chat from the design proposal is shipped.
 
 Available editors:
 

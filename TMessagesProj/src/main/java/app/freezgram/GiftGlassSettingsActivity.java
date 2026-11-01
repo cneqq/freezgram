@@ -26,28 +26,28 @@ public final class GiftGlassSettingsActivity extends BaseFragment {
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override public void onItemClick(int id) { if (id == -1) finishFragment(); }
         });
-        ScrollView scroll = new ScrollView(context);
-        scroll.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundWhite));
-        LinearLayout content = new LinearLayout(context); content.setOrientation(LinearLayout.VERTICAL);
-        scroll.addView(content);
+        ScrollView scroll = StyleEditorUi.scroll(context, resourceProvider);
+        LinearLayout content = StyleEditorUi.content(scroll);
         GiftCardPreview preview = new GiftCardPreview(context, currentAccount, resourceProvider);
-        content.addView(preview, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        StyleEditorUi.preview(content, preview, LayoutHelper.WRAP_CONTENT, resourceProvider, false);
         TextView info = new TextView(context);
-        info.setText(LocaleController.getString(R.string.FreezgramGiftGlassInfo));
+        info.setText(LocaleController.getString(R.string.FreezgramStyleGiftInfo));
         info.setTextSize(14); info.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText));
         info.setPadding(dp(22), dp(12), dp(22), dp(12)); content.addView(info);
-        TextSettingsCell style = new TextSettingsCell(context);
+        LinearLayout settings = StyleEditorUi.section(content, R.string.FreezgramStyleAppearance, resourceProvider);
+        TextSettingsCell style = new TextSettingsCell(context, resourceProvider);
+        style.setBackground(Theme.getSelectorDrawable(false));
         Runnable updateStyle = () -> style.setTextAndValue(LocaleController.getString(R.string.FreezgramGiftCardStyle), styleNames()[GiftGlassStyle.style()], false);
-        updateStyle.run(); content.addView(style);
+        updateStyle.run(); settings.addView(style);
         LinearLayout optics = new LinearLayout(context); optics.setOrientation(LinearLayout.VERTICAL);
         optics.setVisibility(GiftGlassStyle.style() == GiftGlassStyle.GLASS ? View.VISIBLE : View.GONE);
-        content.addView(optics);
+        settings.addView(optics);
         LinearLayout ordinary = new LinearLayout(context); ordinary.setOrientation(LinearLayout.VERTICAL);
-        ordinary.setVisibility(GiftGlassStyle.style() == GiftGlassStyle.ORDINARY ? View.VISIBLE : View.GONE); content.addView(ordinary);
+        ordinary.setVisibility(GiftGlassStyle.style() == GiftGlassStyle.ORDINARY ? View.VISIBLE : View.GONE); settings.addView(ordinary);
         LinearLayout gradient = new LinearLayout(context); gradient.setOrientation(LinearLayout.VERTICAL);
-        gradient.setVisibility(GiftGlassStyle.style() == GiftGlassStyle.SOFT ? View.VISIBLE : View.GONE); content.addView(gradient);
+        gradient.setVisibility(GiftGlassStyle.style() == GiftGlassStyle.SOFT ? View.VISIBLE : View.GONE); settings.addView(gradient);
         LinearLayout corners = new LinearLayout(context); corners.setOrientation(LinearLayout.VERTICAL);
-        content.addView(corners);
+        settings.addView(corners);
         slider(context, corners, R.string.FreezgramGiftCorners, 40, AppearanceConfig.giftCardCorners() < 0 ? 20 : AppearanceConfig.giftCardCorners(), value -> {
             AppearanceConfig.giftCardCorners.setConfigInt(value); changed = true; preview.refreshStyle();
         });
@@ -98,11 +98,11 @@ public final class GiftGlassSettingsActivity extends BaseFragment {
                 LocaleController.getString(R.string.FreezgramGiftCardGlass), LocaleController.getString(R.string.FreezgramGiftCardSoft)};
     }
     private void slider(Context context, LinearLayout content, int title, int max, int value, AvatarCornersSeekBar.OnDrag drag) {
-        AvatarCornersSeekBar slider = new AvatarCornersSeekBar(context, drag, 0, max, LocaleController.getString(title), "0", String.valueOf(max));
+        AvatarCornersSeekBar slider = new AvatarCornersSeekBar(context, drag, 0, max, LocaleController.getString(title), "0", String.valueOf(max), true);
         if (title == R.string.FreezgramGiftGradientAngle) slider.setValueSuffix("°");
-        else if (title == R.string.FreezgramGiftCorners) slider.setValueSuffix("dp");
-        else if (title == R.string.FreezgramGiftOpacity || title == R.string.FreezgramGiftGradientStrength || title == R.string.FreezgramGiftGradientOutline) slider.setValueSuffix("%");
-        slider.setValue(value); content.addView(slider, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 112));
+        else if (title == R.string.FreezgramGiftCorners || title == R.string.FreezgramPanelBlur) slider.setValueSuffix("dp");
+        else slider.setValueSuffix("%");
+        slider.setValue(value); content.addView(slider, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 84));
     }
     @Override public void onFragmentDestroy() {
         android.app.Activity activity = getParentActivity();

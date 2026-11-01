@@ -1,0 +1,25 @@
+<resources>
+    <string name="FreezgramStyleTitle">Freezgram style</string>
+    <string name="FreezgramStyleEntryInfo">Interface, chat and effects</string>
+    <string name="FreezgramStyleInterface">Interface</string>
+    <string name="FreezgramStyleChat">Chat</string>
+    <string name="FreezgramStyleEffects">Effects</string>
+    <string name="FreezgramStyleChatHeader">Chat header</string>
+    <string name="FreezgramStyleChatList">Chat list and folders</string>
+    <string name="FreezgramStyleMenus">Menus, buttons and attachments</string>
+    <string name="FreezgramStyleGlass">Glass</string>
+    <string name="FreezgramStyleAppearance">Appearance</string>
+    <string name="FreezgramStyleAdvanced">Advanced</string>
+    <string name="FreezgramStyleExpand">Show</string>
+    <string name="FreezgramStyleCollapse">Hide</string>
+    <string name="FreezgramStyleMaterial">Material</string>
+    <string name="FreezgramStyleLinked">Linked</string>
+    <string name="FreezgramStyleSeparate">Separate</string>
+    <string name="FreezgramStyleOn">On</string>
+    <string name="FreezgramStyleOff">Off</string>
+    <string name="FreezgramStylePreview">Preview</string>
+    <string name="FreezgramStyleGlassInfo">Shared material for panels and menus. Messages and gifts have their own settings.</string>
+    <string name="FreezgramStyleComposerInfo">These insets apply to the iOS input panel. Its glass appearance is configured under Style Freezgram → Glass.</string>
+    <string name="FreezgramStyleMessageInfo">Comments follow their message background. Linking uses the incoming settings for both directions; unlinking restores the outgoing settings.</string>
+    <string name="FreezgramStyleGiftInfo">Changes the gift card background. Collectible gifts retain their original artwork and colors.</string>
+</resources>

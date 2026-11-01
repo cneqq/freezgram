@@ -1,0 +1,25 @@
+<resources>
+    <string name="FreezgramStyleTitle">Стиль Freezgram</string>
+    <string name="FreezgramStyleEntryInfo">Интерфейс, чат и эффекты</string>
+    <string name="FreezgramStyleInterface">Интерфейс</string>
+    <string name="FreezgramStyleChat">Чат</string>
+    <string name="FreezgramStyleEffects">Эффекты</string>
+    <string name="FreezgramStyleChatHeader">Шапка чата</string>
+    <string name="FreezgramStyleChatList">Список чатов и папки</string>
+    <string name="FreezgramStyleMenus">Меню, кнопки и вложения</string>
+    <string name="FreezgramStyleGlass">Стекло</string>
+    <string name="FreezgramStyleAppearance">Внешний вид</string>
+    <string name="FreezgramStyleAdvanced">Дополнительно</string>
+    <string name="FreezgramStyleExpand">Показать</string>
+    <string name="FreezgramStyleCollapse">Скрыть</string>
+    <string name="FreezgramStyleMaterial">Material</string>
+    <string name="FreezgramStyleLinked">Одинаковые</string>
+    <string name="FreezgramStyleSeparate">Раздельные</string>
+    <string name="FreezgramStyleOn">Включены</string>
+    <string name="FreezgramStyleOff">Выключены</string>
+    <string name="FreezgramStylePreview">Предпросмотр</string>
+    <string name="FreezgramStyleGlassInfo">Общий материал панелей и меню. Сообщения и подарки настраиваются отдельно.</string>
+    <string name="FreezgramStyleComposerInfo">Отступы применяются к iOS-панели ввода. Вид стекла настраивается в разделе «Стиль Freezgram → Стекло».</string>
+    <string name="FreezgramStyleMessageInfo">Комментарии используют фон своего сообщения. Одинаковые настройки берутся у входящих; после разделения восстанавливаются настройки исходящих.</string>
+    <string name="FreezgramStyleGiftInfo">Меняет фон карточек подарков. Коллекционные подарки сохраняют исходные изображения и цвета.</string>
+</resources>

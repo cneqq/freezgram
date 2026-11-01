@@ -34,147 +34,87 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
     private GlassPreview preview;
     private AvatarCornersSeekBar blur, intensity, transparency, width, lift, composerLift, composerSide, composerContent;
     private boolean geometryChanged;
-    private org.telegram.ui.Cells.TextCheckCell contacts, enhanceColors, wallpaperDim, headerDim;
+    private org.telegram.ui.Cells.TextCheckCell contacts, enhanceColors, wallpaperDim;
 
     private String text(int id) { return LocaleController.getString(id); }
 
     @Override
     public View createView(Context context) {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
-        actionBar.setTitle(text(mode == 1 ? R.string.FreezgramSharedGlassSettings : mode == 2 ? R.string.FreezgramComposerSettings : R.string.FreezgramPanelSettings));
+        actionBar.setTitle(text(mode == SHARED ? R.string.FreezgramStyleGlass : mode == COMPOSER ? R.string.FreezgramComposerSettings : R.string.FreezgramPanelSettings));
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override public void onItemClick(int id) { if (id == -1) finishFragment(); }
         });
-        ScrollView scroll = new ScrollView(context);
-        scroll.setFillViewport(true);
-        scroll.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundWhite));
-        LinearLayout content = new LinearLayout(context);
-        content.setOrientation(LinearLayout.VERTICAL);
-        scroll.addView(content);
+        ScrollView scroll = StyleEditorUi.scroll(context, resourceProvider);
+        LinearLayout content = StyleEditorUi.content(scroll);
         preview = new GlassPreview(context);
-        content.addView(preview, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, mode == 1 ? 420 : 240));
+        StyleEditorUi.preview(content, preview, mode == SHARED ? 420 : 240, resourceProvider, mode == SHARED);
         TextView info = new TextView(context);
-        info.setText(text(mode == 0 ? R.string.FreezgramPanelPreviewInfo : mode == 1 ? R.string.FreezgramSharedGlassPreviewInfo : R.string.FreezgramComposerPreviewInfo));
+        info.setText(text(mode == NAVIGATION ? R.string.FreezgramPanelPreviewInfo : mode == SHARED ? R.string.FreezgramStyleGlassInfo : R.string.FreezgramStyleComposerInfo));
         info.setTextSize(14);
         info.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText));
         info.setPadding(dp(20), dp(12), dp(20), dp(12));
         content.addView(info);
         if (mode == 1) {
-            TextView navigation = new TextView(context);
-            navigation.setText(text(R.string.FreezgramPanelSettings)); navigation.setTextSize(16);
-            navigation.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlueText));
-            navigation.setPadding(dp(22), dp(18), dp(22), dp(18));
-            navigation.setOnClickListener(v -> presentFragment(new NavigationGlassSettingsActivity()));
-            content.addView(navigation);
-            org.telegram.ui.Cells.TextCheckCell folders = new org.telegram.ui.Cells.TextCheckCell(context);
-            folders.setTextAndCheck(text(R.string.FreezgramFoldersGlass), AppearanceConfig.foldersLiquidGlass(), false);
-            folders.setOnClickListener(v -> {
-                AppearanceConfig.foldersLiquidGlass.setConfigBool(!AppearanceConfig.foldersLiquidGlass());
-                folders.setChecked(AppearanceConfig.foldersLiquidGlass()); geometryChanged = true; preview.invalidate();
-            });
-            content.addView(folders);
-            org.telegram.ui.Cells.TextSettingsCell dividers = new org.telegram.ui.Cells.TextSettingsCell(context);
-            dividers.setText(text(R.string.FreezgramGlassMenuDividers), false);
-            dividers.setOnClickListener(v -> presentFragment(new GlassDividerSettingsActivity()));
-            content.addView(dividers);
-            org.telegram.ui.Cells.TextCheckCell header = new org.telegram.ui.Cells.TextCheckCell(context);
-            header.setTextAndCheck(text(R.string.FreezgramDialogsHeaderGlass), AppearanceConfig.dialogsHeaderGlass(), false);
-            header.setOnClickListener(v -> {
-                AppearanceConfig.dialogsHeaderGlass.setConfigBool(!AppearanceConfig.dialogsHeaderGlass());
-                header.setChecked(AppearanceConfig.dialogsHeaderGlass()); geometryChanged = true;
-            });
-            content.addView(header);
-            org.telegram.ui.Cells.TextCheckCell smallElements = new org.telegram.ui.Cells.TextCheckCell(context);
-            smallElements.setTextAndCheck(text(R.string.FreezgramSmallElementsGlass), AppearanceConfig.smallElementsGlass(), false);
-            smallElements.setOnClickListener(v -> {
-                AppearanceConfig.smallElementsGlass.setConfigBool(!AppearanceConfig.smallElementsGlass());
-                smallElements.setChecked(AppearanceConfig.smallElementsGlass()); geometryChanged = true;
-            });
-            content.addView(smallElements);
-            TextView smallInfo = new TextView(context);
-            smallInfo.setText(text(R.string.FreezgramSmallElementsInfo)); smallInfo.setTextSize(14);
-            smallInfo.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText));
-            smallInfo.setPadding(dp(22), 0, dp(22), dp(12)); content.addView(smallInfo);
-            TextView messages = new TextView(context);
-            messages.setText(text(R.string.FreezgramMessageSurfaces)); messages.setTextSize(16);
-            messages.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlueText));
-            messages.setPadding(dp(22), dp(18), dp(22), dp(18));
-            messages.setOnClickListener(v -> presentFragment(new MessageSurfaceSettingsActivity()));
-            content.addView(messages);
-            TextView gifts = new TextView(context);
-            gifts.setText(text(R.string.FreezgramGiftGlassSettings)); gifts.setTextSize(16);
-            gifts.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlueText));
-            gifts.setPadding(dp(22), dp(18), dp(22), dp(18));
-            gifts.setOnClickListener(v -> presentFragment(new GiftGlassSettingsActivity()));
-            content.addView(gifts);
-            org.telegram.ui.Cells.TextCheckCell attachments = new org.telegram.ui.Cells.TextCheckCell(context);
-            attachments.setTextAndCheck(text(R.string.FreezgramAttachmentPanelsGlass), AppearanceConfig.attachmentPanelsGlass(), false);
-            attachments.setOnClickListener(v -> {
-                AppearanceConfig.attachmentPanelsGlass.setConfigBool(!AppearanceConfig.attachmentPanelsGlass());
-                attachments.setChecked(AppearanceConfig.attachmentPanelsGlass()); geometryChanged = true;
-            });
-            content.addView(attachments);
-            TextView attachmentsInfo = new TextView(context);
-            attachmentsInfo.setText(text(R.string.FreezgramAttachmentPanelsGlassInfo)); attachmentsInfo.setTextSize(14);
-            attachmentsInfo.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText));
-            attachmentsInfo.setPadding(dp(22), 0, dp(22), dp(12)); content.addView(attachmentsInfo);
+            LinearLayout optics = StyleEditorUi.section(content, R.string.FreezgramStyleAppearance, resourceProvider);
+            LinearLayout advanced = StyleEditorUi.advanced(content, resourceProvider);
             enhanceColors = new org.telegram.ui.Cells.TextCheckCell(context);
             enhanceColors.setTextAndCheck(text(R.string.FreezgramGlassEnhanceColors), LiquidGlassStyle.enhanceColors(), false);
             enhanceColors.setOnClickListener(v -> {
                 AppearanceConfig.glassEnhanceColors.setConfigBool(!LiquidGlassStyle.enhanceColors());
                 enhanceColors.setChecked(LiquidGlassStyle.enhanceColors()); geometryChanged = true; preview.invalidate();
             });
-            content.addView(enhanceColors);
-            headerDim = new org.telegram.ui.Cells.TextCheckCell(context);
-            headerDim.setTextAndCheck(text(R.string.FreezgramChatHeaderGlassDim), AppearanceConfig.chatHeaderGlassDim(), false);
-            headerDim.setOnClickListener(v -> {
-                AppearanceConfig.chatHeaderGlassDim.setConfigBool(!AppearanceConfig.chatHeaderGlassDim());
-                headerDim.setChecked(AppearanceConfig.chatHeaderGlassDim()); geometryChanged = true; preview.invalidate();
-            });
-            content.addView(headerDim);
+            advanced.addView(enhanceColors);
             wallpaperDim = new org.telegram.ui.Cells.TextCheckCell(context);
             wallpaperDim.setTextAndCheck(text(R.string.FreezgramGlassWallpaperDim), AppearanceConfig.glassWallpaperDim(), false);
             wallpaperDim.setOnClickListener(v -> {
                 AppearanceConfig.glassWallpaperDim.setConfigBool(!AppearanceConfig.glassWallpaperDim());
                 wallpaperDim.setChecked(AppearanceConfig.glassWallpaperDim()); geometryChanged = true; preview.invalidate();
             });
-            content.addView(wallpaperDim);
-            blur = slider(context, content, R.string.FreezgramPanelBlur, 30,
+            advanced.addView(wallpaperDim);
+            blur = slider(context, optics, R.string.FreezgramPanelBlur, 30,
                     AppearanceConfig.navigationGlassBlur(), value -> {
                         AppearanceConfig.navigationGlassBlur.setConfigInt(value); geometryChanged = true; preview.invalidate();
                     });
-            intensity = slider(context, content, R.string.FreezgramPanelIntensity, 100,
+            intensity = slider(context, optics, R.string.FreezgramPanelIntensity, 100,
                     AppearanceConfig.navigationGlassIntensity(), value -> {
                         AppearanceConfig.navigationGlassIntensity.setConfigInt(value); geometryChanged = true; preview.invalidate();
                     });
-            transparency = slider(context, content, R.string.FreezgramPanelTransparency, 100,
+            transparency = slider(context, optics, R.string.FreezgramPanelTransparency, 100,
                     effectiveTransparency(), value -> {
                         AppearanceConfig.navigationGlassTransparency.setConfigInt(value); geometryChanged = true; preview.invalidate();
                     });
         }
         if (mode == NAVIGATION) {
-            org.telegram.ui.Cells.TextCheckCell enabled = new org.telegram.ui.Cells.TextCheckCell(context);
-            enabled.setTextAndCheck(text(R.string.OEAppearanceIosNavigationBarStyle), AppearanceConfig.iosNavigationBarStyle.Bool(), false);
-            enabled.setOnClickListener(v -> {
-                boolean value = !AppearanceConfig.iosNavigationBarStyle.Bool();
-                AppearanceConfig.iosNavigationBarStyle.setConfigBool(value);
-                if (value) AppearanceConfig.newNavigationBarStyle.setConfigBool(false);
-                enabled.setChecked(value); geometryChanged = true;
-            });
-            content.addView(enabled);
+            LinearLayout styleGroup = StyleEditorUi.section(content, R.string.FreezgramStyleAppearance, resourceProvider);
+            org.telegram.ui.Cells.TextSettingsCell enabled = new org.telegram.ui.Cells.TextSettingsCell(context, resourceProvider);
+            String[] styles = {text(R.string.FreezgramChatComposerDefault), text(R.string.FreezgramStyleMaterial), "iOS"};
+            Runnable updateStyle = () -> enabled.setTextAndValue(text(R.string.FreezgramMessageSurfaceStyle),
+                    styles[AppearanceConfig.iosNavigationBarStyle() ? 2 : AppearanceConfig.newNavigationBarStyle() ? 1 : 0], false);
+            updateStyle.run(); styleGroup.addView(enabled);
+            enabled.setBackground(Theme.getSelectorDrawable(false));
+            LinearLayout navigationOptions = StyleEditorUi.section(content, R.string.FreezgramPanelSettings, resourceProvider);
+            navigationOptions.setVisibility(AppearanceConfig.iosNavigationBarStyle() ? View.VISIBLE : View.GONE);
+            enabled.setOnClickListener(v -> showDialog(new org.telegram.ui.ActionBar.AlertDialog.Builder(context)
+                    .setTitle(text(R.string.FreezgramPanelSettings)).setItems(styles, (dialog, which) -> {
+                        AppearanceConfig.iosNavigationBarStyle.setConfigBool(which == 2);
+                        AppearanceConfig.newNavigationBarStyle.setConfigBool(which == 1);
+                        updateStyle.run(); navigationOptions.setVisibility(which == 2 ? View.VISIBLE : View.GONE);
+                        geometryChanged = true; preview.updateGeometry();
+                    }).create()));
             org.telegram.ui.Cells.TextCheckCell glassSwitch = new org.telegram.ui.Cells.TextCheckCell(context);
             glassSwitch.setTextAndCheck("Liquid Glass", AppearanceConfig.iosLiquidGlassNavigation.Bool(), false);
             glassSwitch.setOnClickListener(v -> {
                 boolean value = !AppearanceConfig.iosLiquidGlassNavigation.Bool();
                 AppearanceConfig.iosLiquidGlassNavigation.setConfigBool(value); glassSwitch.setChecked(value); geometryChanged = true;
             });
-            content.addView(glassSwitch);
-            width = slider(context, content, R.string.FreezgramPanelWidth, 100,
+            navigationOptions.addView(glassSwitch);
+            width = slider(context, navigationOptions, R.string.FreezgramPanelWidth, 100,
                     AppearanceConfig.navigationPanelWidth(), value -> {
                         AppearanceConfig.navigationPanelWidth.setConfigInt(Math.max(80, value));
                         width.setValue(Math.max(80, value)); geometryChanged = true; preview.updateGeometry();
                     });
-            lift = slider(context, content, R.string.FreezgramPanelLift, 64,
+            lift = slider(context, navigationOptions, R.string.FreezgramPanelLift, 64,
                     AppearanceConfig.navigationPanelLift(), value -> {
                         AppearanceConfig.navigationPanelLift.setConfigInt(value); geometryChanged = true; preview.updateGeometry();
                     });
@@ -185,9 +125,12 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
                 xyz.nextalone.nagram.NaConfig.INSTANCE.getMainTabsHideContacts().setConfigBool(hidden);
                 contacts.setChecked(!hidden); geometryChanged = true; preview.updateGeometry();
             });
-            content.addView(contacts);
+            StyleEditorUi.section(content, 0, resourceProvider).addView(contacts);
         }
         if (mode == COMPOSER) {
+            LinearLayout styleGroup = StyleEditorUi.section(content, R.string.FreezgramStyleAppearance, resourceProvider);
+            LinearLayout geometry = StyleEditorUi.section(content, R.string.FreezgramComposerSettings, resourceProvider);
+            geometry.setVisibility(AppearanceConfig.chatComposerStyle() == 1 ? View.VISIBLE : View.GONE);
             org.telegram.ui.Cells.TextSettingsCell style = new org.telegram.ui.Cells.TextSettingsCell(context);
             String[] styles = {text(R.string.FreezgramChatComposerDefault), text(R.string.FreezgramChatComposerIos), text(R.string.FreezgramChatComposerAndroid)};
             style.setTextAndValue(text(R.string.FreezgramChatComposerStyle), styles[AppearanceConfig.chatComposerStyle()], false);
@@ -195,31 +138,26 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
                     .setTitle(text(R.string.FreezgramChatComposerStyle)).setItems(styles, (dialog, which) -> {
                         AppearanceConfig.chatComposerStyle.setConfigInt(which); geometryChanged = true;
                         style.setTextAndValue(text(R.string.FreezgramChatComposerStyle), styles[which], false);
+                        geometry.setVisibility(which == 1 ? View.VISIBLE : View.GONE);
                         preview.updateGeometry();
                     }).show());
-            content.addView(style);
-            composerContent = slider(context, content, R.string.FreezgramComposerContentInset, 32,
+            styleGroup.addView(style);
+            style.setBackground(Theme.getSelectorDrawable(false));
+            composerContent = slider(context, geometry, R.string.FreezgramComposerContentInset, 32,
                     AppearanceConfig.composerContentInset(), value -> {
                         AppearanceConfig.composerContentInset.setConfigInt(value); geometryChanged = true; preview.invalidate();
                     });
-            composerSide = slider(context, content, R.string.FreezgramComposerSideInset, 48,
+            composerSide = slider(context, geometry, R.string.FreezgramComposerSideInset, 48,
                     AppearanceConfig.composerSideInset(), value -> {
                         AppearanceConfig.composerSideInset.setConfigInt(value); geometryChanged = true; preview.invalidate();
                     });
-            composerLift = slider(context, content, R.string.FreezgramPanelLift, 64,
+            composerLift = slider(context, geometry, R.string.FreezgramPanelLift, 64,
                     AppearanceConfig.composerBottomLift(), value -> {
                         AppearanceConfig.composerBottomLift.setConfigInt(value); geometryChanged = true; preview.invalidate();
                     });
         }
-        TextView reset = new TextView(context);
-        reset.setText(text(R.string.FreezgramPanelReset));
-        reset.setTextSize(16);
-        reset.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlueText));
-        reset.setPadding(dp(22), dp(20), dp(22), dp(24));
-        reset.setOnClickListener(v -> {
+        StyleEditorUi.reset(content, resourceProvider, () -> {
             if (mode == 1) {
-                AppearanceConfig.chatHeaderGlassDim.setConfigBool(false);
-                headerDim.setChecked(false);
                 AppearanceConfig.glassWallpaperDim.setConfigBool(true);
                 wallpaperDim.setChecked(true);
                 AppearanceConfig.glassEnhanceColors.setConfigBool(true);
@@ -241,7 +179,6 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
             geometryChanged = true;
             preview.invalidate();
         });
-        content.addView(reset);
         fragmentView = scroll;
         return fragmentView;
     }
@@ -261,10 +198,10 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
     private AvatarCornersSeekBar slider(Context context, LinearLayout parent, int title, int max,
                                        int value, AvatarCornersSeekBar.OnDrag onDrag) {
         AvatarCornersSeekBar slider = new AvatarCornersSeekBar(context, onDrag, title == R.string.FreezgramPanelWidth ? 80 : 0, max,
-                text(title), title == R.string.FreezgramPanelWidth ? "80" : "0", String.valueOf(max));
+                text(title), title == R.string.FreezgramPanelWidth ? "80" : "0", String.valueOf(max), true);
         slider.setValueSuffix(max == 100 ? "%" : "dp");
         slider.setValue(value);
-        parent.addView(slider, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 112));
+        parent.addView(slider, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 84));
         return slider;
     }
 

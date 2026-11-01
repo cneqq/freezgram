@@ -1,6 +1,9 @@
 name: Personal release APK
 
 on:
+  push:
+    branches:
+      - no-plugins
   workflow_dispatch:
 
 permissions:

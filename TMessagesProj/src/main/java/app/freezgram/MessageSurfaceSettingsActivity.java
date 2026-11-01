@@ -28,13 +28,14 @@ public final class MessageSurfaceSettingsActivity extends BaseFragment {
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override public void onItemClick(int id) { if (id == -1) finishFragment(); }
         });
-        ScrollView scroll = new ScrollView(context); scroll.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundWhite));
-        LinearLayout content = new LinearLayout(context); content.setOrientation(LinearLayout.VERTICAL); scroll.addView(content);
+        ScrollView scroll = StyleEditorUi.scroll(context, resourceProvider);
+        LinearLayout content = StyleEditorUi.content(scroll);
         preview = new MessageSurfacePreview(context, currentAccount, resourceProvider);
-        content.addView(preview, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        StyleEditorUi.preview(content, preview, LayoutHelper.WRAP_CONTENT, resourceProvider, false);
         TextCheckCell same = new TextCheckCell(context);
         same.setTextAndCheck(text(R.string.FreezgramSameMessageSurfaces), AppearanceConfig.sameMessageSurfaces(), false);
-        content.addView(same);
+        StyleEditorUi.section(content, 0, resourceProvider).addView(same);
+        same.setBackground(Theme.getSelectorDrawable(false));
         LinearLayout groups = new LinearLayout(context); groups.setOrientation(LinearLayout.VERTICAL); content.addView(groups);
         rebuildGroups(context, groups);
         same.setOnClickListener(v -> {
@@ -42,7 +43,7 @@ public final class MessageSurfaceSettingsActivity extends BaseFragment {
             same.setChecked(AppearanceConfig.sameMessageSurfaces()); changed = true;
             rebuildGroups(context, groups); preview.refresh();
         });
-        TextView info = new TextView(context); info.setText(text(R.string.FreezgramMessageSurfacesInfo)); info.setTextSize(14);
+        TextView info = new TextView(context); info.setText(text(R.string.FreezgramStyleMessageInfo)); info.setTextSize(14);
         info.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText)); info.setPadding(dp(20), dp(12), dp(20), dp(20)); content.addView(info);
         fragmentView = scroll; return scroll;
     }
@@ -56,13 +57,13 @@ public final class MessageSurfaceSettingsActivity extends BaseFragment {
                 value -> AppearanceConfig.outgoingSurfaceBlur.setConfigInt(value), value -> AppearanceConfig.outgoingSurfaceIntensity.setConfigInt(value));
     }
     private void section(Context context, LinearLayout content, int title, int profile, IntConsumer setStyle, IntConsumer setOpacity, IntConsumer setBlur, IntConsumer setIntensity) {
-        TextView header = new TextView(context); header.setText(text(title)); header.setTextSize(16);
-        header.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlueHeader)); header.setPadding(dp(20), dp(24), dp(20), dp(8)); content.addView(header);
+        LinearLayout group = StyleEditorUi.section(content, title, resourceProvider);
         String[] names = {text(R.string.FreezgramGiftCardOrdinary), text(R.string.FreezgramGiftCardGlass)};
         TextSettingsCell selector = new TextSettingsCell(context);
         Runnable refresh = () -> selector.setTextAndValue(text(R.string.FreezgramMessageSurfaceStyle), names[MessageSurfaceStyle.style(profile)], false);
-        refresh.run(); content.addView(selector);
-        LinearLayout controls = new LinearLayout(context); controls.setOrientation(LinearLayout.VERTICAL); content.addView(controls);
+        refresh.run(); group.addView(selector);
+        selector.setBackground(Theme.getSelectorDrawable(false));
+        LinearLayout controls = new LinearLayout(context); controls.setOrientation(LinearLayout.VERTICAL); group.addView(controls);
         LinearLayout optics = new LinearLayout(context); optics.setOrientation(LinearLayout.VERTICAL);
         slider(context, controls, R.string.FreezgramGiftOpacity, 100, MessageSurfaceStyle.opacity(profile), setOpacity);
         controls.addView(optics);
@@ -76,8 +77,9 @@ public final class MessageSurfaceSettingsActivity extends BaseFragment {
         });
     }
     private void slider(Context context, LinearLayout content, int title, int max, int value, IntConsumer setter) {
-        AvatarCornersSeekBar slider = new AvatarCornersSeekBar(context, v -> { setter.accept(v); changed = true; preview.refresh(); }, 0, max, text(title), "0", String.valueOf(max));
-        slider.setValue(value); content.addView(slider, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 112));
+        AvatarCornersSeekBar slider = new AvatarCornersSeekBar(context, v -> { setter.accept(v); changed = true; preview.refresh(); }, 0, max, text(title), "0", String.valueOf(max), true);
+        slider.setValueSuffix(max == 30 ? "dp" : "%");
+        slider.setValue(value); content.addView(slider, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 84));
     }
     @Override public void onFragmentDestroy() {
         android.app.Activity activity = getParentActivity(); super.onFragmentDestroy();

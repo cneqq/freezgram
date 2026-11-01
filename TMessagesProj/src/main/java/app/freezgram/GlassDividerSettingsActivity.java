@@ -30,35 +30,35 @@ public final class GlassDividerSettingsActivity extends BaseFragment {
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override public void onItemClick(int id) { if (id == -1) finishFragment(); }
         });
-        ScrollView scroll = new ScrollView(context);
-        scroll.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundWhite));
-        LinearLayout content = new LinearLayout(context); content.setOrientation(LinearLayout.VERTICAL);
-        scroll.addView(content);
+        ScrollView scroll = StyleEditorUi.scroll(context, resourceProvider);
+        LinearLayout content = StyleEditorUi.content(scroll);
         Preview preview = new Preview(context);
-        content.addView(preview, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 200));
+        StyleEditorUi.preview(content, preview, 200, resourceProvider, false);
+        LinearLayout settings = StyleEditorUi.section(content, R.string.FreezgramStyleAppearance, resourceProvider);
         TextCheckCell enabled = new TextCheckCell(context);
         enabled.setTextAndCheck(LocaleController.getString(R.string.FreezgramGlassMenuDividers), AppearanceConfig.glassMenuDividers(), false);
         enabled.setOnClickListener(v -> {
             AppearanceConfig.glassMenuDividers.setConfigBool(!AppearanceConfig.glassMenuDividers());
             enabled.setChecked(AppearanceConfig.glassMenuDividers()); changed = true; preview.invalidate();
         });
-        content.addView(enabled);
-        slider(context, content, R.string.FreezgramGlassDividerWeight, 1, 4, AppearanceConfig.glassDividerWeight(), "", value -> {
+        settings.addView(enabled);
+        enabled.setBackground(Theme.getSelectorDrawable(false));
+        slider(context, settings, R.string.FreezgramGlassDividerWeight, 1, 4, AppearanceConfig.glassDividerWeight(), "", value -> {
             AppearanceConfig.glassDividerWeight.setConfigInt(value); changed = true; preview.invalidate();
         });
-        slider(context, content, R.string.FreezgramGlassDividerOpacity, 0, 100, AppearanceConfig.glassDividerOpacity(), "%", value -> {
+        slider(context, settings, R.string.FreezgramGlassDividerOpacity, 0, 100, AppearanceConfig.glassDividerOpacity(), "%", value -> {
             AppearanceConfig.glassDividerOpacity.setConfigInt(value); changed = true; preview.invalidate();
         });
-        slider(context, content, R.string.FreezgramGlassDividerInset, 0, 32, AppearanceConfig.glassDividerInset(), "dp", value -> {
+        slider(context, settings, R.string.FreezgramGlassDividerInset, 0, 32, AppearanceConfig.glassDividerInset(), "dp", value -> {
             AppearanceConfig.glassDividerInset.setConfigInt(value); changed = true; preview.invalidate();
         });
         fragmentView = scroll;
         return scroll;
     }
     private void slider(Context context, LinearLayout content, int title, int min, int max, int value, String suffix, AvatarCornersSeekBar.OnDrag drag) {
-        AvatarCornersSeekBar slider = new AvatarCornersSeekBar(context, drag, min, max, LocaleController.getString(title), String.valueOf(min), String.valueOf(max));
+        AvatarCornersSeekBar slider = new AvatarCornersSeekBar(context, drag, min, max, LocaleController.getString(title), String.valueOf(min), String.valueOf(max), true);
         slider.setValueSuffix(suffix); slider.setValue(value);
-        content.addView(slider, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 112));
+        content.addView(slider, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 84));
     }
     @Override public void onFragmentDestroy() {
         android.app.Activity activity = getParentActivity();

@@ -1086,6 +1086,7 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
                 case TYPE_DETAIL_SETTINGS: {
                     // Иконка слева, подпись под заголовком.
                     TextDetailSettingsCell cell = (TextDetailSettingsCell) holder.itemView;
+                    cell.setAccent(position == sharedGlassSettingsRow, getThemedColor(Theme.key_windowBackgroundWhiteBlueText));
                     if (position == chatComposerStyleRow) {
                         String[] styles = {getString(R.string.FreezgramChatComposerDefault), getString(R.string.FreezgramChatComposerIos), getString(R.string.FreezgramChatComposerAndroid)};
                         cell.setTextAndValueAndIcon(getString(R.string.FreezgramComposerSettings), styles[AppearanceConfig.chatComposerStyle()], R.drawable.msg_newphone, true);

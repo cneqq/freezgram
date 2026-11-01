@@ -44,7 +44,9 @@ public final class MessageSurfacePreview extends SizeNotifierFrameLayout {
             TLRPC.TL_message message = previewMessage(self, profile);
             if (profile == 2) { cell.hasDiscussion = true; cell.linkedChatId = 0; }
             MessageObject object = new MessageObject(account, message, true, false);
-            object.preview = true; cell.isChat = false; cell.setFullyDraw(true);
+            // Normal ChatMessageCell.onDraw draws content with preview=false. The special
+            // send-preview flag suppresses that pass; touch handling is disabled separately.
+            object.preview = false; cell.isChat = false; cell.setFullyDraw(true);
             cell.setMessageObject(object, null, false, false, false);
             cell.setOnTouchListener((v, event) -> true);
             messages.addView(cell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
@@ -56,7 +58,7 @@ public final class MessageSurfacePreview extends SizeNotifierFrameLayout {
         TLRPC.TL_message message = new TLRPC.TL_message();
         message.id = profile + 1; message.date = 43200 + profile * 60; message.dialog_id = peer;
         message.flags = 257; message.out = profile == 1;
-        message.message = LocaleController.getString(profile == 0 ? R.string.FreezgramIncomingSurface : profile == 1 ? R.string.FreezgramOutgoingSurface : R.string.FreezgramCommentsPreview);
+        message.message = LocaleController.getString(profile == 0 ? R.string.FreezgramPreviewIncomingText : profile == 1 ? R.string.FreezgramPreviewOutgoingText : R.string.FreezgramPreviewPostText);
         message.from_id = new TLRPC.TL_peerUser(); message.from_id.user_id = message.out ? self : peer;
         message.peer_id = new TLRPC.TL_peerUser(); message.peer_id.user_id = peer;
         message.media = new TLRPC.TL_messageMediaEmpty();

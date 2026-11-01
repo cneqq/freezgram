@@ -29,7 +29,7 @@ public final class GiftGlassSettingsActivity extends BaseFragment {
         ScrollView scroll = StyleEditorUi.scroll(context, resourceProvider);
         LinearLayout content = StyleEditorUi.content(scroll);
         GiftCardPreview preview = new GiftCardPreview(context, currentAccount, resourceProvider);
-        StyleEditorUi.preview(content, preview, LayoutHelper.WRAP_CONTENT, resourceProvider, false);
+        StyleEditorUi.preview(content, preview, LayoutHelper.WRAP_CONTENT, resourceProvider);
         TextView info = new TextView(context);
         info.setText(LocaleController.getString(R.string.FreezgramStyleGiftInfo));
         info.setTextSize(14); info.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText));

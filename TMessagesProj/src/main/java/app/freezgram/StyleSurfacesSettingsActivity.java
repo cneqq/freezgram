@@ -33,18 +33,20 @@ public final class StyleSurfacesSettingsActivity extends BaseFragment {
         if (mode == CHAT_LIST) {
             // Keep the actual FilterTabsView preview rather than drawing mock tabs.
             FoldersGlassPreview folders = new FoldersGlassPreview(context, currentAccount, resourceProvider);
-            StyleEditorUi.preview(content, folders, 120, resourceProvider, false);
+            StyleEditorUi.preview(content, folders, 120, resourceProvider);
             LinearLayout group = StyleEditorUi.section(content, R.string.FreezgramStyleGlass, resourceProvider);
             toggle(group, R.string.FreezgramDialogsHeaderGlass, AppearanceConfig::dialogsHeaderGlass,
                     value -> AppearanceConfig.dialogsHeaderGlass.setConfigBool(value));
             toggle(group, R.string.FreezgramFoldersGlass, AppearanceConfig::foldersLiquidGlass,
                     value -> { AppearanceConfig.foldersLiquidGlass.setConfigBool(value); folders.refresh(); });
         } else {
+            SmallSurfacesPreview surfaces = new SmallSurfacesPreview(context, currentAccount, resourceProvider);
+            StyleEditorUi.preview(content, surfaces, 280, resourceProvider);
             LinearLayout group = StyleEditorUi.section(content, R.string.FreezgramStyleGlass, resourceProvider);
             toggle(group, R.string.FreezgramSmallElementsGlass, AppearanceConfig::smallElementsGlass,
-                    value -> AppearanceConfig.smallElementsGlass.setConfigBool(value));
+                    value -> { AppearanceConfig.smallElementsGlass.setConfigBool(value); surfaces.refresh(); });
             toggle(group, R.string.FreezgramAttachmentPanelsGlass, AppearanceConfig::attachmentPanelsGlass,
-                    value -> AppearanceConfig.attachmentPanelsGlass.setConfigBool(value));
+                    value -> { AppearanceConfig.attachmentPanelsGlass.setConfigBool(value); surfaces.refresh(); });
         }
         fragmentView = scroll;
         return scroll;

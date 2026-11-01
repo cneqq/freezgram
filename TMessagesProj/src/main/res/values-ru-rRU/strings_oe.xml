@@ -112,7 +112,7 @@
     <string name="FreezgramGiftCardsGlass">Карточки подарков в чатах</string>
     <string name="FreezgramTransitionStyle">Анимации переходов</string>
     <string name="FreezgramTransitionStandard">Стандартные</string>
-    <string name="FreezgramTransitionSmooth">Плавные</string>
+    <string name="FreezgramTransitionSmooth">Freezgram (плавные)</string>
     <string name="FreezgramGiftGlassSettings">Подарки</string>
     <string name="FreezgramGiftGlassInfo">Фон карточек подарков в чатах и обоих предпросмотрах. Для стекла доступны отдельные размытие, интенсивность и прозрачность. Мягкий градиент — непрозрачная плашка в цветах темы. NFT сохраняют родные цвета фона.</string>
     <string name="FreezgramGiftCardStyle">Плашка подарка</string>

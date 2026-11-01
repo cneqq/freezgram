@@ -1,21 +1,24 @@
 # Freezgram Liquid Glass
 
-**Freezgram settings → Appearance → Freezgram style** is the single entry point
+**Freezgram settings → Appearance → General appearance → FreezGram style** is the single entry point
 for Freezgram's visual additions. A grouped native list separates Interface
 (navigation, chat header, input, chat list/folders), Chat (messages, gifts,
 menus/buttons/attachments), and Effects (glass, dividers, transitions, snow).
+General appearance is the first section, with FreezGram style first inside it.
 Inherited Appearance settings retain their existing screens. Old iOS/composer
 search keys resolve to this entry; stored style values and backup keys are unchanged.
 
 Editors use themed sections and compact opt-in sliders. The existing avatar
 and inherited settings sliders keep their previous layout. Shared optics no
 longer doubles as a destination list or a surface opt-in page. Color enhancement
-and wallpaper dimming are under Advanced; header dimming is in Chat header.
+and wallpaper dimming are directly visible switches; header dimming is in Chat header.
 Reset in the shared editor does not reset the header's separate dim preference.
 The existing navigation/composer material previews, native message cells and
-catalog gift preview are retained, with collapsible preview sections. The new
+catalog gift preview are retained. All previews start expanded and can be collapsed. The new
 header preview uses the actual ActionBar/ChatAvatarContainer, the current user
-avatar and wallpaper, with chat actions blocked. Folder glass uses the actual
+avatar and wallpaper, with native back/call/menu icons and chat actions blocked.
+Refreshing its controls preserves the wallpaper child. Message samples use the
+normal native text draw pass and readable incoming/outgoing/post text. Folder glass uses the actual
 FilterTabsView and a live drawable connected to its opt-in switch. No HTML mockup
 or decorative replacement chat from the design proposal is shipped.
 
@@ -24,9 +27,12 @@ Available editors:
 - **Navigation panel** opens its own editor with iOS/Liquid Glass switches,
   width (80–100%), bottom gap (0–64dp) and contact visibility.
 - **Chat header** enables the centered glass header.
-- **Input panel** opens the Default/iOS/Android style selector and a bottom-gap
+- **Input panel** opens the Android/iOS layout selector, an independent Liquid Glass
+  switch and a bottom-gap
   slider (0–64dp). The gap applies to iOS input above both the system inset and
   the keyboard. It moves the entire island, including controls and background.
+  Legacy nonzero styles retain glass until explicitly changed; backup exports the
+  effective glass preference. Layout changes preserve the separate glass choice.
 - **Liquid Glass** is the shared optics editor with sample header, composer and
   navigation surfaces: blur, refraction, fill transparency and color enhancement.
 
@@ -34,6 +40,12 @@ The iOS text and emoji share one 0–32dp content-inset setting (default 16dp).
 Older independent spacing preferences are no longer read or exported. Each editor has its own preview. Navigation previews use the
 actual MainTabsLayout measurement and GlassTabView components, rather than equal
 weighted placeholder columns. Reset affects only the current editor.
+
+Snow and transition choices expand inline in the style list. Transitions offer
+Freezgram (smooth) or Standard. Menus/buttons/attachments have a native popup,
+page-down button and attachment tabs over wallpaper, following their switches.
+Popup dividers share the material/row alpha and the union of expanding background
+segments, so they do not appear ahead of the glass.
 
 ## Shared appearance
 
@@ -56,8 +68,9 @@ frosted surfaces retain their previous color policy.
 
 Refraction requires Android 13+, enabled chat blur and inactive power saving.
 The preview uses the same renderer on sample content, with the actual navigation
-tab components and composer icon resources. It illustrates enabled glass, even
-if a particular production style is currently disabled. It is not a live chat.
+tab components and composer icon resources. Navigation/composer previews follow
+their own glass switch; the shared optics editor illustrates the material itself.
+It is not a live chat.
 Changes are previewed immediately; underlying fragments rebuild on leaving the
 editor. Header/composer drawable revisions update after shared optics change.
 

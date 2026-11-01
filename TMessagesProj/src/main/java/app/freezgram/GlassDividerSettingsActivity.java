@@ -33,7 +33,7 @@ public final class GlassDividerSettingsActivity extends BaseFragment {
         ScrollView scroll = StyleEditorUi.scroll(context, resourceProvider);
         LinearLayout content = StyleEditorUi.content(scroll);
         Preview preview = new Preview(context);
-        StyleEditorUi.preview(content, preview, 200, resourceProvider, false);
+        StyleEditorUi.preview(content, preview, 200, resourceProvider);
         LinearLayout settings = StyleEditorUi.section(content, R.string.FreezgramStyleAppearance, resourceProvider);
         TextCheckCell enabled = new TextCheckCell(context);
         enabled.setTextAndCheck(LocaleController.getString(R.string.FreezgramGlassMenuDividers), AppearanceConfig.glassMenuDividers(), false);

@@ -179,6 +179,36 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
     protected void updateRows() {
         super.updateRows();
 
+        appearanceHeaderRow = addRow("appearanceHeader");
+        sharedGlassSettingsRow = addRow("freezgramStyle", "sharedGlassSettings", "iosStyles", "iosNavBar", "iosChatHeader", "chatComposerStyle", "composerSettings");
+        transitionStyleRow = -1;
+        fabShapeRow = addRow("fabShape");
+        useSystemFontsRow = addRow("useSystemFonts");
+        // Material Design 3 — сворачиваемая группа, как у exteraGram
+        // (AppearancePreferencesActivity: asExteraExpandableSwitch + пять asRoundCheckbox).
+        // Прежние отдельные селекторы «стиль переключателей» и «стиль слайдеров»
+        // стали двумя галочками внутри неё.
+        md3GroupRow = addRow("md3Styles");
+        if (md3Expanded) {
+            md3LoadingRow = addRow("md3Loading");
+            md3SliderRow = addRow("md3Slider");
+            md3SwitchRow = addRow("md3Switch");
+            md3ChatHeaderRow = addRow("md3ChatHeader");
+            md3NavBarRow = addRow("md3NavBar");
+            md3ListItemsRow = addRow("md3ListItems");
+            md3PlayerRow = addRow("md3Player");
+            md3MiniPlayerRow = addRow("md3MiniPlayer");
+        } else {
+            md3LoadingRow = md3SliderRow = md3SwitchRow = md3ChatHeaderRow = md3NavBarRow = md3ListItemsRow = -1;
+            md3PlayerRow = md3MiniPlayerRow = -1;
+        }
+        iosGroupRow = iosNavBarRow = iosLiquidGlassRow = iosPanelSettingsRow = iosChatHeaderRow = -1;
+        chatComposerStyleRow = composerSettingsRow = -1;
+        gooeyAvatarRow = addRow("gooeyAvatar");
+        customThemesRow = addRow("customThemes");
+        appearanceDividerRow = addRow();
+
+
         avatarCornersPreviewRow = addRow("avatarCorners");
         singleCornerRadiusRow = addRow("singleCornerRadius");
         avatarsDividerRow = addRow();
@@ -208,35 +238,6 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
         playerStyleRow = addRow("playerStyle");
         hidingRow = addRow("hiding");
         linksDividerRow = addRow();
-
-        appearanceHeaderRow = addRow("appearanceHeader");
-        transitionStyleRow = -1;
-        fabShapeRow = addRow("fabShape");
-        useSystemFontsRow = addRow("useSystemFonts");
-        // Material Design 3 — сворачиваемая группа, как у exteraGram
-        // (AppearancePreferencesActivity: asExteraExpandableSwitch + пять asRoundCheckbox).
-        // Прежние отдельные селекторы «стиль переключателей» и «стиль слайдеров»
-        // стали двумя галочками внутри неё.
-        md3GroupRow = addRow("md3Styles");
-        if (md3Expanded) {
-            md3LoadingRow = addRow("md3Loading");
-            md3SliderRow = addRow("md3Slider");
-            md3SwitchRow = addRow("md3Switch");
-            md3ChatHeaderRow = addRow("md3ChatHeader");
-            md3NavBarRow = addRow("md3NavBar");
-            md3ListItemsRow = addRow("md3ListItems");
-            md3PlayerRow = addRow("md3Player");
-            md3MiniPlayerRow = addRow("md3MiniPlayer");
-        } else {
-            md3LoadingRow = md3SliderRow = md3SwitchRow = md3ChatHeaderRow = md3NavBarRow = md3ListItemsRow = -1;
-            md3PlayerRow = md3MiniPlayerRow = -1;
-        }
-        iosGroupRow = iosNavBarRow = iosLiquidGlassRow = iosPanelSettingsRow = iosChatHeaderRow = -1;
-        chatComposerStyleRow = composerSettingsRow = -1;
-        sharedGlassSettingsRow = addRow("freezgramStyle", "sharedGlassSettings", "iosStyles", "iosNavBar", "iosChatHeader", "chatComposerStyle", "composerSettings");
-        gooeyAvatarRow = addRow("gooeyAvatar");
-        customThemesRow = addRow("customThemes");
-        appearanceDividerRow = addRow();
 
         sectionsHeaderRow = addRow("sectionsHeader");
         sectionRadiusRow = addRow("sectionRadius");
@@ -930,7 +931,7 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
                 case TYPE_HEADER: {
                     HeaderCell cell = (HeaderCell) holder.itemView;
                     if (position == appearanceHeaderRow) {
-                        cell.setText(getString(R.string.OEAppearanceGeneral));
+                        cell.setText(getString(R.string.FreezgramStyleGeneralTitle));
                     } else if (position == sectionsHeaderRow) {
                         cell.setText(getString(R.string.OEAppearanceSections));
                     } else if (position == blurHeaderRow) {

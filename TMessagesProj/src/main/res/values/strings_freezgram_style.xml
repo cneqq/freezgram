@@ -1,5 +1,9 @@
 <resources>
-    <string name="FreezgramStyleTitle">Freezgram style</string>
+    <string name="FreezgramStyleTitle">FreezGram style</string>
+    <string name="FreezgramStyleGeneralTitle">General appearance</string>
+    <string name="FreezgramPreviewIncomingText">Hi! Here is how your messages will look with these settings.</string>
+    <string name="FreezgramPreviewOutgoingText">Looks good. The text, background and time are all visible.</string>
+    <string name="FreezgramPreviewPostText">A sample channel post with comments. You can change its background here.</string>
     <string name="FreezgramStyleEntryInfo">Interface, chat and effects</string>
     <string name="FreezgramStyleInterface">Interface</string>
     <string name="FreezgramStyleChat">Chat</string>

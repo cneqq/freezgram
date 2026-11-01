@@ -317,7 +317,7 @@ public class ChatInputViewsContainer extends FrameLayout {
         tmpRect.offset(0, blurTop + (int) bubbleInputTranlationY);
 
         final boolean customComposer = app.freezgram.ChatComposerGlass.isRequested();
-        final boolean split = customComposer && composerLeftDrawable != null && useSplitComposer();
+        final boolean split = app.exteraless.appearance.AppearanceConfig.chatComposerStyle() == 1 && composerLeftDrawable != null && useSplitComposer();
         app.freezgram.ChatComposerGlass.surfaceBounds(tmpRect, composerFieldBounds, composerLeftBounds, composerRightBounds, split);
         blurredBackgroundDrawable.setBounds(composerFieldBounds);
         if (composerLeftDrawable != null) {

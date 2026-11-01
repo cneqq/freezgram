@@ -1,5 +1,9 @@
 <resources>
-    <string name="FreezgramStyleTitle">Стиль Freezgram</string>
+    <string name="FreezgramStyleTitle">Стиль FreezGram</string>
+    <string name="FreezgramStyleGeneralTitle">Общее оформление</string>
+    <string name="FreezgramPreviewIncomingText">Привет! Так будут выглядеть сообщения с выбранным оформлением.</string>
+    <string name="FreezgramPreviewOutgoingText">Отлично! Теперь видны текст, фон и время сообщения.</string>
+    <string name="FreezgramPreviewPostText">Пример публикации канала с комментариями. Здесь можно настроить её фон.</string>
     <string name="FreezgramStyleEntryInfo">Интерфейс, чат и эффекты</string>
     <string name="FreezgramStyleInterface">Интерфейс</string>
     <string name="FreezgramStyleChat">Чат</string>

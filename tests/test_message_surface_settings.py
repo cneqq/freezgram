@@ -51,7 +51,7 @@ class TLRPC{
  static class TL_message{int id,date,flags;long dialog_id;boolean out;String message;Peer from_id,peer_id;Object media;TL_messageReplies replies;}
  static class TL_messageMediaEmpty{}static class TL_messageReplies{boolean comments;int replies;}
 }
-class LocaleController{static String getString(int n){return "Preview";}}class R{static class string{static int FreezgramIncomingSurface=1,FreezgramOutgoingSurface=2,FreezgramCommentsPreview=3;}}
+class LocaleController{static String getString(int n){return "Preview";}}class R{static class string{static int FreezgramPreviewIncomingText=1,FreezgramPreviewOutgoingText=2,FreezgramPreviewPostText=3;}}
 '''.replace('FACTORY',factory))
 
  def test_native_shape_and_fallback_are_kept(self):

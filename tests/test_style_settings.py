@@ -38,9 +38,10 @@ class Folders {Object background;void setGlassPreviewBackground(Object value){ba
 class PrivacyCheck {
  ROUTE
  public static void main(String[] args) {
-  String[] keys={"navigation","header","composer","chatList","messages","gifts","surfaces","glass","dividers","motion","snow"};
+  String[] keys={"navigation","header","composer","chatList","messages","gifts","surfaces","glass","dividers"};
   for(String key:keys)if(editorFor(key)==null)throw new AssertionError("Unreachable section: "+key);
   if(editorFor("unknown")!=null || editorFor(null)!=null)throw new AssertionError("Unknown destination");
+  if(editorFor("motion")!=null || editorFor("snow")!=null)throw new AssertionError("Inline choices opened another screen");
   if(Preferences.writes!=0)throw new AssertionError("Opening a section changes preferences");
   if(((NavigationGlassSettingsActivity)editorFor("navigation")).mode!=0 || ((NavigationGlassSettingsActivity)editorFor("composer")).mode!=2 || ((NavigationGlassSettingsActivity)editorFor("glass")).mode!=1)throw new AssertionError("Wrong editor mode");
  }

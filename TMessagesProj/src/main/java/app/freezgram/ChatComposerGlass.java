@@ -10,13 +10,19 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundProvider;
+import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundProviderBuilder;
 
 /** Composer eligibility and geometry; optics are shared with other glass panels. */
 public final class ChatComposerGlass {
     private ChatComposerGlass() {}
 
     public static boolean isRequested() {
-        return AppearanceConfig.chatComposerStyle() != 0;
+        return AppearanceConfig.composerLiquidGlass();
+    }
+
+    /** Old 1/2 styles included glass; an explicit switch now overrides either layout. */
+    public static boolean resolveGlassPreference(int legacyStyle, boolean hasExplicit, boolean explicit) {
+        return hasExplicit ? explicit : legacyStyle != 0;
     }
 
     public static boolean isEnabled() {
@@ -59,6 +65,11 @@ public final class ChatComposerGlass {
     }
 
     public static BlurredBackgroundProvider colors(Theme.ResourcesProvider resourcesProvider) {
+        if (!isRequested()) {
+            return new BlurredBackgroundProviderBuilder(resourcesProvider)
+                    .setBackgroundColor((r, dark) -> Theme.getColor(Theme.key_windowBackgroundWhite, r))
+                    .build();
+        }
         return LiquidGlassStyle.colors(resourcesProvider, () -> isEnabled());
     }
 

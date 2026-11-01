@@ -130,6 +130,8 @@ public class ActionBarPopupWindow extends PopupWindow {
         private ScrollView scrollView;
         private java.util.function.BooleanSupplier glassDividersEnabled;
         private final Paint glassDividerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final RectF glassDividerPosition = new RectF();
+        private final Path glassDividerReveal = new Path();
 
         public void setGlassDividers(java.util.function.BooleanSupplier enabled, int color) {
             glassDividersEnabled = enabled;
@@ -260,6 +262,12 @@ public class ActionBarPopupWindow extends PopupWindow {
                 protected void dispatchDraw(Canvas canvas) {
                     super.dispatchDraw(canvas);
                     if (glassDividersEnabled == null || !glassDividersEnabled.getAsBoolean()) return;
+                    if (backgroundDrawable == null || !org.telegram.ui.Components.chat.ViewPositionWatcher.computeRectInParent(
+                            this, ActionBarPopupWindowLayout.this, glassDividerPosition)) return;
+                    canvas.save();
+                    canvas.translate(-glassDividerPosition.left, -glassDividerPosition.top);
+                    canvas.clipPath(glassDividerReveal);
+                    canvas.translate(glassDividerPosition.left, glassDividerPosition.top);
                     View previous = null;
                     for (int i = 0; i < getChildCount(); i++) {
                         View child = getChildAt(i);
@@ -267,10 +275,12 @@ public class ActionBarPopupWindow extends PopupWindow {
                         if (child instanceof GapView) { previous = null; continue; }
                         if (previous != null) {
                             float y = (previous.getBottom() + child.getTop()) / 2f;
-                            app.freezgram.GlassDividers.draw(canvas, 0, getWidth(), y, 1f, glassDividerPaint.getColor());
+                            float visibility = app.freezgram.GlassDividers.popupVisibility(backAlpha, previous.getAlpha(), child.getAlpha());
+                            app.freezgram.GlassDividers.draw(canvas, 0, getWidth(), y, visibility, glassDividerPaint.getColor());
                         }
                         previous = child;
                     }
+                    canvas.restore();
                 }
 
                 @Override
@@ -476,6 +486,7 @@ public class ActionBarPopupWindow extends PopupWindow {
 
         @Override
         protected void dispatchDraw(Canvas canvas) {
+            glassDividerReveal.rewind();
             if (swipeBackGravityRight) {
                 setTranslationX(getMeasuredWidth() * (1f - backScaleX));
                 if (topView != null) {
@@ -555,6 +566,9 @@ public class ActionBarPopupWindow extends PopupWindow {
                         AndroidUtilities.lerp(rect, AndroidUtilities.rectTmp2, reactionsEnterProgress, AndroidUtilities.rectTmp2);
                     }
                     backgroundDrawable.setBounds(AndroidUtilities.rectTmp2);
+                    // Preserve both native background segments when the menu contains a gap.
+                    glassDividerReveal.addRect(AndroidUtilities.rectTmp2.left, AndroidUtilities.rectTmp2.top,
+                            AndroidUtilities.rectTmp2.right, AndroidUtilities.rectTmp2.bottom, Path.Direction.CW);
                     backgroundDrawable.draw(canvas);
                     if (clipChildren) {
                         AndroidUtilities.rectTmp2.left += bgPaddings.left;

@@ -10,6 +10,9 @@ import org.telegram.ui.ActionBar.Theme;
 public final class GlassDividers {
     private static final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private GlassDividers() {}
+    public static float popupVisibility(int materialAlpha, float previousAlpha, float currentAlpha) {
+        return Math.max(0f, Math.min(materialAlpha / 255f, Math.min(previousAlpha, currentAlpha)));
+    }
     public static void draw(Canvas canvas, float left, float right, float y, float visibility, int color) {
         if (!AppearanceConfig.glassMenuDividers()) return;
         float inset = Math.min(AndroidUtilities.dp(AppearanceConfig.glassDividerInset()), Math.max(0, (right - left) / 2));

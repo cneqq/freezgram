@@ -8,11 +8,16 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.Cells.TextSettingsCell;
+import org.telegram.ui.Cells.TextRadioCell;
+import org.telegram.messenger.AndroidUtilities;
+import tw.nekomimi.nekogram.NekoConfig;
+import xyz.nextalone.nagram.NaConfig;
 import tw.nekomimi.nekogram.settings.BaseNekoSettingsActivity;
 import tw.nekomimi.nekogram.ui.cells.HeaderCell;
 
 /** Single entry point; opening this list never changes the selected styles. */
 public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
+    private boolean motionExpanded, snowExpanded, effectsChanged;
     @Override protected String getActionBarTitle() { return text(R.string.FreezgramStyleTitle); }
     private String text(int id) { return LocaleController.getString(id); }
     @Override protected void updateRows() {
@@ -20,7 +25,11 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
         addRow("interface");
         addRow("navigation"); addRow("header"); addRow("composer"); addRow("chatList"); addRow();
         addRow("chat"); addRow("messages"); addRow("gifts"); addRow("surfaces"); addRow();
-        addRow("effects"); addRow("glass"); addRow("dividers"); addRow("motion"); addRow("snow"); addRow();
+        addRow("effects"); addRow("glass"); addRow("dividers"); addRow("motion");
+        if (motionExpanded) { addRow("motionFreezgram"); addRow("motionStandard"); }
+        addRow("snow");
+        if (snowExpanded) { addRow("snowOff"); addRow("snowFlakes"); addRow("snowDots"); }
+        addRow();
     }
     public static BaseFragment editorFor(String key) {
         if (key == null) return null;
@@ -34,15 +43,29 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
             case "surfaces": return new StyleSurfacesSettingsActivity(StyleSurfacesSettingsActivity.CHAT);
             case "glass": return new NavigationGlassSettingsActivity(NavigationGlassSettingsActivity.SHARED);
             case "dividers": return new GlassDividerSettingsActivity();
-            case "motion": return new StyleEffectsSettingsActivity(StyleEffectsSettingsActivity.MOTION);
-            case "snow": return new StyleEffectsSettingsActivity(StyleEffectsSettingsActivity.SNOW);
             default: return null;
         }
     }
     @Override protected void onItemClick(View view, int position, float x, float y) {
-        BaseFragment editor = editorFor(rowMapReverse.get(position));
+        String key = rowMapReverse.get(position);
+        if (key == null) return;
+        if (key.equals("motion")) { motionExpanded = !motionExpanded; refreshRows(); return; }
+        if (key.equals("snow")) { snowExpanded = !snowExpanded; refreshRows(); return; }
+        if (key.equals("motionFreezgram") || key.equals("motionStandard")) {
+            AppearanceConfig.transitionStyle.setConfigInt(key.equals("motionFreezgram") ? 1 : 0);
+            effectsChanged = true; refreshRows(); return;
+        }
+        if (key.equals("snowOff") || key.equals("snowFlakes") || key.equals("snowDots")) {
+            boolean enabled = !key.equals("snowOff");
+            NekoConfig.actionBarDecoration.setConfigInt(enabled ? 1 : 0);
+            NaConfig.INSTANCE.getChatDecoration().setConfigInt(enabled ? 1 : 0);
+            if (enabled) AppearanceConfig.snowStyle.setConfigInt(key.equals("snowDots") ? 1 : 0);
+            effectsChanged = true; refreshRows(); return;
+        }
+        BaseFragment editor = editorFor(key);
         if (editor != null) presentFragment(editor);
     }
+    private void refreshRows() { updateRows(); if (listAdapter != null) listAdapter.notifyDataSetChanged(); }
     private int label(String key) {
         switch (key) {
             case "interface": return R.string.FreezgramStyleInterface;
@@ -58,6 +81,11 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
             case "glass": return R.string.FreezgramStyleGlass;
             case "dividers": return R.string.FreezgramGlassMenuDividers;
             case "motion": return R.string.FreezgramTransitionStyle;
+            case "motionFreezgram": return R.string.FreezgramTransitionSmooth;
+            case "motionStandard": return R.string.FreezgramTransitionStandard;
+            case "snowOff": return R.string.FreezgramStyleOff;
+            case "snowFlakes": return R.string.FreezgramSnowStyleFlakes;
+            case "snowDots": return R.string.FreezgramSnowStyleDots;
             default: return R.string.FreezgramSnowStyle;
         }
     }
@@ -65,7 +93,7 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
         switch (key) {
             case "navigation": return AppearanceConfig.iosNavigationBarStyle() ? "iOS" : text(AppearanceConfig.newNavigationBarStyle() ? R.string.FreezgramStyleMaterial : R.string.FreezgramChatComposerDefault);
             case "header": return AppearanceConfig.iosChatHeader() ? "iOS" : text(AppearanceConfig.newChatHeaderStyle() ? R.string.FreezgramStyleMaterial : R.string.FreezgramChatComposerDefault);
-            case "composer": return text(new int[]{R.string.FreezgramChatComposerDefault, R.string.FreezgramChatComposerIos, R.string.FreezgramChatComposerAndroid}[AppearanceConfig.chatComposerStyle()]);
+            case "composer": return AppearanceConfig.chatComposerStyle() == 1 ? "iOS" : "Android";
             case "messages": return text(AppearanceConfig.sameMessageSurfaces() ? R.string.FreezgramStyleLinked : R.string.FreezgramStyleSeparate);
             case "gifts": return text(new int[]{R.string.FreezgramGiftCardOrdinary, R.string.FreezgramGiftCardGlass, R.string.FreezgramGiftCardSoft}[GiftGlassStyle.style()]);
             case "glass": return LiquidGlassStyle.blurRadiusDp() + " dp · " + AppearanceConfig.navigationGlassIntensity() + "%";
@@ -81,13 +109,26 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
             @Override public int getItemViewType(int position) {
                 String key = rowMapReverse.get(position);
                 if (key == null || key.isEmpty()) return TYPE_SHADOW;
+                if (key.equals("motionFreezgram") || key.equals("motionStandard") || key.equals("snowOff") || key.equals("snowFlakes") || key.equals("snowDots")) return TYPE_RADIO;
                 return key.equals("interface") || key.equals("chat") || key.equals("effects") ? TYPE_HEADER : TYPE_SETTINGS;
             }
             @Override public void onBindViewHolder(RecyclerView.ViewHolder holder, int position, boolean partial) {
                 String key = rowMapReverse.get(position);
                 if (getItemViewType(position) == TYPE_HEADER) ((HeaderCell) holder.itemView).setText(text(label(key)));
+                else if (getItemViewType(position) == TYPE_RADIO) {
+                    boolean snowEnabled = NekoConfig.actionBarDecoration.Int() == 1;
+                    boolean checked = key.equals("motionFreezgram") ? AppearanceConfig.transitionStyle() == 1
+                            : key.equals("motionStandard") ? AppearanceConfig.transitionStyle() == 0
+                            : key.equals("snowOff") ? !snowEnabled
+                            : snowEnabled && (key.equals("snowDots") ? AppearanceConfig.snowStyle() == 1 : AppearanceConfig.snowStyle() == 0);
+                    ((TextRadioCell) holder.itemView).setTextAndValueAndCheck(text(label(key)), "", checked, false, false);
+                }
                 else if (getItemViewType(position) == TYPE_SETTINGS) ((TextSettingsCell) holder.itemView).setTextAndValue(text(label(key)), value(key), position + 1 < rowCount && getItemViewType(position + 1) == TYPE_SETTINGS);
             }
         };
+    }
+    @Override public void onFragmentDestroy() {
+        android.app.Activity activity = getParentActivity(); super.onFragmentDestroy();
+        if (effectsChanged && activity instanceof org.telegram.ui.LaunchActivity) AndroidUtilities.runOnUIThread(() -> ((org.telegram.ui.LaunchActivity) activity).rebuildAllFragments(false));
     }
 }

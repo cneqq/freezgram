@@ -33,6 +33,7 @@ final class ChatHeaderPreview extends SizeNotifierFrameLayout {
     private final Theme.ResourcesProvider provider;
     private final int account;
     private ChatAvatarContainer avatar;
+    private ActionBar bar;
     private BlurredBackgroundSourceRenderNode source;
     private final BlurredBackgroundDrawableViewFactory factory;
     ChatHeaderPreview(Context context, BaseFragment owner, int account, Theme.ResourcesProvider provider) {
@@ -49,9 +50,11 @@ final class ChatHeaderPreview extends SizeNotifierFrameLayout {
     }
     void refresh() {
         if (avatar != null) avatar.onDestroy();
-        removeAllViews();
-        ActionBar bar = new ActionBar(getContext(), provider);
+        // BackgroundView belongs to SizeNotifierFrameLayout and must survive style changes.
+        if (bar != null) removeView(bar);
+        bar = new ActionBar(getContext(), provider);
         bar.setOccupyStatusBar(false); bar.setBackButtonImage(R.drawable.ic_ab_back);
+        bar.setItemsColor(Theme.getColor(Theme.key_chat_topPanelTitle, provider), false);
         avatar = new ChatAvatarContainer(getContext(), owner, false, provider) {
             @Override protected boolean isCentered() { return AppearanceConfig.iosChatHeader(); }
         };
@@ -68,7 +71,10 @@ final class ChatHeaderPreview extends SizeNotifierFrameLayout {
         ChatHeaderUiHelper.applyChatHeaderGlassStyle(bar);
         if (AppearanceConfig.iosChatHeader()) {
             bar.setChatAvatarContainer(avatar); avatar.setActionBar(bar); bar.setForcedMenuWidth(AndroidUtilities.dp(46));
-        } else bar.createMenu().addItem(0, R.drawable.ic_ab_other);
+        } else {
+            bar.createMenu().addItem(1, R.drawable.call);
+            bar.createMenu().addItem(0, R.drawable.ic_ab_other);
+        }
         addView(bar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP, 0, 20, 0, 0));
         invalidate();
     }

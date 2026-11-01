@@ -5377,14 +5377,15 @@ public class ChatActivity extends BaseFragment implements
         chatInputViewsContainer.setClipChildren(false);
         chatInputViewsContainer.drawInputBackground = !isFeedSearch();
         chatInputViewsContainer.setWindowInsetsProvider(windowInsetsStateHolder);
-        chatInputViewsContainer.setInputIslandBubbleDrawable(
-            app.freezgram.ChatComposerGlass.isRequested()
-                ? composerGlassFactory.create(chatInputViewsContainer, app.freezgram.ChatComposerGlass.colors(themeDelegate))
-                : glassBackgroundDrawableFactory.create(chatInputViewsContainer, blurredBackgroundColorProvider));
-        if (app.freezgram.ChatComposerGlass.isRequested()) {
+        BlurredBackgroundDrawable composerBackground = composerGlassFactory.create(chatInputViewsContainer, app.freezgram.ChatComposerGlass.colors(themeDelegate));
+        app.freezgram.ChatComposerGlass.refresh(composerBackground);
+        chatInputViewsContainer.setInputIslandBubbleDrawable(composerBackground);
+        if (app.exteraless.appearance.AppearanceConfig.chatComposerStyle() == 1) {
+            BlurredBackgroundDrawable composerLeft = composerGlassFactory.create(chatInputViewsContainer, app.freezgram.ChatComposerGlass.colors(themeDelegate));
+            BlurredBackgroundDrawable composerRight = composerGlassFactory.create(chatInputViewsContainer, app.freezgram.ChatComposerGlass.colors(themeDelegate));
+            app.freezgram.ChatComposerGlass.refresh(composerLeft); app.freezgram.ChatComposerGlass.refresh(composerRight);
             chatInputViewsContainer.setComposerGlassButtons(
-                    composerGlassFactory.create(chatInputViewsContainer, app.freezgram.ChatComposerGlass.colors(themeDelegate)),
-                    composerGlassFactory.create(chatInputViewsContainer, app.freezgram.ChatComposerGlass.colors(themeDelegate)));
+                    composerLeft, composerRight);
         }
         chatInputViewsContainer.setUnderKeyboardBackgroundDrawable(
             glassBackgroundDrawableFactoryFrosted.create(chatInputViewsContainer, blurredBackgroundColorProvider));

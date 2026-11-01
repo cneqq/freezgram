@@ -142,7 +142,7 @@ class PrivacyCheck {
   }
  }
 }
-class AppearanceConfig{static int style;static int chatComposerStyle(){return style;}}
+class AppearanceConfig{static int style;static int chatComposerStyle(){return style;}static boolean composerLiquidGlass(){return style!=0;}}
 '''.replace('METHODS',methods))
 
     def test_policy_and_surface_bounds(self):
@@ -175,7 +175,7 @@ class PrivacyCheck {
  }
  static int dp(int n){return n;}
 }
-class AppearanceConfig{static int style;static int chatComposerStyle(){return style;}}
+class AppearanceConfig{static int style;static int chatComposerStyle(){return style;}static boolean composerLiquidGlass(){return style!=0;}}
 class Build{static class VERSION{static int SDK_INT;}}
 class SharedConfig{static boolean blur;static boolean chatBlurEnabled(){return blur;}}
 class LiteMode{static boolean power;static boolean isPowerSaverApplied(){return power;}}
@@ -222,13 +222,13 @@ class PrivacyCheck {
   }
  }
 }
-class AppearanceConfig{static int style;static int chatComposerStyle(){return style;}}
+class AppearanceConfig{static int style;static int chatComposerStyle(){return style;}static boolean composerLiquidGlass(){return style!=0;}}
 class Build{static class VERSION{static int SDK_INT;}}
 class SharedConfig{static boolean blur;static boolean chatBlurEnabled(){return blur;}}
 class LiteMode{static boolean power;static boolean isPowerSaverApplied(){return power;}}
 class AndroidUtilities{static int dp(int n){return n;}static float dpf2(float n){return n;}}
 class Theme {
- static class ResourcesProvider{} static int key_chat_messagePanelBackground;
+ static class ResourcesProvider{} static int key_chat_messagePanelBackground,key_windowBackgroundWhite;
  static int getColor(int key,ResourcesProvider r){return 0xffeeeeee;}
  static int multAlpha(int color,float alpha){return (color&0xffffff)|((int)(255*alpha)<<24);}
 }
@@ -350,6 +350,6 @@ class Canvas{boolean hardware;int blue;boolean isHardwareAccelerated(){return ha
 class Rect{void round(Object r){}}
 class Drawable{int draws;void setBounds(Object r){}void updateColors(){}void draw(Canvas c){draws++;}}
 class AndroidUtilities{static Object rectTmp2=new Object();}
-class AppearanceConfig{static int style;static int chatComposerStyle(){return style;}}
+class AppearanceConfig{static int style;static int chatComposerStyle(){return style;}static boolean composerLiquidGlass(){return style!=0;}}
 class ChatComposerGlass{static boolean enabled;static boolean isEnabled(){return enabled;}static void refresh(Drawable d){}}
 '''.replace('METHODS',methods).replace('PAINT',paint).replace('app.exteraless.appearance.AppearanceConfig','AppearanceConfig').replace('app.freezgram.ChatComposerGlass','ChatComposerGlass'))

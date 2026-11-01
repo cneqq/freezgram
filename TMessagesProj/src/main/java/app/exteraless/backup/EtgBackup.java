@@ -372,6 +372,9 @@ public final class EtgBackup {
         integer(list, "composerSideInset", AppearanceConfig.composerSideInset, 0, 48);
         integer(list, "composerBottomLift", AppearanceConfig.composerBottomLift, 0, 64);
         integer(list, "chatComposerStyle", AppearanceConfig.chatComposerStyle, 0, 2);
+        list.add(new Entry(SECTION_EXTERA, "composerLiquidGlass", KIND_BOOL, 0, 0, null,
+                () -> new JsonPrimitive(AppearanceConfig.composerLiquidGlass()),
+                value -> AppearanceConfig.composerLiquidGlass.setConfigBool(value.getAsBoolean())));
         bool(list, "profileMusicCard", AppearanceConfig.profileMusicCard);
         bool(list, "useSystemFonts", NekoConfig.typeface);
         bool(list, "gooeyAvatarAnimation", AppearanceConfig.gooeyAvatarAnimation);

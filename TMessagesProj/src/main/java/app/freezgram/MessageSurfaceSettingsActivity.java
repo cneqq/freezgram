@@ -31,7 +31,7 @@ public final class MessageSurfaceSettingsActivity extends BaseFragment {
         ScrollView scroll = StyleEditorUi.scroll(context, resourceProvider);
         LinearLayout content = StyleEditorUi.content(scroll);
         preview = new MessageSurfacePreview(context, currentAccount, resourceProvider);
-        StyleEditorUi.preview(content, preview, LayoutHelper.WRAP_CONTENT, resourceProvider, false);
+        StyleEditorUi.preview(content, preview, LayoutHelper.WRAP_CONTENT, resourceProvider);
         TextCheckCell same = new TextCheckCell(context);
         same.setTextAndCheck(text(R.string.FreezgramSameMessageSurfaces), AppearanceConfig.sameMessageSurfaces(), false);
         StyleEditorUi.section(content, 0, resourceProvider).addView(same);

@@ -13,6 +13,7 @@ import android.widget.TextView;
 
 import app.exteraless.appearance.AppearanceConfig;
 import app.exteraless.appearance.AvatarCornersSeekBar;
+import app.exteraless.appearance.MainTabsUiHelper;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
@@ -31,6 +32,11 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
     private final int mode;
     public NavigationGlassSettingsActivity() { this(NAVIGATION); }
     public NavigationGlassSettingsActivity(int mode) { this.mode = mode; }
+    public static boolean previewMaterialRequested(int mode) {
+        if (mode == NAVIGATION) return MainTabsUiHelper.isIosNavigationBar() && AppearanceConfig.iosLiquidGlassNavigation();
+        if (mode == COMPOSER) return ChatComposerGlass.isRequested();
+        return true;
+    }
     private GlassPreview preview;
     private AvatarCornersSeekBar blur, intensity, transparency, width, lift, composerLift, composerSide, composerContent;
     private boolean geometryChanged;
@@ -48,7 +54,7 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
         ScrollView scroll = StyleEditorUi.scroll(context, resourceProvider);
         LinearLayout content = StyleEditorUi.content(scroll);
         preview = new GlassPreview(context);
-        StyleEditorUi.preview(content, preview, mode == SHARED ? 420 : 240, resourceProvider, mode == SHARED);
+        StyleEditorUi.preview(content, preview, mode == SHARED ? 420 : 240, resourceProvider);
         TextView info = new TextView(context);
         info.setText(text(mode == NAVIGATION ? R.string.FreezgramPanelPreviewInfo : mode == SHARED ? R.string.FreezgramStyleGlassInfo : R.string.FreezgramStyleComposerInfo));
         info.setTextSize(14);
@@ -57,21 +63,21 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
         content.addView(info);
         if (mode == 1) {
             LinearLayout optics = StyleEditorUi.section(content, R.string.FreezgramStyleAppearance, resourceProvider);
-            LinearLayout advanced = StyleEditorUi.advanced(content, resourceProvider);
+            LinearLayout switches = StyleEditorUi.section(content, 0, resourceProvider);
             enhanceColors = new org.telegram.ui.Cells.TextCheckCell(context);
             enhanceColors.setTextAndCheck(text(R.string.FreezgramGlassEnhanceColors), LiquidGlassStyle.enhanceColors(), false);
             enhanceColors.setOnClickListener(v -> {
                 AppearanceConfig.glassEnhanceColors.setConfigBool(!LiquidGlassStyle.enhanceColors());
                 enhanceColors.setChecked(LiquidGlassStyle.enhanceColors()); geometryChanged = true; preview.invalidate();
             });
-            advanced.addView(enhanceColors);
+            switches.addView(enhanceColors);
             wallpaperDim = new org.telegram.ui.Cells.TextCheckCell(context);
             wallpaperDim.setTextAndCheck(text(R.string.FreezgramGlassWallpaperDim), AppearanceConfig.glassWallpaperDim(), false);
             wallpaperDim.setOnClickListener(v -> {
                 AppearanceConfig.glassWallpaperDim.setConfigBool(!AppearanceConfig.glassWallpaperDim());
                 wallpaperDim.setChecked(AppearanceConfig.glassWallpaperDim()); geometryChanged = true; preview.invalidate();
             });
-            advanced.addView(wallpaperDim);
+            switches.addView(wallpaperDim);
             blur = slider(context, optics, R.string.FreezgramPanelBlur, 30,
                     AppearanceConfig.navigationGlassBlur(), value -> {
                         AppearanceConfig.navigationGlassBlur.setConfigInt(value); geometryChanged = true; preview.invalidate();
@@ -107,6 +113,7 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
             glassSwitch.setOnClickListener(v -> {
                 boolean value = !AppearanceConfig.iosLiquidGlassNavigation.Bool();
                 AppearanceConfig.iosLiquidGlassNavigation.setConfigBool(value); glassSwitch.setChecked(value); geometryChanged = true;
+                preview.invalidate();
             });
             navigationOptions.addView(glassSwitch);
             width = slider(context, navigationOptions, R.string.FreezgramPanelWidth, 100,
@@ -132,17 +139,27 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
             LinearLayout geometry = StyleEditorUi.section(content, R.string.FreezgramComposerSettings, resourceProvider);
             geometry.setVisibility(AppearanceConfig.chatComposerStyle() == 1 ? View.VISIBLE : View.GONE);
             org.telegram.ui.Cells.TextSettingsCell style = new org.telegram.ui.Cells.TextSettingsCell(context);
-            String[] styles = {text(R.string.FreezgramChatComposerDefault), text(R.string.FreezgramChatComposerIos), text(R.string.FreezgramChatComposerAndroid)};
-            style.setTextAndValue(text(R.string.FreezgramChatComposerStyle), styles[AppearanceConfig.chatComposerStyle()], false);
+            String[] styles = {"Android", "iOS"};
+            style.setTextAndValue(text(R.string.FreezgramChatComposerStyle), styles[AppearanceConfig.chatComposerStyle() == 1 ? 1 : 0], false);
             style.setOnClickListener(v -> new org.telegram.ui.ActionBar.AlertDialog.Builder(context)
                     .setTitle(text(R.string.FreezgramChatComposerStyle)).setItems(styles, (dialog, which) -> {
-                        AppearanceConfig.chatComposerStyle.setConfigInt(which); geometryChanged = true;
+                        boolean glass = AppearanceConfig.composerLiquidGlass();
+                        AppearanceConfig.chatComposerStyle.setConfigInt(which == 1 ? 1 : 2);
+                        AppearanceConfig.composerLiquidGlass.setConfigBool(glass); geometryChanged = true;
                         style.setTextAndValue(text(R.string.FreezgramChatComposerStyle), styles[which], false);
                         geometry.setVisibility(which == 1 ? View.VISIBLE : View.GONE);
                         preview.updateGeometry();
                     }).show());
             styleGroup.addView(style);
             style.setBackground(Theme.getSelectorDrawable(false));
+            org.telegram.ui.Cells.TextCheckCell composerGlass = new org.telegram.ui.Cells.TextCheckCell(context, resourceProvider);
+            composerGlass.setTextAndCheck("Liquid Glass", AppearanceConfig.composerLiquidGlass(), false);
+            composerGlass.setBackground(Theme.getSelectorDrawable(false));
+            composerGlass.setOnClickListener(v -> {
+                AppearanceConfig.composerLiquidGlass.setConfigBool(!AppearanceConfig.composerLiquidGlass());
+                composerGlass.setChecked(AppearanceConfig.composerLiquidGlass()); geometryChanged = true; preview.invalidate();
+            });
+            styleGroup.addView(composerGlass);
             composerContent = slider(context, geometry, R.string.FreezgramComposerContentInset, 32,
                     AppearanceConfig.composerContentInset(), value -> {
                         AppearanceConfig.composerContentInset.setConfigInt(value); geometryChanged = true; preview.invalidate();
@@ -311,7 +328,7 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
         }
 
         private boolean effectsEnabled() {
-            return Build.VERSION.SDK_INT >= 33 && org.telegram.messenger.SharedConfig.chatBlurEnabled()
+            return previewMaterialRequested(mode) && Build.VERSION.SDK_INT >= 33 && org.telegram.messenger.SharedConfig.chatBlurEnabled()
                     && !org.telegram.messenger.LiteMode.isGlassPowerSaverApplied();
         }
 
@@ -323,14 +340,14 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
         }
 
         private void surface(Canvas canvas, BlurredBackgroundDrawable drawable, android.graphics.Rect bounds, int radius, int padding) {
-            if (drawable != null && canvas.isHardwareAccelerated()) {
+            if (previewMaterialRequested(mode) && drawable != null && canvas.isHardwareAccelerated()) {
                 drawable.setBounds(bounds);
                 LiquidGlassStyle.configure(drawable);
                 var node = (org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode) drawable;
                 node.setLiquidGlassEffectAllowed(effectsEnabled());
                 drawable.updateColors(); node.invalidateDisplayList(); drawable.draw(canvas);
             } else {
-                paint.setColor(Theme.multAlpha(getThemedColor(Theme.key_windowBackgroundWhite), .82f));
+                paint.setColor(getThemedColor(Theme.key_windowBackgroundWhite));
                 canvas.drawRoundRect(bounds.left + dp(padding), bounds.top + dp(padding), bounds.right - dp(padding), bounds.bottom - dp(padding), dp(radius), dp(radius), paint);
             }
         }
@@ -375,7 +392,7 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
                 int side = AppearanceConfig.chatComposerStyle() == 1
                         ? Math.min(dp(AppearanceConfig.composerSideInset()), Math.max(0, (getWidth() - dp(240)) / 2)) : 0;
                 android.graphics.Rect whole = new android.graphics.Rect(side, top, getWidth() - side, top + dp(58));
-                boolean split = AppearanceConfig.chatComposerStyle() != 2;
+                boolean split = AppearanceConfig.chatComposerStyle() == 1;
                 ChatComposerGlass.surfaceBounds(whole, field, leftButton, rightButton, split);
                 surface(canvas, fieldGlass, field, 24, 7);
                 if (split) {

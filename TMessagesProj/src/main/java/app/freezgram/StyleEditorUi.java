@@ -52,31 +52,15 @@ final class StyleEditorUi {
         content.addView(group, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 12, title == 0 ? 12 : 0, 12, 0));
         return group;
     }
-    static LinearLayout advanced(LinearLayout content, Theme.ResourcesProvider provider) {
-        LinearLayout heading = section(content, 0, provider);
-        TextSettingsCell row = new TextSettingsCell(content.getContext(), provider);
-        row.setTextAndValue(LocaleController.getString(R.string.FreezgramStyleAdvanced), LocaleController.getString(R.string.FreezgramStyleExpand), false);
-        row.setBackground(Theme.getSelectorDrawable(false));
-        heading.addView(row);
-        LinearLayout options = section(content, 0, provider);
-        options.setVisibility(View.GONE);
-        row.setOnClickListener(v -> {
-            boolean open = options.getVisibility() != View.VISIBLE;
-            options.setVisibility(open ? View.VISIBLE : View.GONE);
-            row.setTextAndValue(LocaleController.getString(R.string.FreezgramStyleAdvanced),
-                    LocaleController.getString(open ? R.string.FreezgramStyleCollapse : R.string.FreezgramStyleExpand), false);
-        });
-        return options;
-    }
-    static void preview(LinearLayout content, View preview, int height, Theme.ResourcesProvider provider, boolean collapsed) {
+    static void preview(LinearLayout content, View preview, int height, Theme.ResourcesProvider provider) {
         LinearLayout group = section(content, 0, provider);
         TextSettingsCell row = new TextSettingsCell(content.getContext(), provider);
         row.setBackground(Theme.getSelectorDrawable(false));
         row.setTextAndValue(LocaleController.getString(R.string.FreezgramStylePreview),
-                LocaleController.getString(collapsed ? R.string.FreezgramStyleExpand : R.string.FreezgramStyleCollapse), false);
+                LocaleController.getString(R.string.FreezgramStyleCollapse), false);
         group.addView(row);
         group.addView(preview, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, height));
-        preview.setVisibility(collapsed ? View.GONE : View.VISIBLE);
+        preview.setVisibility(View.VISIBLE);
         row.setOnClickListener(v -> {
             boolean open = preview.getVisibility() != View.VISIBLE;
             preview.setVisibility(open ? View.VISIBLE : View.GONE);

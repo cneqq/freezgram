@@ -192,10 +192,7 @@ public class FilterTabsView extends FrameLayout {
     private static final float TAB_COUNTER_HEIGHT = 17.333f;
 
     public class TabView extends View {
-        private final app.freezgram.ViewElementGlass unreadGlass = new app.freezgram.ViewElementGlass(app.freezgram.SmallElementsGlass::areUnreadCountersEnabled);
-        @Override public void draw(Canvas canvas) {
-            if (!app.freezgram.SmallElementsGlass.NotificationBackdrop.isExcluded(this)) super.draw(canvas);
-        }
+        private final app.freezgram.CounterGlass unreadGlass = new app.freezgram.CounterGlass();
 
 
         public ValueAnimator changeAnimator;

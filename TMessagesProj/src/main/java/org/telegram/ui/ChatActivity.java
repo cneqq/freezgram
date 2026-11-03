@@ -12507,6 +12507,7 @@ public class ChatActivity extends BaseFragment implements
             }
             if (infoTopView == null) {
                 infoTopView = new ChatActionCell(contentView.getContext(), false, themeDelegate);
+                infoTopView.setServiceGlassFactory(actionGlassFactory);
                 infoTopView.setCustomText(text);
                 infoTopView.setInvalidateColors(true);
                 infoTopView.setOnClickListener(onClickListener);
@@ -35092,6 +35093,7 @@ public class ChatActivity extends BaseFragment implements
                     setVisiblePart(getY() + emptyViewContent.getY(), getServiceHeight(this));
                 }
             };
+            greetingsInfo.setServiceGlassFactory(actionGlassFactory);
             ScaleStateListAnimator.apply(greetingsInfo, .02f, 1.2f);
             greetingsInfo.setOnClickListener(v -> {
                 showDialog(new PremiumFeatureBottomSheet(this, PremiumPreviewFragment.PREMIUM_FEATURE_BUSINESS, true));
@@ -40754,7 +40756,9 @@ public class ChatActivity extends BaseFragment implements
             } else if (viewType == 6) {
                 view = new UserInfoCell(mContext, currentAccount, themeDelegate);
             } else if (viewType == 7) {
-                view = new ChatActionCell(mContext, false, themeDelegate);
+                ChatActionCell cell = new ChatActionCell(mContext, false, themeDelegate);
+                cell.setServiceGlassFactory(actionGlassFactory);
+                view = cell;
             } else if (viewType == 8) {
                 view = new BotAskCell(mContext, currentAccount, themeDelegate) {
                     @Override

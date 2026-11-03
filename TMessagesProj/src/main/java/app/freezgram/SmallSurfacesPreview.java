@@ -69,7 +69,7 @@ final class SmallSurfacesPreview extends SizeNotifierFrameLayout {
         menuGlass = factory.create(menu, LiquidGlassStyle.surfaceColors(provider, SmallElementsGlass::isEnabled));
         menuGlass.setRadius(AndroidUtilities.dp(12)); menuGlass.setPadding(AndroidUtilities.dp(8)); menuGlass.setHasPadding(true);
         menu.setBackgroundDrawable(SmallElementsGlass.isEnabled() ? menuGlass : ordinaryMenu);
-        menu.setGlassDividers(SmallElementsGlass::isEnabled, Theme.getColor(Theme.key_actionBarDefaultSubmenuItem, provider));
+        menu.setGlassDividers(() -> SmallElementsGlass.isEnabled() && AppearanceConfig.glassMenuDividers(), Theme.getColor(Theme.key_actionBarDefaultSubmenuItem, provider));
         var button = ChatActivityBlurredRoundPageDownButton.create(getContext(), 46, 24, provider, factory,
                 SmallElementsGlass.isEnabled() ? LiquidGlassStyle.surfaceColors(provider, SmallElementsGlass::isEnabled)
                         : org.telegram.ui.Components.blur3.drawable.color.impl.BlurredBackgroundProviderImpl.topPanel(provider), R.drawable.pagedown);
@@ -88,7 +88,7 @@ final class SmallSurfacesPreview extends SizeNotifierFrameLayout {
         };
         attachments.setOrientation(LinearLayout.HORIZONTAL);
         attachments.setPadding(AndroidUtilities.dp(8), 0, AndroidUtilities.dp(8), 0);
-        foreground.addView(attachments, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 84, Gravity.BOTTOM, 12, 0, 12, 12));
+        foreground.addView(attachments, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 72, Gravity.BOTTOM, 12, 0, 12, 12));
         if (source != null) {
             attachmentGlass = factory.create(attachments, LiquidGlassStyle.surfaceColors(provider, this::attachmentsEnabled));
             attachmentGlass.setRadius(AndroidUtilities.dp(18));
@@ -98,7 +98,10 @@ final class SmallSurfacesPreview extends SizeNotifierFrameLayout {
         for (int i = 0; i < labels.length; i++) {
             GlassTabView tab = GlassTabView.createAttachTab(getContext(), provider);
             tab.setText(LocaleController.getString(labels[i])); tab.setTabAnimation(animations[i]); tab.setSelected(i == 0, false);
-            attachments.addView(tab, new LinearLayout.LayoutParams(0, LayoutHelper.MATCH_PARENT, 1f));
+            tab.setUseParentWidth(true);
+            LinearLayout.LayoutParams tabParams = new LinearLayout.LayoutParams(0, AndroidUtilities.dp(48), 1f);
+            tabParams.gravity = Gravity.CENTER_VERTICAL;
+            attachments.addView(tab, tabParams);
         }
         updateMenuWidth();
         invalidate();
@@ -122,7 +125,10 @@ final class SmallSurfacesPreview extends SizeNotifierFrameLayout {
             source.setBlur(AndroidUtilities.dpf2(LiquidGlassStyle.blurRadiusDp()), LiquidGlassStyle.enhanceColors() ? org.telegram.messenger.utils.RenderNodeEffects.getSaturationX3RenderEffect() : null);
             LiquidGlassStyle.configure(menuGlass); menuGlass.updateColors();
         }
+        canvas.save();
+        canvas.clipRect(0, 0, getWidth(), getHeight());
         super.dispatchDraw(canvas);
+        canvas.restore();
     }
     @Override public boolean dispatchTouchEvent(MotionEvent event) { return true; }
     @Override protected boolean isActionBarVisible() { return false; }

@@ -1242,9 +1242,11 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             }
             emojiStatusDrawable.setColor(getThemedColor(Theme.key_profile_verifiedBackground));
             titleTextView.setRightDrawable(emojiStatusDrawable);
-            rightDrawableIsScamOrVerified = false;
+            // Community badges keep their own slot in centered headers and chat previews.
+            boolean communityBadge = titleTextView.getRightDrawable2() instanceof FreezgramBadgeDrawable;
+            rightDrawableIsScamOrVerified = communityBadge;
             rightDrawableContentDescription = getString(R.string.AccDescrPremium);
-            if (isCentered()) {
+            if (isCentered() && !communityBadge) {
                 titleTextView.setRightDrawable2(null);
             }
         } else {

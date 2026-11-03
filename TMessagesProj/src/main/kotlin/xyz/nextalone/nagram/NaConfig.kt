@@ -1213,7 +1213,7 @@ object NaConfig {
         addConfig(
             "LeftBottomButtonAction",
             ConfigItem.configTypeInt,
-            0
+            1 // ChatsHelper.LEFT_BUTTON_REPLY
         )
     val showTextMonoCode =
         addConfig(

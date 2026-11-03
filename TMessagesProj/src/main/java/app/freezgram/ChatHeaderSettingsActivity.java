@@ -22,6 +22,7 @@ public final class ChatHeaderSettingsActivity extends BaseFragment {
     @Override public View createView(Context context) {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setTitle(LocaleController.getString(R.string.FreezgramStyleChatHeader));
+        StyleSettingsLinks.install(this, "header");
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override public void onItemClick(int id) { if (id == -1) finishFragment(); }
         });

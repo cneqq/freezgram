@@ -116,7 +116,9 @@ Legacy workflows вынесены из .github/workflows и больше не з
 
 ## Ускорение
 
-Собирается только arm64-v8a. Кэшируются downloaded Gradle dependencies, C++ ccache
+В одном запуске собираются два отдельных APK: `arm64-v8a` (ARM64) и `x86_64` (Intel/AMD). Артефакты имеют разные имена; подпись и пакет одинаковы. 32-битные ARM/x86 этой конфигурацией не поддерживаются. Кэшируются downloaded Gradle dependencies, C++ ccache
+При ручном запуске `Personal release APK` параметр `architecture` позволяет выбрать `arm64-v8a`, `x86_64` или `both`. Push по умолчанию собирает обе архитектуры.
+
 до 2 GB и нативные результаты CMake. Последние восстанавливаются только
 при точном совпадении ключа исходников JNI и файлов конфигурации сборки.
 local.properties, signing files и Java/R8 outputs с API-реквизитами не кэшируются.

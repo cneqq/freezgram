@@ -27,6 +27,27 @@ class SharedConfig{static boolean blur;static boolean chatBlurEnabled(){return b
 class LiteMode{static boolean saver;static boolean isGlassPowerSaverApplied(){return saver;}}
 '''.replace('GATE', gate))
 
+    def test_counters_and_sticker_details_have_independent_power_safe_switches(self):
+        source = SOURCE.read_text()
+        gates = method(source, '    public static boolean areUnreadCountersEnabled()') + method(source, '    public static boolean areMessageDecorationsEnabled()')
+        run_java('''
+class PrivacyCheck {
+ GATES
+ public static void main(String[] args){
+  for(int sdk:new int[]{32,33,36})for(boolean counts:new boolean[]{false,true})for(boolean details:new boolean[]{false,true})
+  for(boolean blur:new boolean[]{false,true})for(boolean saver:new boolean[]{false,true}){
+   Build.VERSION.SDK_INT=sdk;AppearanceConfig.counts=counts;AppearanceConfig.details=details;SharedConfig.blur=blur;LiteMode.saver=saver;
+   boolean allowed=sdk>=33&&blur&&!saver;
+   if(areUnreadCountersEnabled()!=(counts&&allowed)||areMessageDecorationsEnabled()!=(details&&allowed))throw new AssertionError("Independent glass opt-ins or power fallback broken");
+  }
+ }
+}
+class Build{static class VERSION{static int SDK_INT;}}
+class AppearanceConfig{static boolean counts,details;static boolean unreadCountersGlass(){return counts;}static boolean messageDecorationsGlass(){return details;}}
+class SharedConfig{static boolean blur;static boolean chatBlurEnabled(){return blur;}}
+class LiteMode{static boolean saver;static boolean isGlassPowerSaverApplied(){return saver;}}
+'''.replace('GATES',gates))
+
     def test_message_menu_opt_in_is_not_overridden_by_legacy_gate(self):
         # SOURCE is .../java/app/freezgram/SmallElementsGlass.java.
         path=SOURCE.parent.parent/'exteraless/appearance/GlassMenuHelper.java'
@@ -50,7 +71,7 @@ class BlurredBackgroundProviderImpl{static boolean allowed;static boolean checkB
     def test_snapshot_bridge_updates_when_bitmap_or_settings_change(self):
         source=SOURCE.read_text()
         start=source.index('    private static final class SnapshotSource')
-        end=source.index('    /** One in-memory',start)
+        end=source.index('    public static final class NotificationBackdrop',start)
         nested=source[start:end]
         run_java('''
 class PrivacyCheck {
@@ -110,7 +131,7 @@ class RenderNodeEffects{static Object getSaturationX3RenderEffect(){return null;
         release=release[:release.index('\n        }')+len('\n        }')]
         run_java('''
 class PrivacyCheck{
- Object glass=new Object(),bitmap=new Object(),capturedRoot=new Object();Source bitmapSource=new Source();
+ Object glass=new Object(),bitmap=new Object(),capturedRoot=new Object(),capturedOwner=new Object(),scrollListener;boolean captureDirty=true;ViewTreeObserver scrollObserver;Source bitmapSource=new Source();
  RELEASE
  public static void main(String[] args){
   var p=new PrivacyCheck();p.release();p.release();
@@ -118,6 +139,7 @@ class PrivacyCheck{
  }
 }
 class Source{Object value=new Object();void setBitmap(Object o){value=o;}}
+class ViewTreeObserver{boolean isAlive(){return true;}void removeOnScrollChangedListener(Object o){}}
 '''.replace('RELEASE',release))
 
     def test_reaction_panel_and_bubbles_keep_independent_retained_drawables(self):

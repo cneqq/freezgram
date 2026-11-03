@@ -12507,6 +12507,7 @@ public class ChatActivity extends BaseFragment implements
             }
             if (infoTopView == null) {
                 infoTopView = new ChatActionCell(contentView.getContext(), false, themeDelegate);
+                infoTopView.setServiceGlassFactory(actionGlassFactory);
                 infoTopView.setCustomText(text);
                 infoTopView.setInvalidateColors(true);
                 infoTopView.setOnClickListener(onClickListener);
@@ -35092,6 +35093,7 @@ public class ChatActivity extends BaseFragment implements
                     setVisiblePart(getY() + emptyViewContent.getY(), getServiceHeight(this));
                 }
             };
+            greetingsInfo.setServiceGlassFactory(actionGlassFactory);
             ScaleStateListAnimator.apply(greetingsInfo, .02f, 1.2f);
             greetingsInfo.setOnClickListener(v -> {
                 showDialog(new PremiumFeatureBottomSheet(this, PremiumPreviewFragment.PREMIUM_FEATURE_BUSINESS, true));
@@ -40754,7 +40756,9 @@ public class ChatActivity extends BaseFragment implements
             } else if (viewType == 6) {
                 view = new UserInfoCell(mContext, currentAccount, themeDelegate);
             } else if (viewType == 7) {
-                view = new ChatActionCell(mContext, false, themeDelegate);
+                ChatActionCell cell = new ChatActionCell(mContext, false, themeDelegate);
+                cell.setServiceGlassFactory(actionGlassFactory);
+                view = cell;
             } else if (viewType == 8) {
                 view = new BotAskCell(mContext, currentAccount, themeDelegate) {
                     @Override
@@ -42401,7 +42405,11 @@ public class ChatActivity extends BaseFragment implements
         }
         private BlurredBackgroundDrawable drawCellElementGlass(ChatMessageCell cell, Canvas canvas, RectF bounds,
                 BlurredBackgroundDrawable cached, float[] radii) {
-            if (!app.freezgram.SmallElementsGlass.isEnabled()) return null;
+            return drawCellElementGlass(cell, canvas, bounds, cached, radii, app.freezgram.SmallElementsGlass::isEnabled);
+        }
+        private BlurredBackgroundDrawable drawCellElementGlass(ChatMessageCell cell, Canvas canvas, RectF bounds,
+                BlurredBackgroundDrawable cached, float[] radii, java.util.function.BooleanSupplier enabled) {
+            if (!enabled.getAsBoolean()) return null;
             if (Build.VERSION.SDK_INT < 33 || !canvas.isHardwareAccelerated() || contentView == null
                     || !SharedConfig.chatBlurEnabled() || LiteMode.isGlassPowerSaverApplied()) return null;
             if (!ViewPositionWatcher.computeRectInParent(cell, contentView, smallElementsCellBounds)) return null;
@@ -42423,7 +42431,7 @@ public class ChatActivity extends BaseFragment implements
             BlurredBackgroundDrawable drawable = cached;
             if (drawable == null) {
                 drawable = smallElementsSource.createDrawable();
-                drawable.setColorProvider(app.freezgram.LiquidGlassStyle.surfaceColors(themeDelegate, app.freezgram.SmallElementsGlass::isEnabled));
+                drawable.setColorProvider(app.freezgram.LiquidGlassStyle.surfaceColors(themeDelegate, enabled));
                 drawable.setRadius(dp(16)); drawable.setCallback(cell);
             }
             if (radii != null) drawable.setRadius(radii[0], radii[2], radii[4], radii[6]);
@@ -42433,6 +42441,12 @@ public class ChatActivity extends BaseFragment implements
             ((org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode) drawable).setLiquidGlassEffectAllowed(true);
             drawable.updateColors(); drawable.draw(canvas);
             return drawable;
+        }
+
+        @Override public BlurredBackgroundDrawable drawMessageDecorationGlass(ChatMessageCell cell, Canvas canvas, RectF bounds,
+                float radius, BlurredBackgroundDrawable cached) {
+            return drawCellElementGlass(cell, canvas, bounds, cached,
+                    new float[] {radius, radius, radius, radius, radius, radius, radius, radius}, app.freezgram.SmallElementsGlass::areMessageDecorationsEnabled);
         }
 
         @Override

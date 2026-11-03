@@ -575,6 +575,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 RectF bounds, float[] radii, org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable cached) { return null; }
         default boolean drawMessageSurface(ChatMessageCell cell, Canvas canvas, RectF bounds, int profile,
                 app.freezgram.MessageSurfaceStyle.Surface surface, float alpha) { return false; }
+        default org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable drawMessageDecorationGlass(ChatMessageCell cell, Canvas canvas, RectF bounds,
+                float radius, org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable cached) { return null; }
         default boolean drawShareButtonGlass(ChatMessageCell cell, Canvas canvas, RectF bounds) { return false; }
 
         default boolean isReplyOrSelf() {
@@ -1734,6 +1736,16 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
 
     private boolean hideSideButtonByQuickShare;
+    private final org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable[] decorationGlass = new org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable[2];
+    private boolean drawMessageDecorationGlass(Canvas canvas, RectF bounds, float radius, float alpha, int slot) {
+        if (delegate == null || !app.freezgram.SmallElementsGlass.areMessageDecorationsEnabled()) return false;
+        canvas.saveLayerAlpha(bounds, (int) (255 * alpha));
+        try {
+            var drawable = delegate.drawMessageDecorationGlass(this, canvas, bounds, radius, decorationGlass[slot]);
+            if (drawable == null) return false;
+            decorationGlass[slot] = drawable; return true;
+        } finally { canvas.restore(); }
+    }
     private final app.freezgram.MessageSurfaceStyle.Surface messageSurface = new app.freezgram.MessageSurfaceStyle.Surface();
     private final RectF messageSurfaceBounds = new RectF();
     private void drawConfiguredMessageBackground(Canvas canvas, float alpha) {
@@ -6526,6 +6538,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         super.onDetachedFromWindow();
         if (messageSurface.glass != null) messageSurface.glass.setCallback(null);
         messageSurface.glass = null;
+        for (int i = 0; i < decorationGlass.length; i++) {
+            if (decorationGlass[i] != null) decorationGlass[i].setCallback(null);
+            decorationGlass[i] = null;
+        }
         if (shareGlassBackground != null) { shareGlassBackground.setCallback(null); shareGlassBackground = null; }
         releaseBotGlass();
 
@@ -13620,6 +13636,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     @Override
     protected boolean verifyDrawable(@NonNull Drawable who) {
+        if (decorationGlass != null && (who == decorationGlass[0] || who == decorationGlass[1])) return true;
         if ((messageSurface != null && who == messageSurface.glass) || who == shareGlassBackground || super.verifyDrawable(who) || who == selectorDrawable[0] || who == animatedInfoLayout || who == selectorDrawable[1] || who == linkPreviewSelector || who == nameLayoutSelector || who == replySelector || reactionsLayoutInBubble != null && reactionsLayoutInBubble.verifyDrawable(who) || who instanceof LoadingDrawable) {
             return true;
         }
@@ -23643,7 +23660,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 // draw reply background
                 leftRad = bottomRad; // line redesign
                 replyLine.setLoading(loading);
-                replyLine.drawBackground(canvas, replySelectorRect, leftRad, rightRad, bottomRad, alpha, isReplyQuote, currentMessageObject.shouldDrawWithoutBackground());
+                if (!(currentMessageObject.shouldDrawWithoutBackground() && drawMessageDecorationGlass(canvas, replySelectorRect, dp(leftRad), alpha, 0))) {
+                    replyLine.drawBackground(canvas, replySelectorRect, leftRad, rightRad, bottomRad, alpha, isReplyQuote, currentMessageObject.shouldDrawWithoutBackground());
+                }
 
                 if (replySelector == null) {
                     replySelector = Theme.createRadSelectorDrawable(replySelectorColor = rippleColor, 0, 0);
@@ -24928,8 +24947,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     dimPaint.setAlpha(oldAlpha2);
                 } else {
                     applyServiceShaderMatrix();
-                    canvas.drawRoundRect(rect, r, r, paint);
-                    if (paint == getThemedPaint(Theme.key_paint_chatActionBackground) && hasGradientService()) {
+                    boolean timeGlass = currentMessageObject.shouldDrawWithoutBackground() && drawMessageDecorationGlass(canvas, rect, r, timeAlpha * alpha, 1);
+                    if (!timeGlass) canvas.drawRoundRect(rect, r, r, paint);
+                    if (!timeGlass && paint == getThemedPaint(Theme.key_paint_chatActionBackground) && hasGradientService()) {
                         int oldAlpha2 = Theme.chat_actionBackgroundGradientDarkenPaint.getAlpha();
                         Theme.chat_actionBackgroundGradientDarkenPaint.setAlpha((int) (oldAlpha2 * timeAlpha * alpha));
                         canvas.drawRoundRect(rect, r, r, Theme.chat_actionBackgroundGradientDarkenPaint);

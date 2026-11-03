@@ -664,6 +664,15 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     private ValueAnimator reactionsMentionsAnimator;
     private float countChangeProgress = 1f;
     private float reactionsMentionsChangeProgress = 1f;
+    @Override public void draw(Canvas canvas) {
+        if (!app.freezgram.SmallElementsGlass.NotificationBackdrop.isExcluded(this)) super.draw(canvas);
+    }
+    private final app.freezgram.ViewElementGlass unreadGlass = new app.freezgram.ViewElementGlass(app.freezgram.SmallElementsGlass::areUnreadCountersEnabled);
+    private boolean drawUnreadGlass(Canvas canvas, RectF bounds) {
+        boolean glass = unreadGlass.draw(canvas, this, bounds, resourcesProvider, dp(11.5f));
+        if (glass) Theme.dialogs_countTextPaint2.setColor(Theme.getColor(Theme.key_glass_defaultIcon, resourcesProvider));
+        return glass;
+    }
     private StaticLayout countLayout;
     private StaticLayout countOldLayout;
     private StaticLayout countAnimationStableLayout;
@@ -995,6 +1004,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
     @Override
     protected void onDetachedFromWindow() {
+        unreadGlass.release();
         super.onDetachedFromWindow();
         if (communityBadge != null) communityBadge.setCallback(null);
         isSliding = false;
@@ -5509,6 +5519,8 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     }
 
     private void drawCounter(Canvas canvas, boolean drawCounterMuted, int countTop, int countLeftLocal, int countLeftOld, float globalScale, boolean outline) {
+        int nativeCounterTextColor = Theme.dialogs_countTextPaint2.getColor();
+        try {
         final boolean drawBubble = isForumCell() || isFolderCell();
         if (drawCount && drawCount2 || countChangeProgress != 1f) {
             final float progressFinal = (unreadCount == 0 && !markUnread) ? 1f - countChangeProgress : countChangeProgress;
@@ -5572,12 +5584,14 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                         }
                         BubbleCounterPath.addBubbleRect(counterPath, counterPathRect, dp(10.33f));
                     }
-                    canvas.drawPath(counterPath, paint);
+                    canvas.save(); canvas.clipPath(counterPath);
+                    if (!drawUnreadGlass(canvas, rect)) canvas.drawPath(counterPath, paint);
+                    canvas.restore();
                     if (outline) {
                         canvas.drawPath(counterPath, counterPaintOutline);
                     }
                 } else {
-                    canvas.drawRoundRect(rect, dp(11.5f), dp(11.5f), paint);
+                    if (!drawUnreadGlass(canvas, rect)) canvas.drawRoundRect(rect, dp(11.5f), dp(11.5f), paint);
                     if (outline) {
                         canvas.drawRoundRect(rect, dp(11.5f), dp(11.5f), counterPaintOutline);
                     }
@@ -5624,12 +5638,14 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                         }
                         BubbleCounterPath.addBubbleRect(counterPath, counterPathRect, dp(10.33f));
                     }
-                    canvas.drawPath(counterPath, paint);
+                    canvas.save(); canvas.clipPath(counterPath);
+                    if (!drawUnreadGlass(canvas, rect)) canvas.drawPath(counterPath, paint);
+                    canvas.restore();
                     if (outline) {
                         canvas.drawPath(counterPath, counterPaintOutline);
                     }
                 } else {
-                    canvas.drawRoundRect(rect, dp(11.5f), dp(11.5f), paint);
+                    if (!drawUnreadGlass(canvas, rect)) canvas.drawRoundRect(rect, dp(11.5f), dp(11.5f), paint);
                     if (outline) {
                         canvas.drawRoundRect(rect, dp(11.5f), dp(11.5f), counterPaintOutline);
                     }
@@ -5669,6 +5685,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 Theme.dialogs_countTextPaint2.setColor(Theme.getColor(Theme.key_chats_unreadCounterText));
             }
         }
+        } finally { Theme.dialogs_countTextPaint2.setColor(nativeCounterTextColor); }
     }
 
     private void createStatusDrawableAnimator(int lastStatusDrawableParams, int currentStatus) {

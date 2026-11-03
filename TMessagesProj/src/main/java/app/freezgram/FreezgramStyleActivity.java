@@ -18,13 +18,27 @@ import tw.nekomimi.nekogram.ui.cells.HeaderCell;
 /** Single entry point; opening this list never changes the selected styles. */
 public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
     private boolean motionExpanded, snowExpanded, effectsChanged;
+    @Override protected String getKey() { return "freezgram_style"; }
+    @Override public View createView(Context context) {
+        View view = super.createView(context);
+        StyleSettingsLinks.install(this, null);
+        return view;
+    }
+    public static BaseFragment screenForLink(String row) {
+        BaseFragment editor = editorFor(row);
+        if (editor != null) return editor;
+        FreezgramStyleActivity root = new FreezgramStyleActivity();
+        root.motionExpanded = row != null && row.startsWith("motion");
+        root.snowExpanded = row != null && row.startsWith("snow");
+        return root;
+    }
     @Override protected String getActionBarTitle() { return text(R.string.FreezgramStyleTitle); }
     private String text(int id) { return LocaleController.getString(id); }
     @Override protected void updateRows() {
         super.updateRows();
         addRow("interface");
-        addRow("navigation"); addRow("header"); addRow("composer"); addRow("chatList"); addRow();
-        addRow("chat"); addRow("messages"); addRow("gifts"); addRow("surfaces"); addRow();
+        addRow("navigation"); addRow("header"); addRow("composer"); addRow("chatList"); addRow("counters"); addRow();
+        addRow("chat"); addRow("messages"); addRow("messageDetails"); addRow("gifts"); addRow("surfaces"); addRow();
         addRow("effects"); addRow("glass"); addRow("dividers"); addRow("motion");
         if (motionExpanded) { addRow("motionFreezgram"); addRow("motionStandard"); }
         addRow("snow");
@@ -38,6 +52,8 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
             case "header": return new ChatHeaderSettingsActivity();
             case "composer": return new NavigationGlassSettingsActivity(NavigationGlassSettingsActivity.COMPOSER);
             case "chatList": return new StyleSurfacesSettingsActivity(StyleSurfacesSettingsActivity.CHAT_LIST);
+            case "counters": return new StyleSurfacesSettingsActivity(StyleSurfacesSettingsActivity.COUNTERS);
+            case "messageDetails": return new StyleSurfacesSettingsActivity(StyleSurfacesSettingsActivity.DETAILS);
             case "messages": return new MessageSurfaceSettingsActivity();
             case "gifts": return new GiftGlassSettingsActivity();
             case "surfaces": return new StyleSurfacesSettingsActivity(StyleSurfacesSettingsActivity.CHAT);
@@ -65,7 +81,22 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
         BaseFragment editor = editorFor(key);
         if (editor != null) presentFragment(editor);
     }
-    private void refreshRows() { updateRows(); if (listAdapter != null) listAdapter.notifyDataSetChanged(); }
+    private void refreshRows() {
+        int oldCount = rowCount;
+        java.util.HashMap<Integer, String> oldRows = new java.util.HashMap<>(rowMapReverse);
+        updateRows();
+        if (listAdapter == null) return;
+        androidx.recyclerview.widget.DiffUtil.calculateDiff(new androidx.recyclerview.widget.DiffUtil.Callback() {
+            @Override public int getOldListSize() { return oldCount; }
+            @Override public int getNewListSize() { return rowCount; }
+            @Override public boolean areItemsTheSame(int oldPosition, int newPosition) {
+                String key = oldRows.get(oldPosition);
+                return key != null && key.equals(rowMapReverse.get(newPosition));
+            }
+            @Override public boolean areContentsTheSame(int oldPosition, int newPosition) { return false; }
+            @Override public Object getChangePayload(int oldPosition, int newPosition) { return PARTIAL; }
+        }, false).dispatchUpdatesTo(listAdapter);
+    }
     private int label(String key) {
         switch (key) {
             case "interface": return R.string.FreezgramStyleInterface;
@@ -75,6 +106,8 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
             case "header": return R.string.FreezgramStyleChatHeader;
             case "composer": return R.string.FreezgramComposerSettings;
             case "chatList": return R.string.FreezgramStyleChatList;
+            case "counters": return R.string.FreezgramUnreadCountersGlass;
+            case "messageDetails": return R.string.FreezgramMessageDecorationsGlass;
             case "messages": return R.string.FreezgramMessageSurfaces;
             case "gifts": return R.string.FreezgramGiftGlassSettings;
             case "surfaces": return R.string.FreezgramStyleMenus;
@@ -121,7 +154,9 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
                             : key.equals("motionStandard") ? AppearanceConfig.transitionStyle() == 0
                             : key.equals("snowOff") ? !snowEnabled
                             : snowEnabled && (key.equals("snowDots") ? AppearanceConfig.snowStyle() == 1 : AppearanceConfig.snowStyle() == 0);
-                    ((TextRadioCell) holder.itemView).setTextAndValueAndCheck(text(label(key)), "", checked, false, false);
+                    TextRadioCell cell = (TextRadioCell) holder.itemView;
+                    if (partial) cell.setChecked(checked);
+                    else cell.setTextAndValueAndCheck(text(label(key)), "", checked, false, false);
                 }
                 else if (getItemViewType(position) == TYPE_SETTINGS) ((TextSettingsCell) holder.itemView).setTextAndValue(text(label(key)), value(key), position + 1 < rowCount && getItemViewType(position + 1) == TYPE_SETTINGS);
             }

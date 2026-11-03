@@ -42,6 +42,11 @@ class PrivacyCheck{
   p.currentMessageObject.star=false;p.currentMessageObject.type=-1;
   if(p.drawServiceGlass(c,null,card,20,true,true))throw new AssertionError("Soft style changed unrelated card");
   GiftGlassStyle.selected=1;
+  // Greeting/business-intro hints are custom text cells without a MessageObject.
+  p.currentMessageObject=null;SmallElementsGlass.enabled=true;c.hardware=true;
+  if(p.drawServiceGlass(c,text,null,11,false,false))throw new AssertionError("Missing source must keep native greeting background");
+  p.serviceGlassFactory=new Factory();
+  if(!p.drawServiceGlass(c,text,null,11,false,false)||p.serviceGlass[0].alpha!=255)throw new AssertionError("Standalone greeting did not render clipped glass");
   Drawable gift=p.serviceGlass[1];p.setServiceGlassFactory(new Factory());
   if(service.callback!=null||gift.callback!=null||p.serviceGlass[0]!=null||p.serviceGlass[1]!=null)throw new AssertionError("Old recording retained");
  }

@@ -25,6 +25,7 @@ public final class MessageSurfaceSettingsActivity extends BaseFragment {
     private String text(int id) { return LocaleController.getString(id); }
     @Override public View createView(Context context) {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back); actionBar.setTitle(text(R.string.FreezgramMessageSurfaces));
+        StyleSettingsLinks.install(this, "messages");
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override public void onItemClick(int id) { if (id == -1) finishFragment(); }
         });

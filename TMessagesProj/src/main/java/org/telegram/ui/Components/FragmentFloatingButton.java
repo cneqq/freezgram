@@ -215,12 +215,21 @@ public class FragmentFloatingButton extends FrameLayout implements FactorAnimato
         }
     }
 
+    private final app.freezgram.ViewElementGlass elementGlass = new app.freezgram.ViewElementGlass(app.freezgram.SmallElementsGlass::isEnabled);
+    @Override protected void onDetachedFromWindow() { elementGlass.release(); super.onDetachedFromWindow(); }
     @Override
     public void draw(@NonNull Canvas canvas) {
-        if (iBlur3Background != null) {
-            iBlur3Background.draw(canvas);
-        }
-        super.draw(canvas);
+        if (app.freezgram.SmallElementsGlass.NotificationBackdrop.isExcluded(this)) return;
+        org.telegram.messenger.AndroidUtilities.rectTmp.set(0, 0, getWidth(), getHeight());
+        boolean glass = elementGlass.draw(canvas, this, org.telegram.messenger.AndroidUtilities.rectTmp, resourcesProvider,
+                isSubButton ? dp(18) : app.exteraless.appearance.AppearanceConfig.squareFab() ? dp(14) : getHeight() / 2f);
+        android.graphics.drawable.Drawable background = getBackground();
+        int oldAlpha = background == null ? 255 : background.getAlpha();
+        if (glass && background != null) background.setAlpha(0);
+        try {
+            if (!glass && iBlur3Background != null) iBlur3Background.draw(canvas);
+            super.draw(canvas);
+        } finally { if (glass && background != null) background.setAlpha(oldAlpha); }
     }
 
     @Override

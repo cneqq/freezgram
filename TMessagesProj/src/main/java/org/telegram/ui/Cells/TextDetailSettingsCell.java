@@ -10,6 +10,8 @@ package org.telegram.ui.Cells;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.text.TextUtils;
@@ -32,6 +34,19 @@ public class TextDetailSettingsCell extends FrameLayout {
     private ImageView imageView;
     private boolean needDivider;
     private boolean multiline;
+    private boolean accented;
+    private int accentColor;
+    private final Paint accentPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final RectF accentBounds = new RectF();
+
+    public void setAccent(boolean enabled, int color) {
+        accented = enabled; accentColor = color;
+        textView.setTextColor(enabled ? color : Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+        textView.setTypeface(enabled ? AndroidUtilities.bold() : AndroidUtilities.regular());
+        imageView.setColorFilter(new PorterDuffColorFilter(enabled ? color : Theme.getColor(Theme.key_windowBackgroundWhiteGrayIcon), PorterDuff.Mode.MULTIPLY));
+        setWillNotDraw(!needDivider && !accented);
+        invalidate();
+    }
 
     public TextDetailSettingsCell(Context context) {
         super(context);
@@ -113,7 +128,7 @@ public class TextDetailSettingsCell extends FrameLayout {
         valueTextView.setText(value);
         needDivider = divider;
         imageView.setVisibility(GONE);
-        setWillNotDraw(!divider);
+        setWillNotDraw(!divider && !accented);
     }
 
     public void setTextAndValueAndIcon(String text, CharSequence value, int resId, boolean divider) {
@@ -124,7 +139,7 @@ public class TextDetailSettingsCell extends FrameLayout {
         textView.setPadding(LocaleController.isRTL ? 0 : AndroidUtilities.dp(50), 0, LocaleController.isRTL ? AndroidUtilities.dp(50) : 0, 0);
         valueTextView.setPadding(LocaleController.isRTL ? 0 : AndroidUtilities.dp(50), 0, LocaleController.isRTL ? AndroidUtilities.dp(50) : 0, multiline ? AndroidUtilities.dp(12) : 0);
         needDivider = divider;
-        setWillNotDraw(!divider);
+        setWillNotDraw(!divider && !accented);
     }
 
     public void setValue(CharSequence value) {
@@ -139,6 +154,15 @@ public class TextDetailSettingsCell extends FrameLayout {
 
     @Override
     protected void onDraw(Canvas canvas) {
+        if (accented) {
+            accentBounds.set(AndroidUtilities.dp(8), AndroidUtilities.dp(4), getWidth() - AndroidUtilities.dp(8), getHeight() - AndroidUtilities.dp(4));
+            accentPaint.setColor(Theme.multAlpha(accentColor, .10f));
+            accentPaint.setStyle(Paint.Style.FILL);
+            canvas.drawRoundRect(accentBounds, AndroidUtilities.dp(14), AndroidUtilities.dp(14), accentPaint);
+            accentPaint.setColor(Theme.multAlpha(accentColor, .28f));
+            accentPaint.setStyle(Paint.Style.STROKE); accentPaint.setStrokeWidth(AndroidUtilities.dpf2(1));
+            canvas.drawRoundRect(accentBounds, AndroidUtilities.dp(14), AndroidUtilities.dp(14), accentPaint);
+        }
         if (needDivider && Theme.dividerPaint != null) {
             canvas.drawLine(LocaleController.isRTL ? 0 : AndroidUtilities.dp(imageView.getVisibility() == VISIBLE ? 71 : 20), getMeasuredHeight() - 1, getMeasuredWidth() - (LocaleController.isRTL ? AndroidUtilities.dp(imageView.getVisibility() == VISIBLE ? 71 : 20) : 0), getMeasuredHeight() - 1, Theme.dividerPaint);
         }

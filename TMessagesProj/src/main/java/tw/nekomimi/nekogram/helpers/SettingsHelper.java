@@ -43,7 +43,7 @@ import tw.nekomimi.nekogram.settings.NekoTranslatorSettingsActivity;
 public class SettingsHelper {
 
     private static final String HOST_NAGRAM = "nasettings";
-    private static final String HOST_EXTERALESS = "exteraless";
+    private static final String HOST_EXTERALESS = "freezgram";
 
     private static final Map<String, String> SEARCH_TITLE_ALIASES = new HashMap<>();
     private static final Map<String, String> TRANSLATOR_ROWS = new HashMap<>();
@@ -141,12 +141,13 @@ public class SettingsHelper {
 
     private static final Set<String> EXTERALESS_SCREENS = new HashSet<>(Arrays.asList(
             "settings", "general", "appearance", "chats", "pillstack", "other",
-            "ayumoments", "navigation", "menus", "media", "hiding"));
+            "ayumoments", "navigation", "menus", "media", "hiding", "style"));
 
     public static boolean isDeepLink(String path) {
         if (path == null) {
             return false;
         }
+        if (path.startsWith("exteraless/")) path = HOST_EXTERALESS + path.substring("exteraless".length());
         if (path.startsWith(HOST_NAGRAM + "/")) {
             return true;
         }
@@ -161,6 +162,8 @@ public class SettingsHelper {
             return null;
         }
         switch (key) {
+            case "freezgram_style":
+                return HOST_EXTERALESS + "/style";
             case "exteraless":
                 return HOST_EXTERALESS + "/settings";
             case "exteraless_general":
@@ -198,7 +201,7 @@ public class SettingsHelper {
             unknown.run();
             return;
         }
-        final boolean exteraless = HOST_EXTERALESS.equals(segments.get(0));
+        final boolean exteraless = HOST_EXTERALESS.equals(segments.get(0)) || "exteraless".equals(segments.get(0));
         if (!exteraless && !HOST_NAGRAM.equals(segments.get(0))) {
             unknown.run();
             return;
@@ -240,6 +243,11 @@ public class SettingsHelper {
                     } else {
                         fragment = neko_fragment = new OpenExteraGeneralActivity();
                     }
+                    break;
+                case "style":
+                    fragment = app.freezgram.FreezgramStyleActivity.screenForLink(row);
+                    if (fragment instanceof app.freezgram.FreezgramStyleActivity) neko_fragment = (BaseNekoSettingsActivity) fragment;
+                    else row = null;
                     break;
                 case "appearance":
                     fragment = neko_fragment = "useSystemEmoji".equals(row)

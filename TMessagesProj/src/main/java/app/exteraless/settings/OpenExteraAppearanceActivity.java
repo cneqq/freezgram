@@ -74,9 +74,11 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
     private static final int TYPE_ROUND_CHECK = 105;
     /** Две карточки-превью формы плавающей кнопки. */
     private static final int TYPE_FAB_SHAPE = 106;
+    private static final int TYPE_STYLE_ENTRY = 107;
 
     // Appearance
     private int appearanceHeaderRow;
+    private int styleHeaderRow, styleDividerRow;
     private int transitionStyleRow;
     private int fabShapeRow;
     private int useSystemFontsRow;
@@ -179,8 +181,10 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
     protected void updateRows() {
         super.updateRows();
 
-        appearanceHeaderRow = addRow("appearanceHeader");
+        styleHeaderRow = addRow("freezgramStyleHeader");
         sharedGlassSettingsRow = addRow("freezgramStyle", "sharedGlassSettings", "iosStyles", "iosNavBar", "iosChatHeader", "chatComposerStyle", "composerSettings");
+        styleDividerRow = addRow();
+        appearanceHeaderRow = addRow("appearanceHeader");
         transitionStyleRow = -1;
         fabShapeRow = addRow("fabShape");
         useSystemFontsRow = addRow("useSystemFonts");
@@ -193,8 +197,7 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
             md3LoadingRow = addRow("md3Loading");
             md3SliderRow = addRow("md3Slider");
             md3SwitchRow = addRow("md3Switch");
-            md3ChatHeaderRow = addRow("md3ChatHeader");
-            md3NavBarRow = addRow("md3NavBar");
+            md3ChatHeaderRow = md3NavBarRow = -1;
             md3ListItemsRow = addRow("md3ListItems");
             md3PlayerRow = addRow("md3Player");
             md3MiniPlayerRow = addRow("md3MiniPlayer");
@@ -330,7 +333,7 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
      *
      * rebuildAllFragmentViews(false, ...) намеренно пропускает последний фрагмент
      * стека — то есть ровно тот, который открыт. Свои строки поэтому обновляем
-     * сами: галочки внутри группы и счётчик «N/8» ставятся при привязке, а стиль
+     * сами: галочки внутри группы и счётчик «N/6» ставятся при привязке, а стиль
      * переключателей и слайдеров читается при отрисовке.
      */
     private void notifyRow(int row) {
@@ -896,6 +899,7 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
                     fabShapeCell.setNeedDivider(true);
                     view = fabShapeCell;
                     break;
+                case TYPE_STYLE_ENTRY:
                 case TYPE_DETAIL_SETTINGS: {
                     // Базовый класс делает такую же ячейку, но многострочной; exteraGram
                     // (asButtonWithSubtext(..., 64, 60) :456-458) держит ровно 64 dp.
@@ -930,7 +934,9 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
             switch (holder.getItemViewType()) {
                 case TYPE_HEADER: {
                     HeaderCell cell = (HeaderCell) holder.itemView;
-                    if (position == appearanceHeaderRow) {
+                    if (position == styleHeaderRow) {
+                        cell.setText(getString(R.string.FreezgramStyleTitle));
+                    } else if (position == appearanceHeaderRow) {
                         cell.setText(getString(R.string.FreezgramStyleGeneralTitle));
                     } else if (position == sectionsHeaderRow) {
                         cell.setText(getString(R.string.OEAppearanceSections));
@@ -1083,15 +1089,18 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
                     }
                     break;
                 }
+                case TYPE_STYLE_ENTRY:
                 case TYPE_DETAIL_SETTINGS: {
                     // Иконка слева, подпись под заголовком.
                     TextDetailSettingsCell cell = (TextDetailSettingsCell) holder.itemView;
+                    cell.setAccent(position == sharedGlassSettingsRow, getThemedColor(Theme.key_windowBackgroundWhiteBlueText));
+                    if (position == sharedGlassSettingsRow) cell.setBackground(null);
                     if (position == chatComposerStyleRow) {
                         String[] styles = {getString(R.string.FreezgramChatComposerDefault), getString(R.string.FreezgramChatComposerIos), getString(R.string.FreezgramChatComposerAndroid)};
                         cell.setTextAndValueAndIcon(getString(R.string.FreezgramComposerSettings), styles[AppearanceConfig.chatComposerStyle()], R.drawable.msg_newphone, true);
                     } else if (position == composerSettingsRow || position == sharedGlassSettingsRow) {
                         cell.setTextAndValueAndIcon(getString(position == composerSettingsRow ? R.string.FreezgramComposerSettings : R.string.FreezgramStyleTitle),
-                                getString(position == composerSettingsRow ? R.string.FreezgramComposerSettingsInfo : R.string.FreezgramStyleEntryInfo), R.drawable.msg_newphone, true);
+                                getString(position == composerSettingsRow ? R.string.FreezgramComposerSettingsInfo : R.string.FreezgramStyleEntryInfo), R.drawable.msg_newphone, position != sharedGlassSettingsRow);
                     } else if (position == iosPanelSettingsRow) {
                         cell.setTextAndValueAndIcon(getString(R.string.FreezgramPanelSettings), getString(R.string.FreezgramPanelSettingsInfo), R.drawable.msg_newphone, true);
                     } else if (position == appNavigationRow) {
@@ -1112,6 +1121,7 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
                 }
                 case TYPE_INFO_PRIVACY: {
                     TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
+                    cell.setFixedSize(position == styleDividerRow ? -1 : 0);
                     // Скруглённый «хвост» списка положен последней тени, а она у нас после блока
                     // Blur, а не после строк-переходов.
                     boolean bottom = position == blurDividerRow;
@@ -1128,9 +1138,13 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
                     } else {
                         cell.setText(null);
                     }
-                    cell.setBackground(Theme.getThemedDrawable(mContext,
-                            bottom ? R.drawable.greydivider_bottom : R.drawable.greydivider,
-                            Theme.key_windowBackgroundGrayShadow));
+                    if (position == styleDividerRow) {
+                        cell.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundGray));
+                    } else {
+                        cell.setBackground(Theme.getThemedDrawable(mContext,
+                                bottom ? R.drawable.greydivider_bottom : R.drawable.greydivider,
+                                Theme.key_windowBackgroundGrayShadow));
+                    }
                     break;
                 }
             }
@@ -1147,7 +1161,7 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             final int type = holder.getItemViewType();
-            if (type == TYPE_EXPANDABLE_SWITCH || type == TYPE_ROUND_CHECK) {
+            if (type == TYPE_STYLE_ENTRY || type == TYPE_EXPANDABLE_SWITCH || type == TYPE_ROUND_CHECK) {
                 return true;
             }
             return super.isEnabled(holder);
@@ -1155,7 +1169,9 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
 
         @Override
         public int getItemViewType(int position) {
-            if (position == avatarCornersPreviewRow) {
+            if (position == sharedGlassSettingsRow) {
+                return TYPE_STYLE_ENTRY;
+            } else if (position == avatarCornersPreviewRow) {
                 return TYPE_AVATAR_CORNERS;
             } else if (position == chatListPreviewRow) {
                 return TYPE_CHAT_LIST;
@@ -1163,11 +1179,11 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
                 return TYPE_FOLDERS;
             } else if (position == sectionRadiusRow) {
                 return TYPE_SECTION_SLIDER;
-            } else if (position == appearanceHeaderRow || position == sectionsHeaderRow
+            } else if (position == styleHeaderRow || position == appearanceHeaderRow || position == sectionsHeaderRow
                     || position == blurHeaderRow || position == chatListHeaderRow
                     || position == foldersHeaderRow || position == linksHeaderRow) {
                 return TYPE_HEADER;
-            } else if (position == appearanceDividerRow || position == sectionsDividerRow
+            } else if (position == styleDividerRow || position == appearanceDividerRow || position == sectionsDividerRow
                     || position == blurDividerRow || position == avatarsDividerRow
                     || position == chatListDividerRow || position == foldersDividerRow
                     || position == linksDividerRow) {
@@ -1194,8 +1210,8 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
         }
     }
 
-    /** Сколько стилей MD3 включено. Счётчик «N/8» рядом с шевроном. */
-    private static final int MD3_STYLE_COUNT = 8;
+    /** Сколько стилей MD3 включено. Счётчик «N/6» рядом с шевроном. */
+    private static final int MD3_STYLE_COUNT = 6;
     /** Значение селектора NagramX, соответствующее Material Design 3. */
     private static final int STYLE_MD3 = 2;
 
@@ -1214,8 +1230,7 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
         if (AppearanceConfig.newLoadingStyle.Bool()) n++;
         if (isMd3(NaConfig.INSTANCE.getSliderStyle().Int())) n++;
         if (isMd3Switch(NaConfig.INSTANCE.getSwitchStyle().Int())) n++;
-        if (AppearanceConfig.newChatHeaderStyle.Bool()) n++;
-        if (AppearanceConfig.newNavigationBarStyle.Bool()) n++;
+
         if (AppearanceConfig.m3ListItems.Bool()) n++;
         if (AppearanceConfig.md3Player.Bool()) n++;
         if (AppearanceConfig.md3MiniPlayer.Bool()) n++;
@@ -1270,22 +1285,17 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
     private void toggleAllMd3Styles() {
         boolean enable = md3SelectedCount() == 0;
         AppearanceConfig.newLoadingStyle.setConfigBool(enable);
-        AppearanceConfig.newChatHeaderStyle.setConfigBool(enable);
-        AppearanceConfig.newNavigationBarStyle.setConfigBool(enable);
+
         AppearanceConfig.m3ListItems.setConfigBool(enable);
         AppearanceConfig.md3Player.setConfigBool(enable);
         AppearanceConfig.md3MiniPlayer.setConfigBool(enable);
         onM3ListItemsChanged();
-        if (enable) {
-            AppearanceConfig.iosNavigationBarStyle.setConfigBool(false);
-            leaveFloatingBottomNavigation();
-        }
         NaConfig.INSTANCE.getSliderStyle().setConfigInt(enable ? STYLE_MD3 : 0);
         NaConfig.INSTANCE.getSwitchStyle().setConfigInt(enable ? SWITCH_STYLE_M3 : 0);
         if (avatarCornersPreviewCell != null) {
             avatarCornersPreviewCell.invalidate();
         }
-        // Перезапуск не нужен: все восемь стилей читаются при отрисовке или при создании вьюх.
+        // Перезапуск не нужен: все шесть стилей читаются при отрисовке или при создании вьюх.
         rebuildAll();
         rebuildRowsAndNotify();
     }

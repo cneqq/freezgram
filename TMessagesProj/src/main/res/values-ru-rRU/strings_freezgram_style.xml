@@ -26,4 +26,6 @@
     <string name="FreezgramStyleComposerInfo">Отступы применяются к iOS-панели ввода. Вид стекла настраивается в разделе «Стиль Freezgram → Стекло».</string>
     <string name="FreezgramStyleMessageInfo">Комментарии используют фон своего сообщения. Одинаковые настройки берутся у входящих; после разделения восстанавливаются настройки исходящих.</string>
     <string name="FreezgramStyleGiftInfo">Меняет фон карточек подарков. Коллекционные подарки сохраняют исходные изображения и цвета.</string>
+    <string name="FreezgramUnreadCountersGlass">Счётчики непрочитанных: стекло</string>
+    <string name="FreezgramMessageDecorationsGlass">Ответы и время на стикерах: стекло</string>
 </resources>

@@ -192,6 +192,11 @@ public class FilterTabsView extends FrameLayout {
     private static final float TAB_COUNTER_HEIGHT = 17.333f;
 
     public class TabView extends View {
+        private final app.freezgram.ViewElementGlass unreadGlass = new app.freezgram.ViewElementGlass(app.freezgram.SmallElementsGlass::areUnreadCountersEnabled);
+        @Override public void draw(Canvas canvas) {
+            if (!app.freezgram.SmallElementsGlass.NotificationBackdrop.isExcluded(this)) super.draw(canvas);
+        }
+
 
         public ValueAnimator changeAnimator;
         private Tab currentTab;
@@ -290,6 +295,7 @@ public class FilterTabsView extends FrameLayout {
 
         @Override
         protected void onDetachedFromWindow() {
+            unreadGlass.release();
             attached = false;
             super.onDetachedFromWindow();
             animateChange = false;
@@ -567,7 +573,10 @@ public class FilterTabsView extends FrameLayout {
                     float s = animateCounterEnter ? changeProgress : 1f - changeProgress;
                     canvas.scale(s, s, rect.centerX(), rect.centerY());
                 }
-                canvas.drawRoundRect(rect, 11.5f * AndroidUtilities.density, 11.5f * AndroidUtilities.density, counterPaint);
+                int nativeTextColor = textCounterPaint.getColor();
+                boolean glassCounter = unreadGlass.draw(canvas, this, rect, resourcesProvider, dp(11.5f));
+                if (!glassCounter) canvas.drawRoundRect(rect, 11.5f * AndroidUtilities.density, 11.5f * AndroidUtilities.density, counterPaint);
+                else textCounterPaint.setColor(Theme.getColor(Theme.key_glass_defaultIcon, resourcesProvider));
 
                 if (animateCounterReplace) {
                     float y = countTop;
@@ -626,6 +635,7 @@ public class FilterTabsView extends FrameLayout {
                     canvas.drawLine(rect.centerX() - side, rect.centerY() - side, rect.centerX() + side, rect.centerY() + side, deletePaint);
                     canvas.drawLine(rect.centerX() - side, rect.centerY() + side, rect.centerX() + side, rect.centerY() - side, deletePaint);
                 }
+                textCounterPaint.setColor(nativeTextColor);
             }
             if (reorderEnabled && editingAnimationProgress != 0) {
                 canvas.restore();

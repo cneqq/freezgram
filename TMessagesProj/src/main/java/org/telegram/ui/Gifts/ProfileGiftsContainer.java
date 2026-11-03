@@ -512,7 +512,7 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
                 emptyView2Subtitle.setText(getString(R.string.Gift2CollectionEmptyText));
                 emptyView2Layout.addView(emptyView2Subtitle, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 10, 0, 0));
 
-                emptyView2Button = new ButtonWithCounterView(getContext(), resourcesProvider);
+                emptyView2Button = new ButtonWithCounterView(getContext(), resourcesProvider).setElementGlass(true);
                 emptyView2Button.setText(getString(R.string.Gift2CollectionEmptyButton), false);
                 emptyView2Layout.addView(emptyView2Button, LayoutHelper.createLinear(200, 44, Gravity.CENTER_HORIZONTAL, 0, 19, 0, 12));
                 emptyView2Button.setOnClickListener(v -> {
@@ -1358,7 +1358,7 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
         sb2.setSpan(span2, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         addGiftsText = sb2;
 
-        button = new ButtonWithCounterView(context, resourcesProvider);
+        button = new ButtonWithCounterView(context, resourcesProvider).setElementGlass(true);
         button.setUseWrapContent(true);
         button.setPadding(dp(16), 0, dp(16), 0);
         button.setRoundRadius(dp(19));
@@ -1861,7 +1861,7 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
             subtitleView.setText(getString(R.string.Gift2UnpinAlertSubtitle));
             layout.addView(subtitleView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 22, 4.33f, 22, 10));
 
-            final ButtonWithCounterView button = new ButtonWithCounterView(context, resourcesProvider);
+            final ButtonWithCounterView button = new ButtonWithCounterView(context, resourcesProvider).setElementGlass(true);
 
             final StarsController.GiftsList giftsList = StarsController.getInstance(currentAccount).getProfileGiftsList(dialogId);
             final UniversalRecyclerView listView = new UniversalRecyclerView(context, currentAccount, 0, (items, adapter) -> {

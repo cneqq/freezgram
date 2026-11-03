@@ -48,6 +48,7 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
     public View createView(Context context) {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setTitle(text(mode == SHARED ? R.string.FreezgramStyleGlass : mode == COMPOSER ? R.string.FreezgramComposerSettings : R.string.FreezgramPanelSettings));
+        StyleSettingsLinks.install(this, mode == SHARED ? "glass" : mode == COMPOSER ? "composer" : "navigation");
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override public void onItemClick(int id) { if (id == -1) finishFragment(); }
         });

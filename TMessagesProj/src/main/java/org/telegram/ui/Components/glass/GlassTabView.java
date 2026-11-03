@@ -246,7 +246,7 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
                 premiumStarDrawable.draw(canvas);
             } else {
                 paintCounterBackground.setColor(ColorUtils.blendARGB(Theme.getColor(Theme.key_telegram_color), Theme.getColor(Theme.key_fill_RedNormal), isHasCounterErrorAnimator.getFloatValue()));
-                canvas.drawRoundRect(tmpRectF, rInner, rInner, paintCounterBackground);
+                if (!unreadGlass.draw(canvas, this, tmpRectF, resourcesProvider, rInner)) canvas.drawRoundRect(tmpRectF, rInner, rInner, paintCounterBackground);
                 counter.setBounds(tmpRectF);
                 counter.draw(canvas);
             }
@@ -540,8 +540,19 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
         return backupImageView;
     }
 
+    @Override public void draw(Canvas canvas) {
+        if (!app.freezgram.SmallElementsGlass.NotificationBackdrop.isExcluded(this)) super.draw(canvas);
+    }
+    private final app.freezgram.ViewElementGlass unreadGlass = new app.freezgram.ViewElementGlass(app.freezgram.SmallElementsGlass::areUnreadCountersEnabled);
+    @Override protected void onDetachedFromWindow() { unreadGlass.release(); super.onDetachedFromWindow(); }
     private boolean selfMeasure;
     private int additionalWidth;
+
+    /** Use the parent's allocated width in bounded previews instead of measuring by label. */
+    public void setUseParentWidth(boolean enabled) {
+        selfMeasure = !enabled;
+        requestLayout();
+    }
 
     public void setAdditionalWidth(int additionalWidth) {
         this.additionalWidth = additionalWidth;

@@ -121,7 +121,15 @@ public class FoldersPreviewCell extends FrameLayout {
 
     public void setGlassPreviewBackground(BlurredBackgroundDrawable background) {
         tabsView.setBlurredBackground(background != null ? background : defaultBackground);
+        invalidatePreviewTree(tabsView);
         invalidate();
+    }
+
+    private static void invalidatePreviewTree(View view) {
+        view.invalidate();
+        if (view instanceof android.view.ViewGroup group) {
+            for (int i = 0; i < group.getChildCount(); i++) invalidatePreviewTree(group.getChildAt(i));
+        }
     }
 
     private void rebuildTabs(boolean animated) {

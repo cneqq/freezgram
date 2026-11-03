@@ -1,5 +1,7 @@
 package app.freezgram.badges;
 
+import app.freezgram.network.FreezgramCommunity;
+
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 
@@ -12,15 +14,13 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.Components.BulletinFactory;
 
-/** Built-in community badges; no remote service or Telegram verification changes. */
+/** Community badge artwork is bundled; the API supplies eligible recipients. */
 public final class FreezgramBadges {
-    private static final long FOUNDER_ID = 966442694L;
-    private static final long OFFICIAL_CHANNEL_ID = 4480543290L;
 
     private FreezgramBadges() {}
 
     public static boolean hasBadge(TLRPC.User user) {
-        return user != null && user.id == FOUNDER_ID
+        return user != null && FreezgramCommunity.hasBadge(user.id, false)
                 && !user.scam && !user.fake && !user.verified;
     }
 
@@ -30,7 +30,7 @@ public final class FreezgramBadges {
     }
 
     public static boolean hasChannelBadge(TLRPC.Chat chat) {
-        return chat != null && chat.id == OFFICIAL_CHANNEL_ID && ChatObject.isChannel(chat)
+        return chat != null && FreezgramCommunity.hasBadge(chat.id, true) && ChatObject.isChannel(chat)
                 && !chat.megagroup && !chat.scam && !chat.fake && !chat.verified;
     }
 
@@ -39,7 +39,7 @@ public final class FreezgramBadges {
     }
 
     public static String getTitle() {
-        return LocaleController.getString(R.string.FreezgramBadgeFounder);
+        return LocaleController.getString(R.string.FreezgramBadgeMember);
     }
 
     public static void showInfo(BaseFragment fragment) {
@@ -47,7 +47,7 @@ public final class FreezgramBadges {
     }
 
     public static String getChannelTitle() {
-        return LocaleController.getString(R.string.FreezgramBadgeOfficialChannel);
+        return LocaleController.getString(R.string.FreezgramBadgeChannel);
     }
 
     public static void showChannelInfo(BaseFragment fragment) {

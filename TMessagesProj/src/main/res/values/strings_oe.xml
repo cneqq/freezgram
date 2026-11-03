@@ -98,10 +98,10 @@
     <string name="FreezgramUpstream">Original project</string>
     <string name="AppIconFreezgramWhite">Freezgram · Mono Light</string>
     <string name="AppIconFreezgramMonoDark">Freezgram · Mono Dark</string>
-    <string name="FreezgramBadgeFounder">Freezgram founder</string>
+    <string name="FreezgramBadgeMember">Freezgram community member</string>
     <string name="FreezgramIosLiquidGlassNavigation">Liquid Glass navigation bar</string>
     <string name="FreezgramIosLiquidGlassNavigationInfo">Refracted backdrop with translucent edges. Requires Android 13+ and enabled blur. Uses frosted glass on older Android versions or while power saving is active.</string>
-    <string name="FreezgramBadgeOfficialChannel">Official Freezgram channel</string>
+    <string name="FreezgramBadgeChannel">Freezgram community channel</string>
     <string name="FreezgramBadgeLocalInfo">Community badge. Visible only in Freezgram.</string>
     <string name="FreezgramPanelSettings">Navigation panel</string>
     <string name="FreezgramPanelSettingsInfo">Style, width, bottom gap and contacts</string>

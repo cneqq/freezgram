@@ -71,10 +71,10 @@
     <string name="FreezgramUpstream">Исходный проект</string>
     <string name="AppIconFreezgramWhite">Freezgram · Ч/б светлая</string>
     <string name="AppIconFreezgramMonoDark">Freezgram · Ч/б тёмная</string>
-    <string name="FreezgramBadgeFounder">Основатель Freezgram</string>
+    <string name="FreezgramBadgeMember">Участник сообщества Freezgram</string>
     <string name="FreezgramIosLiquidGlassNavigation">Панель навигации Liquid Glass</string>
     <string name="FreezgramIosLiquidGlassNavigationInfo">Преломление фона и полупрозрачные края. Нужны Android 13+ и включённое размытие. На старых версиях Android и в энергосбережении — матовое стекло.</string>
-    <string name="FreezgramBadgeOfficialChannel">Официальный канал Freezgram</string>
+    <string name="FreezgramBadgeChannel">Канал сообщества Freezgram</string>
     <string name="FreezgramBadgeLocalInfo">Значок сообщества. Виден только в Freezgram.</string>
     <string name="FreezgramPanelSettings">Панель навигации</string>
     <string name="FreezgramPanelSettingsInfo">Стиль, ширина, отступ снизу и контакты</string>
@@ -134,4 +134,6 @@
     <string name="FreezgramCommentsPreview">Публикация с комментариями</string>
     <string name="FreezgramSameMessageSurfaces">Одинаковые настройки</string>
     <string name="FreezgramAllMessagesSurface">Все сообщения</string>
+    <string name="FreezgramActivityStats">Делиться статистикой использования</string>
+    <string name="FreezgramActivityStatsInfo">Отправлять ID активного аккаунта Telegram на сервер Freezgram для подсчёта уникальных аккаунтов. Сервер хранит псевдоним и время последней активности около 30 дней.</string>
 </resources>

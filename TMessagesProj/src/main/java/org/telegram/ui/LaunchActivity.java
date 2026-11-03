@@ -1273,6 +1273,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         UserConfig.getInstance(0).saveConfig(false);
 
         checkCurrentAccount();
+        app.freezgram.network.FreezgramCommunity.reportActivity(account);
         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.activeAccountChanged, account);
         if (AndroidUtilities.isTablet()) {
             layersActionBarLayout.removeAllFragments();
@@ -7100,6 +7101,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     @Override
     protected void onResume() {
         super.onResume();
+        app.freezgram.network.FreezgramCommunity.refreshBadges();
+        app.freezgram.network.FreezgramCommunity.reportActivity(UserConfig.selectedAccount);
         isResumed = true;
         app.exteraless.crash.CrashReportDialog.showIfPending(this);
         pipActivityHandler.onResume();

@@ -11541,4 +11541,6 @@
     <string name="CreateManagedBotUsernameBotLimit">This bot already has a Premium username. Remove it before adding another.</string>
     <string name="CreateManagedBotUsernameSuffixMissing">The username must end in %1$s.</string>
     <string name="CreateManagedBotUsernameCheckFailed">Couldn\'t check this username. Please try again.</string>
+    <string name="FreezgramActivityStats">Share usage statistics</string>
+    <string name="FreezgramActivityStatsInfo">Send the active Telegram account ID to Freezgram to count unique accounts. The server stores a pseudonym and last activity for about 30 days.</string>
 </resources>

@@ -70,6 +70,7 @@ public class OpenExteraOtherActivity extends BaseNekoSettingsActivity {
 
     private int googleHeaderRow;
     private int crashReportsRow;
+    private int activityStatsRow;
     private int contentCaptureRow;
     private int googleDividerRow;
     private int nagramHeaderRow;
@@ -133,6 +134,7 @@ public class OpenExteraOtherActivity extends BaseNekoSettingsActivity {
         googleHeaderRow = addRow("googleHeader");
         crashReportsRow = BuildConfig.ISOLATED_BUILD ? -1 : addRow("crashReports");
         contentCaptureRow = addRow("contentCapture");
+        activityStatsRow = addRow("freezgramActivity", "FreezgramActivityStats");
         googleDividerRow = addRow();
 
         nagramHeaderRow = addRow("nagramHeader");
@@ -193,7 +195,13 @@ public class OpenExteraOtherActivity extends BaseNekoSettingsActivity {
 
     @Override
     protected void onItemClick(View view, int position, float x, float y) {
-        if (crashReportsRow >= 0 && position == crashReportsRow) {
+        if (position == activityStatsRow) {
+            boolean enabled = !app.freezgram.network.FreezgramCommunity.isActivityEnabled();
+            app.freezgram.network.FreezgramCommunity.setActivityEnabled(enabled, currentAccount);
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(enabled);
+            }
+        } else if (crashReportsRow >= 0 && position == crashReportsRow) {
             boolean enabled = GeneralConfig.crashReports.toggleConfigBool();
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(enabled);
@@ -521,6 +529,11 @@ public class OpenExteraOtherActivity extends BaseNekoSettingsActivity {
                         cell.setTextAndCheck(getString(R.string.OEGeneralCrashReports),
                                 GeneralConfig.crashReports(), true);
                         cell.setIcon(R.drawable.msg_report);
+                    } else if (position == activityStatsRow) {
+                        cell.setTextAndValueAndCheck(getString(R.string.FreezgramActivityStats),
+                                getString(R.string.FreezgramActivityStatsInfo),
+                                app.freezgram.network.FreezgramCommunity.isActivityEnabled(), true, true);
+                        cell.setIcon(0);
                     } else if (position == contentCaptureRow) {
                         cell.setTextAndValueAndCheck(getString(R.string.OEGeneralContentCapture),
                                 getString(R.string.OEGeneralContentCaptureInfo), GeneralConfig.contentCapture(), true, false);

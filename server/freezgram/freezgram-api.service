@@ -1,0 +1,16 @@
+[Unit]
+Description=Freezgram badge and activity API
+After=network.target
+
+[Service]
+DynamicUser=yes
+StateDirectory=freezgram-api
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/freezgram-api/api.py
+Restart=on-failure
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target

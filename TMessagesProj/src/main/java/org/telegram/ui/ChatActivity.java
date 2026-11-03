@@ -5323,6 +5323,7 @@ public class ChatActivity extends BaseFragment implements
             actionGlassFactory.setSourceRootView(viewPositionWatcher, parentView);
             actionGlassFactory.setLiquidGlassEffectAllowed(true);
             actionGlassFactory.setLinkedViewsRef(glassAttachedViews);
+            app.freezgram.LiveGlassBackdrop.install(contentView, navbarContentSourceWallpaper);
         }
 
         navbarContentDrawableFactory.setSourceRootView(viewPositionWatcher, parentView);

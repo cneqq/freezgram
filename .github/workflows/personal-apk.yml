@@ -16,10 +16,20 @@ concurrency:
 jobs:
   build:
     if: github.repository == 'cneqq/freezgram'
+    name: Release APK (${{ matrix.abi }})
     runs-on: ubuntu-24.04
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - abi: arm64-v8a
+            label: arm64
+          - abi: x86_64
+            label: x86_64
     env:
-      NATIVE_TARGET: arm64-v8a
+      NATIVE_TARGET: ${{ matrix.abi }}
+      APK_ABI_LABEL: ${{ matrix.label }}
       PERSONAL_BUILD_ID: personal
       PERSONAL_APPLICATION_ID: com.freezgram.app
       PERSONAL_BUILD_LABEL: Freezgram
@@ -91,7 +101,8 @@ jobs:
           import os
           import subprocess
           from pathlib import Path
-          digest = hashlib.sha256(b'native-v3-no-plugins-arm64-ndk27.2.12479018-cmake3.31.6')
+          digest = hashlib.sha256(b'native-v4-no-plugins-ndk27.2.12479018-cmake3.31.6')
+          digest.update(os.environ['NATIVE_TARGET'].encode('utf-8'))
           # CMake caches contain absolute paths: repository renames require a new entry.
           digest.update(os.environ['GITHUB_WORKSPACE'].encode('utf-8'))
           for path in ('TMessagesProj/jni',):
@@ -130,8 +141,8 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: .ccache
-          key: native-arm64-ndk27-${{ github.sha }}
-          restore-keys: native-arm64-ndk27-
+          key: native-${{ matrix.abi }}-ndk27-${{ github.sha }}
+          restore-keys: native-${{ matrix.abi }}-ndk27-
 
       - name: Restore exact native build outputs
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
@@ -185,7 +196,7 @@ jobs:
           path.write_text(''.join(f'{k}={property_value(v)}\n' for k, v in props.items()))
           PY
 
-      - name: Build ARM64 release APK
+      - name: Build ${{ matrix.abi }} release APK
         shell: bash
         env:
           COMMIT_ID: ${{ github.sha }}
@@ -214,8 +225,9 @@ jobs:
           import zipfile
           apks = list(Path('TMessagesProj/build/outputs/apk/release').glob('*.apk'))
           if len(apks) != 1:
-              raise SystemExit('Expected exactly one ARM64 release APK.')
-          apk = Path(f'artifact/freezgram-{os.environ["OPTIMIZATION_MODE"]}-arm64.apk')
+              raise SystemExit('Expected exactly one release APK for ' + os.environ['NATIVE_TARGET'])
+          abi = os.environ['NATIVE_TARGET']
+          apk = Path(f'artifact/freezgram-{os.environ["OPTIMIZATION_MODE"]}-{os.environ["APK_ABI_LABEL"]}.apk')
           shutil.copyfile(apks[0], apk)
           tools = Path(os.environ['ANDROID_HOME']) / 'build-tools/36.0.0'
           manifest = subprocess.check_output([str(tools / 'aapt2'), 'dump', 'badging', str(apk)], text=True)
@@ -234,11 +246,14 @@ jobs:
               raise SystemExit('APK installation permission must not be present.')
           if 'application-debuggable' in manifest:
               raise SystemExit('Release APK must not be debuggable.')
-          if 'arm64-v8a' not in manifest:
-              raise SystemExit('APK is missing the ARM64 ABI.')
+          if abi not in manifest:
+              raise SystemExit('APK is missing the expected ABI: ' + abi)
           with zipfile.ZipFile(apk) as z:
-              if 'lib/arm64-v8a/libtmessages.49.so' not in z.namelist():
+              if f'lib/{abi}/libtmessages.49.so' not in z.namelist():
                   raise SystemExit('Native Telegram/wallet library is missing.')
+              packaged_abis = {name.split('/')[1] for name in z.namelist() if name.startswith('lib/') and name.endswith('.so')}
+              if packaged_abis != {abi}:
+                  raise SystemExit('Unexpected native ABI set: ' + repr(packaged_abis))
               forbidden_paths = ('chaquopy', 'libpython', 'libaliuhook', 'liblsplant')
               if any(any(token in name.lower() for token in forbidden_paths) for name in z.namelist()):
                   raise SystemExit('APK contains a removed plugin runtime.')
@@ -260,7 +275,7 @@ jobs:
           checksum = hashlib.sha256(apk.read_bytes()).hexdigest()
           Path('artifact/SHA256SUMS.txt').write_text(f'{checksum}  {apk.name}\n')
           Path('artifact/build-info.json').write_text(json.dumps({
-              'commit': os.environ['GITHUB_SHA'], 'build_type': 'release', 'abi': 'arm64-v8a',
+              'commit': os.environ['GITHUB_SHA'], 'build_type': 'release', 'abi': abi,
               'optimization': os.environ['OPTIMIZATION_MODE'], 'minified': True,
               'application_id': expected_package, 'app_label': os.environ['PERSONAL_BUILD_LABEL'],
               'firebase': False,
@@ -278,7 +293,7 @@ jobs:
       - name: Upload APK only
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: freezgram-arm64-release-${{ github.run_id }}-${{ github.run_attempt }}
+          name: freezgram-${{ matrix.label }}-release-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifact/
           if-no-files-found: error
           retention-days: 3

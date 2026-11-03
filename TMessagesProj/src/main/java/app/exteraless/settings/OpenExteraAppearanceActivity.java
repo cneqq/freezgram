@@ -1121,7 +1121,7 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
                 }
                 case TYPE_INFO_PRIVACY: {
                     TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
-                    cell.setFixedSize(position == styleDividerRow ? 16 : 0);
+                    cell.setFixedSize(position == styleDividerRow ? -1 : 0);
                     // Скруглённый «хвост» списка положен последней тени, а она у нас после блока
                     // Blur, а не после строк-переходов.
                     boolean bottom = position == blurDividerRow;

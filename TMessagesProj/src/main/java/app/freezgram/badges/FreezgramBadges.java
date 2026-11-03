@@ -12,7 +12,6 @@ import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.R;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
-import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 
 /** Community badge artwork is bundled; the API supplies eligible recipients. */
@@ -59,10 +58,8 @@ public final class FreezgramBadges {
         if (fragment == null || fragment.getContext() == null) {
             return;
         }
-        Bulletin bulletin = BulletinFactory.of(fragment).createSimpleBulletin(
+        BulletinFactory.of(fragment).createSimpleBulletin(
                 getDrawable(fragment.getContext()), channel ? getChannelTitle() : getTitle(),
-                LocaleController.getString(R.string.FreezgramBadgeLocalInfo));
-        bulletin.getLayout().disableGlassBackground();
-        bulletin.show();
+                LocaleController.getString(R.string.FreezgramBadgeLocalInfo)).show();
     }
 }

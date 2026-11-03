@@ -776,13 +776,6 @@ public class Bulletin {
         Drawable background;
         private final app.freezgram.SmallElementsGlass.NotificationBackdrop smallElementBackdrop = new app.freezgram.SmallElementsGlass.NotificationBackdrop();
         private int smallElementRadius = 16;
-        private boolean glassBackgroundEnabled = true;
-
-        public void disableGlassBackground() {
-            glassBackgroundEnabled = false;
-            smallElementBackdrop.release();
-            invalidate();
-        }
 
         @Override public void draw(Canvas canvas) {
             if (AndroidUtilities.makingGlobalBlurBitmap && app.freezgram.SmallElementsGlass.isEnabled()) return;
@@ -794,10 +787,7 @@ public class Bulletin {
         }
 
         private void drawNoticeBackground(Canvas canvas) {
-            if (hasCustomBackground || !glassBackgroundEnabled
-                    || !smallElementBackdrop.draw(canvas, this, background.getBounds(), resourcesProvider, smallElementRadius)) {
-                background.draw(canvas);
-            }
+            if (hasCustomBackground || !smallElementBackdrop.draw(canvas, this, background.getBounds(), resourcesProvider, smallElementRadius)) background.draw(canvas);
         }
 
         public boolean top;

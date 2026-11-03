@@ -18,6 +18,20 @@ import tw.nekomimi.nekogram.ui.cells.HeaderCell;
 /** Single entry point; opening this list never changes the selected styles. */
 public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
     private boolean motionExpanded, snowExpanded, effectsChanged;
+    @Override protected String getKey() { return "freezgram_style"; }
+    @Override public View createView(Context context) {
+        View view = super.createView(context);
+        StyleSettingsLinks.install(this, null);
+        return view;
+    }
+    public static BaseFragment screenForLink(String row) {
+        BaseFragment editor = editorFor(row);
+        if (editor != null) return editor;
+        FreezgramStyleActivity root = new FreezgramStyleActivity();
+        root.motionExpanded = row != null && row.startsWith("motion");
+        root.snowExpanded = row != null && row.startsWith("snow");
+        return root;
+    }
     @Override protected String getActionBarTitle() { return text(R.string.FreezgramStyleTitle); }
     private String text(int id) { return LocaleController.getString(id); }
     @Override protected void updateRows() {

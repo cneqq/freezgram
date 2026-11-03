@@ -142,7 +142,7 @@ public class SettingsHelper {
 
     private static final Set<String> EXTERALESS_SCREENS = new HashSet<>(Arrays.asList(
             "settings", "general", "appearance", "chats", "pillstack", "other",
-            "ayumoments", "navigation", "menus", "media", "hiding"));
+            "ayumoments", "navigation", "menus", "media", "hiding", "style"));
 
     public static boolean isDeepLink(String path) {
         if (path == null) {
@@ -163,6 +163,8 @@ public class SettingsHelper {
             return null;
         }
         switch (key) {
+            case "freezgram_style":
+                return HOST_EXTERALESS + "/style";
             case "exteraless":
                 return HOST_EXTERALESS + "/settings";
             case "exteraless_general":
@@ -242,6 +244,11 @@ public class SettingsHelper {
                     } else {
                         fragment = neko_fragment = new OpenExteraGeneralActivity();
                     }
+                    break;
+                case "style":
+                    fragment = app.freezgram.FreezgramStyleActivity.screenForLink(row);
+                    if (fragment instanceof app.freezgram.FreezgramStyleActivity) neko_fragment = (BaseNekoSettingsActivity) fragment;
+                    else row = null;
                     break;
                 case "appearance":
                     fragment = neko_fragment = "useSystemEmoji".equals(row)

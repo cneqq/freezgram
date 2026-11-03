@@ -23,6 +23,7 @@ public final class GiftGlassSettingsActivity extends BaseFragment {
     @Override public View createView(Context context) {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setTitle(LocaleController.getString(R.string.FreezgramGiftGlassSettings));
+        StyleSettingsLinks.install(this, "gifts");
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override public void onItemClick(int id) { if (id == -1) finishFragment(); }
         });

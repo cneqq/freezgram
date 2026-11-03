@@ -25,6 +25,7 @@ public final class StyleSurfacesSettingsActivity extends BaseFragment {
     @Override public View createView(Context context) {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setTitle(LocaleController.getString(mode == CHAT_LIST ? R.string.FreezgramStyleChatList : R.string.FreezgramStyleMenus));
+        StyleSettingsLinks.install(this, mode == CHAT_LIST ? "chatList" : "surfaces");
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override public void onItemClick(int id) { if (id == -1) finishFragment(); }
         });

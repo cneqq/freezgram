@@ -29,13 +29,13 @@ class PrivacyCheck{
  }
 }
 class Canvas{boolean hardware=true;boolean isHardwareAccelerated(){return hardware;}}class Rect{}class Bitmap{}
-class View{View root;int width=400,invalidates;ViewTreeObserver observer=new ViewTreeObserver();View getRootView(){return root==null?this:root;}int getWidth(){return width;}int getHeight(){return 800;}ViewTreeObserver getViewTreeObserver(){return observer;}void invalidate(){invalidates++;}void getLocationOnScreen(int[] a){a[0]=a[1]=0;}}
+class View{View root;float alpha=1f;float getAlpha(){return alpha;}void setAlpha(float a){alpha=a;}int width=400,invalidates;ViewTreeObserver observer=new ViewTreeObserver();View getRootView(){return root==null?this:root;}int getWidth(){return width;}int getHeight(){return 800;}ViewTreeObserver getViewTreeObserver(){return observer;}void invalidate(){invalidates++;}void getLocationOnScreen(int[] a){a[0]=a[1]=0;}}
 class ViewTreeObserver{interface OnScrollChangedListener{void onScrollChanged();}java.util.ArrayList<OnScrollChangedListener> listeners=new java.util.ArrayList<>();void addOnScrollChangedListener(OnScrollChangedListener l){listeners.add(l);}void removeOnScrollChangedListener(OnScrollChangedListener l){listeners.remove(l);}boolean isAlive(){return true;}}
 class BlurredBackgroundSourceBitmap{Bitmap value;void setBitmap(Bitmap b){value=b;}}
 class BlurredBackgroundDrawable{void setColorProvider(Object o){}void setSourceOffset(int x,int y){}void setBounds(Rect r){}void setRadius(int n){}void updateColors(){}void draw(Canvas c){}}
 class BlurredBackgroundDrawableRenderNode extends BlurredBackgroundDrawable{void setLiquidGlassEffectAllowed(boolean b){}}
 class Factory{BlurredBackgroundDrawable createDrawable(){return new BlurredBackgroundDrawableRenderNode();}}
-class LiquidGlassStyle{static Object colors(Object p,java.util.function.BooleanSupplier e){return null;}static void configure(Object d){}}
+class LiquidGlassStyle{static Object colors(Object p,java.util.function.BooleanSupplier e){return null;}static Object surfaceColors(Object p,java.util.function.BooleanSupplier e){return null;}static void configure(Object d){}}
 class SmallElementsGlass{static boolean enabled=true;static boolean isEnabled(){return enabled;}}
 class AndroidUtilities{static boolean makingGlobalBlurBitmap;static int captures;static int dp(int n){return n;}static void makeGlobalBlurBitmap(java.util.function.Consumer<Bitmap> callback,float scale,int radius,View root,Object excluded){captures++;callback.accept(new Bitmap());}}
 class Blur3Utils{static void checkBitmapSourceMatrixScale(Object source,View root){}}

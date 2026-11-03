@@ -26,4 +26,6 @@
     <string name="FreezgramStyleComposerInfo">These insets apply to the iOS input panel. Its glass appearance is configured under Style Freezgram → Glass.</string>
     <string name="FreezgramStyleMessageInfo">Comments follow their message background. Linking uses the incoming settings for both directions; unlinking restores the outgoing settings.</string>
     <string name="FreezgramStyleGiftInfo">Changes the gift card background. Collectible gifts retain their original artwork and colors.</string>
+    <string name="FreezgramUnreadCountersGlass">Unread counters: glass</string>
+    <string name="FreezgramMessageDecorationsGlass">Replies and sticker timestamps: glass</string>
 </resources>

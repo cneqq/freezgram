@@ -42401,7 +42401,11 @@ public class ChatActivity extends BaseFragment implements
         }
         private BlurredBackgroundDrawable drawCellElementGlass(ChatMessageCell cell, Canvas canvas, RectF bounds,
                 BlurredBackgroundDrawable cached, float[] radii) {
-            if (!app.freezgram.SmallElementsGlass.isEnabled()) return null;
+            return drawCellElementGlass(cell, canvas, bounds, cached, radii, app.freezgram.SmallElementsGlass::isEnabled);
+        }
+        private BlurredBackgroundDrawable drawCellElementGlass(ChatMessageCell cell, Canvas canvas, RectF bounds,
+                BlurredBackgroundDrawable cached, float[] radii, java.util.function.BooleanSupplier enabled) {
+            if (!enabled.getAsBoolean()) return null;
             if (Build.VERSION.SDK_INT < 33 || !canvas.isHardwareAccelerated() || contentView == null
                     || !SharedConfig.chatBlurEnabled() || LiteMode.isGlassPowerSaverApplied()) return null;
             if (!ViewPositionWatcher.computeRectInParent(cell, contentView, smallElementsCellBounds)) return null;
@@ -42423,7 +42427,7 @@ public class ChatActivity extends BaseFragment implements
             BlurredBackgroundDrawable drawable = cached;
             if (drawable == null) {
                 drawable = smallElementsSource.createDrawable();
-                drawable.setColorProvider(app.freezgram.LiquidGlassStyle.surfaceColors(themeDelegate, app.freezgram.SmallElementsGlass::isEnabled));
+                drawable.setColorProvider(app.freezgram.LiquidGlassStyle.surfaceColors(themeDelegate, enabled));
                 drawable.setRadius(dp(16)); drawable.setCallback(cell);
             }
             if (radii != null) drawable.setRadius(radii[0], radii[2], radii[4], radii[6]);
@@ -42433,6 +42437,12 @@ public class ChatActivity extends BaseFragment implements
             ((org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode) drawable).setLiquidGlassEffectAllowed(true);
             drawable.updateColors(); drawable.draw(canvas);
             return drawable;
+        }
+
+        @Override public BlurredBackgroundDrawable drawMessageDecorationGlass(ChatMessageCell cell, Canvas canvas, RectF bounds,
+                float radius, BlurredBackgroundDrawable cached) {
+            return drawCellElementGlass(cell, canvas, bounds, cached,
+                    new float[] {radius, radius, radius, radius, radius, radius, radius, radius}, app.freezgram.SmallElementsGlass::areMessageDecorationsEnabled);
         }
 
         @Override

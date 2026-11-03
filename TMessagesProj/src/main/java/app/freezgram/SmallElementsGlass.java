@@ -27,6 +27,13 @@ public final class SmallElementsGlass {
                 && SharedConfig.chatBlurEnabled() && !LiteMode.isGlassPowerSaverApplied();
     }
 
+    public static boolean areUnreadCountersEnabled() {
+        return AppearanceConfig.unreadCountersGlass() && Build.VERSION.SDK_INT >= 33 && SharedConfig.chatBlurEnabled() && !LiteMode.isGlassPowerSaverApplied();
+    }
+    public static boolean areMessageDecorationsEnabled() {
+        return AppearanceConfig.messageDecorationsGlass() && Build.VERSION.SDK_INT >= 33 && SharedConfig.chatBlurEnabled() && !LiteMode.isGlassPowerSaverApplied();
+    }
+
     public static boolean areServiceBubblesEnabled() {
         return isEnabled() || MessageSurfaceStyle.glassEnabled(0);
     }
@@ -91,6 +98,12 @@ public final class SmallElementsGlass {
 
     /** Scroll-aware in-memory backdrop. Released when its notice detaches. */
     public static final class NotificationBackdrop {
+        private static View excludedOwner;
+        public static boolean isExcluded(View view) { return excludedOwner == view; }
+        private final java.util.function.BooleanSupplier enabled;
+        private final boolean hideOwner;
+        public NotificationBackdrop() { this(SmallElementsGlass::isEnabled, false); }
+        public NotificationBackdrop(java.util.function.BooleanSupplier enabled, boolean hideOwner) { this.enabled = enabled; this.hideOwner = hideOwner; }
         private final BlurredBackgroundSourceBitmap bitmapSource = new BlurredBackgroundSourceBitmap();
         private BlurredBackgroundDrawable glass;
         private Bitmap bitmap;
@@ -107,7 +120,7 @@ public final class SmallElementsGlass {
         private final int[] ownerLocation = new int[2], rootLocation = new int[2];
 
         public boolean draw(Canvas canvas, View owner, Rect bounds, Theme.ResourcesProvider provider, int radiusDp) {
-            if (!isEnabled() || !canvas.isHardwareAccelerated() || AndroidUtilities.makingGlobalBlurBitmap) return false;
+            if (!enabled.getAsBoolean() || !canvas.isHardwareAccelerated() || AndroidUtilities.makingGlobalBlurBitmap) return false;
             View root = owner.getRootView();
             if (root.getWidth() <= 0 || root.getHeight() <= 0) return false;
             if (bitmap == null || root != capturedRoot || rootWidth != root.getWidth() || rootHeight != root.getHeight()) {
@@ -120,12 +133,21 @@ public final class SmallElementsGlass {
             if (captureDirty) {
                 captureDirty = false;
                 // Bulletin/Undo draw guards exclude notices from this capture, including this owner.
-                AndroidUtilities.makeGlobalBlurBitmap(value -> { bitmap = value; bitmapSource.setBitmap(value); }, 4f, 0, root, null);
+                float alpha = owner.getAlpha();
+                View previousExcluded = excludedOwner;
+                try {
+                    if (hideOwner) excludedOwner = owner;
+                    if (hideOwner && owner != root) owner.setAlpha(0f);
+                    AndroidUtilities.makeGlobalBlurBitmap(value -> { bitmap = value; bitmapSource.setBitmap(value); }, 4f, 0, root, null);
+                } finally {
+                    excludedOwner = previousExcluded;
+                    if (hideOwner && owner != root) owner.setAlpha(alpha);
+                }
                 if (bitmap == null) { captureDirty = true; return false; }
                 Blur3Utils.checkBitmapSourceMatrixScale(bitmapSource, root);
                 if (glass == null) {
                     glass = createSource(bitmapSource).createDrawable();
-                    glass.setColorProvider(LiquidGlassStyle.colors(provider, SmallElementsGlass::isEnabled));
+                    glass.setColorProvider(hideOwner ? LiquidGlassStyle.surfaceColors(provider, enabled) : LiquidGlassStyle.colors(provider, enabled));
                 }
             }
             owner.getLocationOnScreen(ownerLocation); root.getLocationOnScreen(rootLocation);

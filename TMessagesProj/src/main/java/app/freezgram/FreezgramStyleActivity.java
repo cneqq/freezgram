@@ -37,8 +37,8 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
     @Override protected void updateRows() {
         super.updateRows();
         addRow("interface");
-        addRow("navigation"); addRow("header"); addRow("composer"); addRow("chatList"); addRow();
-        addRow("chat"); addRow("messages"); addRow("gifts"); addRow("surfaces"); addRow();
+        addRow("navigation"); addRow("header"); addRow("composer"); addRow("chatList"); addRow("counters"); addRow();
+        addRow("chat"); addRow("messages"); addRow("messageDetails"); addRow("gifts"); addRow("surfaces"); addRow();
         addRow("effects"); addRow("glass"); addRow("dividers"); addRow("motion");
         if (motionExpanded) { addRow("motionFreezgram"); addRow("motionStandard"); }
         addRow("snow");
@@ -52,6 +52,8 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
             case "header": return new ChatHeaderSettingsActivity();
             case "composer": return new NavigationGlassSettingsActivity(NavigationGlassSettingsActivity.COMPOSER);
             case "chatList": return new StyleSurfacesSettingsActivity(StyleSurfacesSettingsActivity.CHAT_LIST);
+            case "counters": return new StyleSurfacesSettingsActivity(StyleSurfacesSettingsActivity.COUNTERS);
+            case "messageDetails": return new StyleSurfacesSettingsActivity(StyleSurfacesSettingsActivity.DETAILS);
             case "messages": return new MessageSurfaceSettingsActivity();
             case "gifts": return new GiftGlassSettingsActivity();
             case "surfaces": return new StyleSurfacesSettingsActivity(StyleSurfacesSettingsActivity.CHAT);
@@ -104,6 +106,8 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
             case "header": return R.string.FreezgramStyleChatHeader;
             case "composer": return R.string.FreezgramComposerSettings;
             case "chatList": return R.string.FreezgramStyleChatList;
+            case "counters": return R.string.FreezgramUnreadCountersGlass;
+            case "messageDetails": return R.string.FreezgramMessageDecorationsGlass;
             case "messages": return R.string.FreezgramMessageSurfaces;
             case "gifts": return R.string.FreezgramGiftGlassSettings;
             case "surfaces": return R.string.FreezgramStyleMenus;

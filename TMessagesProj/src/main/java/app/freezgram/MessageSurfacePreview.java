@@ -22,9 +22,33 @@ import org.telegram.ui.Stories.recorder.PreviewView;
 /** Native incoming/outgoing messages and a channel post, over the current wallpaper. */
 public final class MessageSurfacePreview extends SizeNotifierFrameLayout {
     private final LinearLayout messages;
-    public MessageSurfacePreview(Context context, int account, Theme.ResourcesProvider provider) {
+    private final int account;
+    private long selfId;
+    private ChatMessageCell stickerCell;
+    private android.widget.TextView stickerStatus;
+    private boolean stickerLoaded;
+    private int stickerAttempts;
+    private final Runnable stickerLoader = this::loadSticker;
+    private void loadSticker() {
+        if (stickerCell == null || stickerLoaded) return;
+        TLRPC.Document document = org.telegram.messenger.MediaDataController.getInstance(account).getGreetingsSticker();
+        if (document == null) { if (stickerAttempts++ < 20) postDelayed(stickerLoader, 500); return; }
+        TLRPC.TL_message message = previewMessage(selfId, 0);
+        TLRPC.TL_messageMediaDocument media = new TLRPC.TL_messageMediaDocument(); media.flags |= 1; media.document = document;
+        message.media = media; message.message = "";
+        message.reply_to = new TLRPC.TL_messageReplyHeader(); message.reply_to.reply_to_msg_id = 20;
+        MessageObject object = new MessageObject(account, message, true, false);
+        object.preview = false; object.replyMessageObject = new MessageObject(account, previewMessage(selfId, 1), true, false);
+        stickerCell.setMessageObject(object, null, false, false, false);
+        stickerLoaded = true; stickerCell.setVisibility(VISIBLE); stickerStatus.setVisibility(GONE);
+        messages.setMinimumHeight(0); requestLayout(); refresh();
+    }
+    public MessageSurfacePreview(Context context, int account, Theme.ResourcesProvider provider) { this(context, account, provider, false); }
+    public MessageSurfacePreview(Context context, int account, Theme.ResourcesProvider provider, boolean stickerDetails) {
         super(context);
+        this.account = account;
         long self = UserConfig.getInstance(account).getClientUserId();
+        selfId = self;
         setBackgroundImage(PreviewView.getBackgroundDrawable(null, account, self, Theme.isCurrentThemeDark()), false);
         messages = new LinearLayout(context); messages.setOrientation(LinearLayout.VERTICAL);
         messages.setPadding(0, org.telegram.messenger.AndroidUtilities.dp(12), 0, org.telegram.messenger.AndroidUtilities.dp(12));
@@ -34,9 +58,12 @@ public final class MessageSurfacePreview extends SizeNotifierFrameLayout {
             @Override public void draw(Canvas canvas, float l, float t, float r, float b) { drawWallpaperForGlass(canvas); }
         };
         MessageSurfaceRenderer renderer = new MessageSurfaceRenderer(this, wallpaper, provider);
-        for (int profile = 0; profile < 3; profile++) {
+        for (int profile = 0; profile < (stickerDetails ? 1 : 3); profile++) {
             ChatMessageCell cell = new ChatMessageCell(context, account, false, null, provider);
             cell.setDelegate(new ChatMessageCell.ChatMessageCellDelegate() {
+                @Override public BlurredBackgroundDrawable drawMessageDecorationGlass(ChatMessageCell c, Canvas canvas, RectF bounds, float radius, BlurredBackgroundDrawable cached) {
+                    return renderer.decoration(c, canvas, bounds, radius, cached);
+                }
                 @Override public boolean drawMessageSurface(ChatMessageCell c, Canvas canvas, RectF bounds, int p, MessageSurfaceStyle.Surface surface, float alpha) {
                     return renderer.draw(c, canvas, bounds, p, surface, alpha);
                 }
@@ -50,8 +77,18 @@ public final class MessageSurfacePreview extends SizeNotifierFrameLayout {
             cell.setMessageObject(object, null, false, false, false);
             cell.setOnTouchListener((v, event) -> true);
             messages.addView(cell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+            if (stickerDetails) { stickerCell = cell; cell.setVisibility(INVISIBLE); }
+        }
+        if (stickerDetails) {
+            messages.setMinimumHeight(org.telegram.messenger.AndroidUtilities.dp(180));
+            stickerStatus = new android.widget.TextView(context); stickerStatus.setGravity(Gravity.CENTER);
+            stickerStatus.setText(LocaleController.getString(R.string.Loading));
+            stickerStatus.setTextColor(Theme.getColor(Theme.key_chat_serviceText, provider));
+            addView(stickerStatus, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 180, Gravity.TOP));
         }
     }
+    @Override protected void onAttachedToWindow() { super.onAttachedToWindow(); if (stickerCell != null) post(stickerLoader); }
+    @Override protected void onDetachedFromWindow() { removeCallbacks(stickerLoader); super.onDetachedFromWindow(); }
     static TLRPC.TL_message previewMessage(long self, int profile) {
         // A synthetic non-self dialog keeps incoming examples out of Saved Messages logic.
         long peer = self == 1 ? 2 : 1;

@@ -38,7 +38,7 @@ class Folders {Object background;void setGlassPreviewBackground(Object value){ba
 class PrivacyCheck {
  ROUTE
  public static void main(String[] args) {
-  String[] keys={"navigation","header","composer","chatList","messages","gifts","surfaces","glass","dividers"};
+  String[] keys={"navigation","header","composer","chatList","counters","messageDetails","messages","gifts","surfaces","glass","dividers"};
   for(String key:keys)if(editorFor(key)==null)throw new AssertionError("Unreachable section: "+key);
   if(editorFor("unknown")!=null || editorFor(null)!=null)throw new AssertionError("Unknown destination");
   if(editorFor("motion")!=null || editorFor("snow")!=null)throw new AssertionError("Inline choices opened another screen");
@@ -53,7 +53,7 @@ class ChatHeaderSettingsActivity extends BaseFragment {}
 class MessageSurfaceSettingsActivity extends BaseFragment {}
 class GiftGlassSettingsActivity extends BaseFragment {}
 class GlassDividerSettingsActivity extends BaseFragment {}
-class StyleSurfacesSettingsActivity extends BaseFragment {static final int CHAT_LIST=0,CHAT=1;StyleSurfacesSettingsActivity(int mode){}}
+class StyleSurfacesSettingsActivity extends BaseFragment {static final int CHAT_LIST=0,CHAT=1,COUNTERS=2,DETAILS=3;StyleSurfacesSettingsActivity(int mode){}}
 class StyleEffectsSettingsActivity extends BaseFragment {static final int MOTION=0,SNOW=1;StyleEffectsSettingsActivity(int mode){}}
 '''.replace('ROUTE',route))
 

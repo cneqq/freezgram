@@ -3635,7 +3635,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
                 bottomButtonContainer[a] = new FrameLayout(context);
 
-                    bottomButton[a] = new ButtonWithCounterView(context, resourcesProvider);
+                    bottomButton[a] = new ButtonWithCounterView(context, resourcesProvider).setElementGlass(true);
                 bottomButton[a].setRoundRadius(dp(19));
                 bottomButton[a].setUseWrapContent(true);
                 bottomButton[a].setPadding(dp(16), 0, dp(16), 0);
@@ -6193,7 +6193,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         View buttonShadow = new View(context);
         buttonShadow.setBackgroundColor(getThemedColor(Theme.key_divider));
         bottomButton2Container.addView(buttonShadow, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 1.0f / AndroidUtilities.density, Gravity.TOP | Gravity.FILL_HORIZONTAL, 0, 0, 0, 0));
-        bottomButton2 = new ButtonWithCounterView(context, resourcesProvider);
+        bottomButton2 = new ButtonWithCounterView(context, resourcesProvider).setElementGlass(true);
         bottomButton2.setText(getString(R.string.Save), false);
         bottomButton2Container.addView(bottomButton2, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.FILL, 10, 10 + (1.0f / AndroidUtilities.density), 10, 10));
         bottomButton2.setOnClickListener(v -> {
@@ -14011,7 +14011,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     break;
                 case VIEW_TYPE_BOT_APP:
                     FrameLayout frameLayout = new FrameLayout(mContext);
-                    ButtonWithCounterView button = new ButtonWithCounterView(mContext, resourcesProvider);
+                    ButtonWithCounterView button = new ButtonWithCounterView(mContext, resourcesProvider).setElementGlass(true);
                     button.setRound();
                     button.setText(LocaleController.getString(R.string.ProfileBotOpenApp), false);
                     button.setOnClickListener(v -> {
@@ -17721,7 +17721,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             linearLayout.addView(cell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 6, 0, 6, 8));
         }
         {
-            ButtonWithCounterView button = new ButtonWithCounterView(context, resourcesProvider);
+            ButtonWithCounterView button = new ButtonWithCounterView(context, resourcesProvider).setElementGlass(true);
             button.setOnClickListener(v -> dismiss.run());
             button.setText(replaceUnderstood(getString(R.string.Understood)), false);
             linearLayout.addView(button, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, 16, 10, 16, 8));

@@ -577,6 +577,16 @@ object AppearanceConfig {
     fun giftCardsGlass(): Boolean { ensureLoaded(); return giftCardsGlass.Bool() }
 
     @JvmField
+    val unreadCountersGlass = addConfig("FreezgramUnreadCountersGlass", ConfigItem.configTypeBool, false)
+    @JvmStatic
+    fun unreadCountersGlass(): Boolean { ensureLoaded(); return unreadCountersGlass.Bool() }
+
+    @JvmField
+    val messageDecorationsGlass = addConfig("FreezgramMessageDecorationsGlass", ConfigItem.configTypeBool, false)
+    @JvmStatic
+    fun messageDecorationsGlass(): Boolean { ensureLoaded(); return messageDecorationsGlass.Bool() }
+
+    @JvmField
     val smallElementsGlass = addConfig("FreezgramSmallElementsGlass", ConfigItem.configTypeBool, false)
     @JvmStatic
     fun smallElementsGlass(): Boolean { ensureLoaded(); return smallElementsGlass.Bool() }

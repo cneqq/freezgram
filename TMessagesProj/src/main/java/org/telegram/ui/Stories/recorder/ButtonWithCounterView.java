@@ -467,6 +467,25 @@ public class ButtonWithCounterView extends FrameLayout implements Loadable {
     private int globalAlpha = 255;
     private final int subTextAlpha = 200;
 
+    private boolean useElementGlass;
+    private final app.freezgram.ViewElementGlass elementGlass = new app.freezgram.ViewElementGlass(app.freezgram.SmallElementsGlass::isEnabled);
+    public ButtonWithCounterView setElementGlass(boolean enabled) { useElementGlass = enabled; return this; }
+    @Override public void draw(Canvas canvas) {
+        if (app.freezgram.SmallElementsGlass.NotificationBackdrop.isExcluded(this)) return;
+        AndroidUtilities.rectTmp.set(0, 0, getWidth(), getHeight());
+        boolean glass = useElementGlass && elementGlass.draw(canvas, this, AndroidUtilities.rectTmp, resourcesProvider, dp(radiusDp));
+        android.graphics.drawable.Drawable background = getBackground();
+        int oldAlpha = background == null ? 255 : background.getAlpha();
+        if (glass && background != null) background.setAlpha(0);
+        int nativeTextColor = text.getTextColor();
+        if (glass) text.setTextColor(Theme.getColor(Theme.key_glass_defaultIcon, resourcesProvider));
+        try { super.draw(canvas); } finally {
+            text.setTextColor(nativeTextColor);
+            if (glass && background != null) background.setAlpha(oldAlpha);
+        }
+    }
+    @Override protected void onDetachedFromWindow() { elementGlass.release(); super.onDetachedFromWindow(); }
+
     protected float calculateCounterWidth(float width, float percent) {
         return width * percent;
     }

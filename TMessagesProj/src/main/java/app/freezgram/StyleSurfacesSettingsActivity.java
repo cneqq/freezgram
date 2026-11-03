@@ -18,20 +18,32 @@ import org.telegram.ui.Components.LayoutHelper;
 
 /** Surface opt-ins are separate from the shared material's optical parameters. */
 public final class StyleSurfacesSettingsActivity extends BaseFragment {
-    public static final int CHAT_LIST = 0, CHAT = 1;
+    public static final int CHAT_LIST = 0, CHAT = 1, COUNTERS = 2, DETAILS = 3;
     private final int mode;
     private boolean changed;
     public StyleSurfacesSettingsActivity(int mode) { this.mode = mode; }
     @Override public View createView(Context context) {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
-        actionBar.setTitle(LocaleController.getString(mode == CHAT_LIST ? R.string.FreezgramStyleChatList : R.string.FreezgramStyleMenus));
-        StyleSettingsLinks.install(this, mode == CHAT_LIST ? "chatList" : "surfaces");
+        actionBar.setTitle(LocaleController.getString(mode == COUNTERS ? R.string.FreezgramUnreadCountersGlass : mode == DETAILS ? R.string.FreezgramMessageDecorationsGlass : mode == CHAT_LIST ? R.string.FreezgramStyleChatList : R.string.FreezgramStyleMenus));
+        StyleSettingsLinks.install(this, mode == COUNTERS ? "counters" : mode == DETAILS ? "messageDetails" : mode == CHAT_LIST ? "chatList" : "surfaces");
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override public void onItemClick(int id) { if (id == -1) finishFragment(); }
         });
         ScrollView scroll = StyleEditorUi.scroll(context, resourceProvider);
         LinearLayout content = StyleEditorUi.content(scroll);
-        if (mode == CHAT_LIST) {
+        if (mode == COUNTERS) {
+            FoldersGlassPreview folders = new FoldersGlassPreview(context, currentAccount, resourceProvider);
+            StyleEditorUi.preview(content, folders, 120, resourceProvider);
+            LinearLayout group = StyleEditorUi.section(content, R.string.FreezgramStyleGlass, resourceProvider);
+            toggle(group, R.string.FreezgramUnreadCountersGlass, AppearanceConfig::unreadCountersGlass,
+                    value -> { AppearanceConfig.unreadCountersGlass.setConfigBool(value); folders.refresh(); });
+        } else if (mode == DETAILS) {
+            MessageSurfacePreview sticker = new MessageSurfacePreview(context, currentAccount, resourceProvider, true);
+            StyleEditorUi.preview(content, sticker, LayoutHelper.WRAP_CONTENT, resourceProvider);
+            LinearLayout group = StyleEditorUi.section(content, R.string.FreezgramStyleGlass, resourceProvider);
+            toggle(group, R.string.FreezgramMessageDecorationsGlass, AppearanceConfig::messageDecorationsGlass,
+                    value -> { AppearanceConfig.messageDecorationsGlass.setConfigBool(value); sticker.refresh(); });
+        } else if (mode == CHAT_LIST) {
             // Keep the actual FilterTabsView preview rather than drawing mock tabs.
             FoldersGlassPreview folders = new FoldersGlassPreview(context, currentAccount, resourceProvider);
             StyleEditorUi.preview(content, folders, 120, resourceProvider);

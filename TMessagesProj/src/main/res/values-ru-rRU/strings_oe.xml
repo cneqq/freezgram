@@ -135,5 +135,5 @@
     <string name="FreezgramSameMessageSurfaces">Одинаковые настройки</string>
     <string name="FreezgramAllMessagesSurface">Все сообщения</string>
     <string name="FreezgramActivityStats">Делиться статистикой использования</string>
-    <string name="FreezgramActivityStatsInfo">Отправлять ID активного аккаунта Telegram на сервер Freezgram для подсчёта уникальных аккаунтов. Сервер хранит псевдоним и время последней активности около 30 дней.</string>
+    <string name="FreezgramActivityStatsInfo">Включено по умолчанию. Freezgram отправляет ID активного аккаунта Telegram для подсчёта уникальных аккаунтов. Сервер хранит псевдоним и время последней активности около 30 дней.</string>
 </resources>

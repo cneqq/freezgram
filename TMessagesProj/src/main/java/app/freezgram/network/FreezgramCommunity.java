@@ -30,7 +30,7 @@ import okhttp3.Response;
 
 public final class FreezgramCommunity {
     private static final String API = "https://gift.cneqq.com/freezgram/api/";
-    private static final String OPT_IN = "activity_opt_in";
+    private static final String ACTIVITY_ENABLED = "activity_opt_in";
     private static final String BADGES = "badges";
     private static final long MAX_ID = (1L << 52) - 1;
     private static final long MAX_BADGE_BYTES = 256 * 1024;
@@ -49,11 +49,11 @@ public final class FreezgramCommunity {
     }
 
     public static boolean isActivityEnabled() {
-        return prefs().getBoolean(OPT_IN, false);
+        return prefs().getBoolean(ACTIVITY_ENABLED, true);
     }
 
     public static synchronized void setActivityEnabled(boolean enabled, int account) {
-        prefs().edit().putBoolean(OPT_IN, enabled).apply();
+        prefs().edit().putBoolean(ACTIVITY_ENABLED, enabled).apply();
         if (enabled) {
             reportActivity(account);
         } else {

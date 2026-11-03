@@ -664,14 +664,21 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     private ValueAnimator reactionsMentionsAnimator;
     private float countChangeProgress = 1f;
     private float reactionsMentionsChangeProgress = 1f;
-    @Override public void draw(Canvas canvas) {
-        if (!app.freezgram.SmallElementsGlass.NotificationBackdrop.isExcluded(this)) super.draw(canvas);
-    }
-    private final app.freezgram.ViewElementGlass unreadGlass = new app.freezgram.ViewElementGlass(app.freezgram.SmallElementsGlass::areUnreadCountersEnabled);
+    private final Paint unreadGlassPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
     private boolean drawUnreadGlass(Canvas canvas, RectF bounds) {
-        boolean glass = unreadGlass.draw(canvas, this, bounds, resourcesProvider, dp(11.5f));
-        if (glass) Theme.dialogs_countTextPaint2.setColor(Theme.getColor(Theme.key_glass_defaultIcon, resourcesProvider));
-        return glass;
+        if (!app.freezgram.SmallElementsGlass.areUnreadCountersEnabled()
+                || !canvas.isHardwareAccelerated() || AndroidUtilities.makingGlobalBlurBitmap) {
+            return false;
+        }
+        // Each visible counter is drawn on scroll. Sampling the root here redraws the whole window per row.
+        float radius = dp(11.5f);
+        unreadGlassPaint.setColor(Theme.multAlpha(Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider), .82f));
+        canvas.drawRoundRect(bounds, radius, radius, unreadGlassPaint);
+        unreadGlassPaint.setColor(Theme.multAlpha(Theme.getColor(Theme.key_glass_defaultIcon, resourcesProvider), .12f));
+        canvas.drawRoundRect(bounds.left, bounds.top, bounds.right, bounds.centerY(), radius, radius, unreadGlassPaint);
+        Theme.dialogs_countTextPaint2.setColor(Theme.getColor(Theme.key_glass_defaultIcon, resourcesProvider));
+        return true;
     }
     private StaticLayout countLayout;
     private StaticLayout countOldLayout;
@@ -1004,7 +1011,6 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
     @Override
     protected void onDetachedFromWindow() {
-        unreadGlass.release();
         super.onDetachedFromWindow();
         if (communityBadge != null) communityBadge.setCallback(null);
         isSliding = false;

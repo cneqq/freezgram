@@ -74,6 +74,7 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
     private static final int TYPE_ROUND_CHECK = 105;
     /** Две карточки-превью формы плавающей кнопки. */
     private static final int TYPE_FAB_SHAPE = 106;
+    private static final int TYPE_STYLE_ENTRY = 107;
 
     // Appearance
     private int appearanceHeaderRow;
@@ -898,6 +899,7 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
                     fabShapeCell.setNeedDivider(true);
                     view = fabShapeCell;
                     break;
+                case TYPE_STYLE_ENTRY:
                 case TYPE_DETAIL_SETTINGS: {
                     // Базовый класс делает такую же ячейку, но многострочной; exteraGram
                     // (asButtonWithSubtext(..., 64, 60) :456-458) держит ровно 64 dp.
@@ -1087,16 +1089,18 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
                     }
                     break;
                 }
+                case TYPE_STYLE_ENTRY:
                 case TYPE_DETAIL_SETTINGS: {
                     // Иконка слева, подпись под заголовком.
                     TextDetailSettingsCell cell = (TextDetailSettingsCell) holder.itemView;
                     cell.setAccent(position == sharedGlassSettingsRow, getThemedColor(Theme.key_windowBackgroundWhiteBlueText));
+                    if (position == sharedGlassSettingsRow) cell.setBackground(null);
                     if (position == chatComposerStyleRow) {
                         String[] styles = {getString(R.string.FreezgramChatComposerDefault), getString(R.string.FreezgramChatComposerIos), getString(R.string.FreezgramChatComposerAndroid)};
                         cell.setTextAndValueAndIcon(getString(R.string.FreezgramComposerSettings), styles[AppearanceConfig.chatComposerStyle()], R.drawable.msg_newphone, true);
                     } else if (position == composerSettingsRow || position == sharedGlassSettingsRow) {
                         cell.setTextAndValueAndIcon(getString(position == composerSettingsRow ? R.string.FreezgramComposerSettings : R.string.FreezgramStyleTitle),
-                                getString(position == composerSettingsRow ? R.string.FreezgramComposerSettingsInfo : R.string.FreezgramStyleEntryInfo), R.drawable.msg_newphone, true);
+                                getString(position == composerSettingsRow ? R.string.FreezgramComposerSettingsInfo : R.string.FreezgramStyleEntryInfo), R.drawable.msg_newphone, position != sharedGlassSettingsRow);
                     } else if (position == iosPanelSettingsRow) {
                         cell.setTextAndValueAndIcon(getString(R.string.FreezgramPanelSettings), getString(R.string.FreezgramPanelSettingsInfo), R.drawable.msg_newphone, true);
                     } else if (position == appNavigationRow) {
@@ -1157,7 +1161,7 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             final int type = holder.getItemViewType();
-            if (type == TYPE_EXPANDABLE_SWITCH || type == TYPE_ROUND_CHECK) {
+            if (type == TYPE_STYLE_ENTRY || type == TYPE_EXPANDABLE_SWITCH || type == TYPE_ROUND_CHECK) {
                 return true;
             }
             return super.isEnabled(holder);
@@ -1165,7 +1169,9 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
 
         @Override
         public int getItemViewType(int position) {
-            if (position == avatarCornersPreviewRow) {
+            if (position == sharedGlassSettingsRow) {
+                return TYPE_STYLE_ENTRY;
+            } else if (position == avatarCornersPreviewRow) {
                 return TYPE_AVATAR_CORNERS;
             } else if (position == chatListPreviewRow) {
                 return TYPE_CHAT_LIST;

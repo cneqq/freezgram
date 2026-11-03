@@ -1117,6 +1117,7 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
                 }
                 case TYPE_INFO_PRIVACY: {
                     TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
+                    cell.setFixedSize(position == styleDividerRow ? 16 : 0);
                     // Скруглённый «хвост» списка положен последней тени, а она у нас после блока
                     // Blur, а не после строк-переходов.
                     boolean bottom = position == blurDividerRow;
@@ -1133,9 +1134,13 @@ public class OpenExteraAppearanceActivity extends BaseNekoSettingsActivity {
                     } else {
                         cell.setText(null);
                     }
-                    cell.setBackground(Theme.getThemedDrawable(mContext,
-                            bottom ? R.drawable.greydivider_bottom : R.drawable.greydivider,
-                            Theme.key_windowBackgroundGrayShadow));
+                    if (position == styleDividerRow) {
+                        cell.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundGray));
+                    } else {
+                        cell.setBackground(Theme.getThemedDrawable(mContext,
+                                bottom ? R.drawable.greydivider_bottom : R.drawable.greydivider,
+                                Theme.key_windowBackgroundGrayShadow));
+                    }
                     break;
                 }
             }

@@ -45,10 +45,6 @@
     <string name="DisableCrashlyticsCollection">停用 Firebase Crashlytics 崩潰報告</string>
     <string name="ShowStickersRowToplevel">在主設定中顯示貼圖</string>
     <string name="HideShareButtonInChannel">隱藏右側分享按鈕</string>
-    <string name="DeleteCloudBackup">清除雲資料</string>
-    <string name="DeleteCloudBackupFailed">雲備份資料清除失敗</string>
-    <string name="DeleteCloudBackupSuccess">雲備份資料已清除</string>
-    <string name="CloudConfigNoBackupToDelete">沒有資料可清除</string>
     <string name="ClearRegexFilters">清除</string>
     <string name="ClearRegexFiltersAlertMessage">您確定要清除所有已儲存的過濾器嗎？此操作將刪除通用過濾器、使用者過濾器和聊天過濾器。</string>
     <string name="PreferredTranslateTargetLang">自訂首選語言清單</string>

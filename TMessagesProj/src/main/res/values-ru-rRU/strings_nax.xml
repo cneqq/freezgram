@@ -47,10 +47,6 @@
     <string name="DisableCrashlyticsCollection">Отключить Firebase Crashlytics</string>
     <string name="ShowStickersRowToplevel">Показывать «Стикеры и эмодзи» в основных настройках</string>
     <string name="HideShareButtonInChannel">Скрыть боковую кнопку «Поделиться»</string>
-    <string name="DeleteCloudBackup">Очистить облачные данные</string>
-    <string name="DeleteCloudBackupFailed">Не удалось очистить облачные данные</string>
-    <string name="DeleteCloudBackupSuccess">Облачные данные очищены</string>
-    <string name="CloudConfigNoBackupToDelete">Нет данных для очистки</string>
     <string name="ClearRegexFilters">Очистить</string>
     <string name="ClearRegexFiltersAlertMessage">Вы уверены, что хотите удалить все сохранённые фильтры? Это удалит общие фильтры, пользовательские фильтры и фильтры чатов.</string>
     <string name="PreferredTranslateTargetLang">Пользовательский список языков</string>

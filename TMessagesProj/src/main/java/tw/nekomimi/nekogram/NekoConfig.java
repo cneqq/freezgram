@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 
 import tw.nekomimi.nekogram.config.ConfigItem;
-import tw.nekomimi.nekogram.helpers.CloudSettingsHelper;
 
 @SuppressLint("ApplySharedPref")
 @SuppressWarnings("unused")
@@ -281,8 +280,6 @@ public class NekoConfig {
                     getPreferences().edit().remove(o.key).apply();
                 }
             }
-            if (!configLoaded)
-                getPreferences().registerOnSharedPreferenceChangeListener(CloudSettingsHelper.listener);
             for (int a = 1; a <= 5; a++) {
                 datacenterInfos.add(new DatacenterInfo(a));
             }

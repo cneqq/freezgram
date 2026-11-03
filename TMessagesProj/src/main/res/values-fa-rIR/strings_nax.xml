@@ -45,10 +45,6 @@
     <string name="DisableCrashlyticsCollection">غیرفعال کردن Firebase Crashlytics</string>
     <string name="ShowStickersRowToplevel">نمایش استیکرها در صفحه اصلی تنظیمات</string>
     <string name="HideShareButtonInChannel">پنهان کردن دکمه اشتراک‌گذاری در کانال</string>
-    <string name="DeleteCloudBackup">پاک کردن پشتیبان ابری</string>
-    <string name="DeleteCloudBackupFailed">پشتیبان ابری پاک نشد</string>
-    <string name="DeleteCloudBackupSuccess">پشتیبان ابری پاک شد</string>
-    <string name="CloudConfigNoBackupToDelete">چیزی برای پاک کردن وجود ندارد!</string>
     <string name="ClearRegexFilters">پاک کردن</string>
     <string name="ClearRegexFiltersAlertMessage">آیا مطمئن هستید که می‌خواهید تمام فیلترهای ذخیره‌شده را پاک کنید؟ این کار فیلترهای اشتراکی، فیلترهای کاربر و فیلترهای مختص چت را حذف خواهد کرد.</string>
     <string name="PreferredTranslateTargetLang">لیست سفارشی زبان‌های مقصد</string>

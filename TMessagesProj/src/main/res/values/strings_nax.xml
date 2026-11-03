@@ -60,10 +60,6 @@
     <string name="DisableCrashlyticsCollection">Disable Firebase Crashlytics</string>
     <string name="ShowStickersRowToplevel">Show Stickers in Main Settings</string>
     <string name="HideShareButtonInChannel">Hide Side \"Share\" Button</string>
-    <string name="DeleteCloudBackup">Clear cloud data</string>
-    <string name="DeleteCloudBackupFailed">Failed to clear cloud data</string>
-    <string name="DeleteCloudBackupSuccess">Cloud data cleared</string>
-    <string name="CloudConfigNoBackupToDelete">No data to clear</string>
     <string name="ClearRegexFilters">Clear</string>
     <string name="ClearRegexFiltersAlertMessage">Are you sure you want to clear all saved filters? This will remove shared filters, user filters, and chat-specific filters.</string>
     <string name="PreferredTranslateTargetLang">Custom preferred language list</string>

@@ -153,7 +153,6 @@ public final class GeneralHelper {
     public static void resetAllSettings() {
         resetSettings();
         Context context = ApplicationLoader.applicationContext;
-        context.getSharedPreferences("nekocloud", Context.MODE_PRIVATE).edit().clear().commit();
         context.getSharedPreferences("nekox_config", Context.MODE_PRIVATE).edit().clear().commit();
         SharedPreferences.Editor editor = NekoConfig.getPreferences().edit().clear();
         LegacyDefaults.keepPinned(editor);

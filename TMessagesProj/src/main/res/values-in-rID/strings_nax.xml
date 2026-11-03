@@ -45,10 +45,6 @@
     <string name="DisableCrashlyticsCollection">Nonaktifkan Firebase Crashlytics</string>
     <string name="ShowStickersRowToplevel">Tampilkan Stiker di Pengaturan Utama</string>
     <string name="HideShareButtonInChannel">Sembunyikan Tombol \"Bagikan\" di Sisi</string>
-    <string name="DeleteCloudBackup">Bersihkan data cloud</string>
-    <string name="DeleteCloudBackupFailed">Gagal membersihkan data cloud</string>
-    <string name="DeleteCloudBackupSuccess">Data cloud telah dibersihkan</string>
-    <string name="CloudConfigNoBackupToDelete">Tidak ada data untuk dihapus</string>
     <string name="ClearRegexFilters">Bersihkan</string>
     <string name="ClearRegexFiltersAlertMessage">Apakah Anda yakin ingin menghapus semua penyaring yang disimpan? Ini akan menghapus penyaring yang dibagikan, penyaring pengguna, dan penyaring spesifik obrolan.</string>
     <string name="PreferredTranslateTargetLang">Daftar bahasa pilihan khusus</string>

@@ -45,10 +45,6 @@
     <string name="DisableCrashlyticsCollection">Wyłącz Firebase Crashlytics</string>
     <string name="ShowStickersRowToplevel">Pokaż naklejki w ustawieniach głównych</string>
     <string name="HideShareButtonInChannel">Ukryj boczny przycisk „Udostępnij”</string>
-    <string name="DeleteCloudBackup">Wyczyść dane w chmurze</string>
-    <string name="DeleteCloudBackupFailed">Nie udało się wyczyścić danych w chmurze</string>
-    <string name="DeleteCloudBackupSuccess">Dane w chmurze zostały usunięte</string>
-    <string name="CloudConfigNoBackupToDelete">Brak danych do wyczyszczenia</string>
     <string name="ClearRegexFilters">Wyczyść</string>
     <string name="ClearRegexFiltersAlertMessage">Czy na pewno chcesz wyczyścić wszystkie zapisane filtry? Spowoduje to usunięcie filtrów współdzielonych, filtrów użytkowników i filtrów specyficznych dla czatu.</string>
     <string name="PreferredTranslateTargetLang">Niestandardowa lista preferowanych języków</string>

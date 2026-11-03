@@ -45,10 +45,6 @@
     <string name="DisableCrashlyticsCollection">Desativar Firebase Crashlytics</string>
     <string name="ShowStickersRowToplevel">Mostrar stickers nas configurações principais</string>
     <string name="HideShareButtonInChannel">Ocultar botão lateral \"Compartilhar\"</string>
-    <string name="DeleteCloudBackup">Limpar dados da nuvem</string>
-    <string name="DeleteCloudBackupFailed">Falha ao limpar dados na nuvem</string>
-    <string name="DeleteCloudBackupSuccess">Dados na nuvem limpos</string>
-    <string name="CloudConfigNoBackupToDelete">Não há dados para limpar</string>
     <string name="ClearRegexFilters">Limpar</string>
     <string name="ClearRegexFiltersAlertMessage">Tem certeza de que deseja limpar todos os filtros salvos? Isso removerá os filtros compartilhados, filtros de usuário e filtros específicos do chat.</string>
     <string name="PreferredTranslateTargetLang">Lista de idiomas preferidos personalizados</string>

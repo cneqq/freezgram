@@ -36,7 +36,6 @@ import java.util.UUID;
 
 import tw.nekomimi.nekogram.NekoConfig;
 import tw.nekomimi.nekogram.helpers.AppRestartHelper;
-import tw.nekomimi.nekogram.helpers.CloudSettingsHelper;
 import tw.nekomimi.nekogram.helpers.PasscodeHelper;
 import tw.nekomimi.nekogram.helpers.SettingsBackupHelper;
 import tw.nekomimi.nekogram.utils.AlertUtil;
@@ -44,7 +43,6 @@ import tw.nekomimi.nekogram.utils.AlertUtil;
 public class NekoSettingsActivity extends BaseNekoSettingsActivity {
 
     private static final int MENU_SEARCH = 1;
-    private static final int MENU_SYNC = 2;
 
     private int generalRow;
     private int translatorRow;
@@ -92,7 +90,6 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity {
 
         ActionBarMenu menu = actionBar.createMenu();
         menu.addItem(MENU_SEARCH, R.drawable.outline_header_search, resourcesProvider);
-        menu.addItem(MENU_SYNC, R.drawable.cloud_sync, resourcesProvider);
 
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
@@ -101,8 +98,6 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity {
                     finishFragment();
                 } else if (id == MENU_SEARCH) {
                     showSettingsSearchDialog();
-                } else if (id == MENU_SYNC) {
-                    presentFragment(new app.exteraless.settings.OpenExteraCloudActivity());
                 }
             }
         });
@@ -146,7 +141,6 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity {
                     getString(R.string.Reset),
                     true,
                     () -> {
-                        ApplicationLoader.applicationContext.getSharedPreferences("nekocloud", Activity.MODE_PRIVATE).edit().clear().commit();
                         ApplicationLoader.applicationContext.getSharedPreferences("nekox_config", Activity.MODE_PRIVATE).edit().clear().commit();
                         NekoConfig.getPreferences().edit().clear().commit();
                         AppRestartHelper.triggerRebirth(getParentActivity(), new Intent(getParentActivity(), LaunchActivity.class));

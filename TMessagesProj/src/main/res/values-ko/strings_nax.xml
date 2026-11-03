@@ -45,10 +45,6 @@
     <string name="DisableCrashlyticsCollection">Firebase Crashlytics 비활성화</string>
     <string name="ShowStickersRowToplevel">설정 메인 화면에 스티커 표시</string>
     <string name="HideShareButtonInChannel">측면 \"공유\" 버튼 숨기기</string>
-    <string name="DeleteCloudBackup">클라우드 데이터 지우기</string>
-    <string name="DeleteCloudBackupFailed">클라우드 데이터를 지우지 못했습니다</string>
-    <string name="DeleteCloudBackupSuccess">클라우드 데이터가 지워졌습니다</string>
-    <string name="CloudConfigNoBackupToDelete">지울 데이터가 없습니다</string>
     <string name="ClearRegexFilters">지우기</string>
     <string name="ClearRegexFiltersAlertMessage">저장된 모든 필터를 지우시겠습니까? 공유 필터, 사용자 필터, 채팅별 필터가 제거됩니다.</string>
     <string name="PreferredTranslateTargetLang">사용자 지정 선호 언어 목록</string>

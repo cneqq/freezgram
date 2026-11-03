@@ -72,7 +72,6 @@ import org.telegram.utils.glass.GlassEngine;
 import java.util.ArrayList;
 
 import tw.nekomimi.nekogram.NekoConfig;
-import tw.nekomimi.nekogram.helpers.CloudStorageHelper;
 import tw.nekomimi.nekogram.helpers.UserHelper;
 import tw.nekomimi.nekogram.helpers.MessageHelper;
 import tw.nekomimi.nekogram.utils.AndroidUtil;
@@ -995,10 +994,6 @@ public abstract class BaseFragment {
 
     public UserHelper getUserHelper() {
         return getAccountInstance().getUserHelper();
-    }
-
-    public CloudStorageHelper getCloudStorageHelper() {
-        return getAccountInstance().getCloudStorageHelper();
     }
 
     public void saveKeyboardPositionBeforeTransition() {

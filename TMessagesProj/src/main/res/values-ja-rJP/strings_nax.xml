@@ -45,10 +45,6 @@
     <string name="DisableCrashlyticsCollection">Firebase Crashlytics を無効化</string>
     <string name="ShowStickersRowToplevel">ステッカーをメイン設定に表示</string>
     <string name="HideShareButtonInChannel">共有ボタンを非表示</string>
-    <string name="DeleteCloudBackup">クラウドデータを消去</string>
-    <string name="DeleteCloudBackupFailed">クラウドデータを消去できませんでした</string>
-    <string name="DeleteCloudBackupSuccess">クラウドデータを消去しました</string>
-    <string name="CloudConfigNoBackupToDelete">消去するデータがありません</string>
     <string name="ClearRegexFilters">クリア</string>
     <string name="ClearRegexFiltersAlertMessage">保存されているフィルターをすべてクリアしてもよろしいですか？これにより、共有フィルター、ユーザーフィルター、およびチャット固有のフィルターが削除されます。</string>
     <string name="PreferredTranslateTargetLang">カスタム優先言語リスト</string>

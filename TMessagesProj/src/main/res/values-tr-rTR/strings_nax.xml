@@ -45,10 +45,6 @@
     <string name="DisableCrashlyticsCollection">Firebase Crashlytics\'i Devre Dışı Bırak</string>
     <string name="ShowStickersRowToplevel">Çıkartmaları Ana Ayarlarda Göster</string>
     <string name="HideShareButtonInChannel">Yan \"Paylaş\" Butonunu Gizle</string>
-    <string name="DeleteCloudBackup">Bulut verilerini temizle</string>
-    <string name="DeleteCloudBackupFailed">Bulut verileri temizlenemedi</string>
-    <string name="DeleteCloudBackupSuccess">Bulut verileri temizlendi</string>
-    <string name="CloudConfigNoBackupToDelete">Temizlenecek veri yok</string>
     <string name="ClearRegexFilters">Temizle</string>
     <string name="ClearRegexFiltersAlertMessage">Kayıtlı tüm filtreleri temizlemek istediğinizden emin misiniz? Bu işlem paylaşılan filtreleri, kullanıcı filtrelerini ve sohbete özel filtreleri kaldıracaktır.</string>
     <string name="PreferredTranslateTargetLang">Özel tercih edilen dil listesi</string>

@@ -45,10 +45,6 @@
     <string name="DisableCrashlyticsCollection">Tắt Firebase Crashlytics</string>
     <string name="ShowStickersRowToplevel">Hiển thị Sticker ở Cài đặt chính</string>
     <string name="HideShareButtonInChannel">Ẩn nút \"Chia sẻ\" bên cạnh</string>
-    <string name="DeleteCloudBackup">Xóa dữ liệu đám mây</string>
-    <string name="DeleteCloudBackupFailed">Không thể xóa dữ liệu đám mây</string>
-    <string name="DeleteCloudBackupSuccess">Đã xóa dữ liệu đám mây</string>
-    <string name="CloudConfigNoBackupToDelete">Không có dữ liệu để xóa</string>
     <string name="ClearRegexFilters">Xóa</string>
     <string name="ClearRegexFiltersAlertMessage">Bạn có chắc chắn muốn xóa tất cả các bộ lọc đã lưu không? Thao tác này sẽ xóa các bộ lọc được chia sẻ, bộ lọc của người dùng và bộ lọc dành riêng cho cuộc trò chuyện.</string>
     <string name="PreferredTranslateTargetLang">Danh sách ngôn ngữ ưu tiên tùy chỉnh</string>

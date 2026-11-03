@@ -1,5 +1,5 @@
 """Both release jobs must package and verify their own architecture."""
-import os,subprocess,tempfile,unittest,zipfile
+import os,subprocess,tempfile,unittest,zipfile,json,re
 from pathlib import Path
 from unittest.mock import patch
 import yaml
@@ -7,7 +7,12 @@ WORKFLOW=Path(__file__).resolve().parents[1]/'.github/workflows/personal-apk.yml
 class AbiMatrixTests(unittest.TestCase):
  def test_two_architectures_have_distinct_artifacts_and_native_caches(self):
   build=yaml.safe_load(WORKFLOW.read_text())['jobs']['build']
-  matrix=build['strategy']['matrix']['include']
+  expression=build['strategy']['matrix']['include']
+  variants=[json.loads(value) for value in re.findall(r"'(\[.*?\])'",expression)]
+  self.assertEqual([[entry['abi'] for entry in variant] for variant in variants],[['arm64-v8a'],['x86_64'],['arm64-v8a','x86_64']])
+  self.assertIn("inputs.architecture == 'arm64-v8a'",expression)
+  self.assertIn("inputs.architecture == 'x86_64'",expression)
+  matrix=variants[-1]
   self.assertEqual({x['abi'] for x in matrix},{'arm64-v8a','x86_64'})
   self.assertEqual(len({x['label'] for x in matrix}),2)
   self.assertFalse(build['strategy']['fail-fast'])

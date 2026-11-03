@@ -5,6 +5,15 @@ on:
     branches:
       - no-plugins
   workflow_dispatch:
+    inputs:
+      architecture:
+        description: APK architecture
+        type: choice
+        default: both
+        options:
+          - both
+          - arm64-v8a
+          - x86_64
 
 permissions:
   contents: read
@@ -22,11 +31,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - abi: arm64-v8a
-            label: arm64
-          - abi: x86_64
-            label: x86_64
+        include: >-
+          ${{ fromJSON(
+            github.event_name == 'workflow_dispatch' && inputs.architecture == 'arm64-v8a'
+            && '[{"abi":"arm64-v8a","label":"arm64"}]'
+            || github.event_name == 'workflow_dispatch' && inputs.architecture == 'x86_64'
+            && '[{"abi":"x86_64","label":"x86_64"}]'
+            || '[{"abi":"arm64-v8a","label":"arm64"},{"abi":"x86_64","label":"x86_64"}]'
+          ) }}
     env:
       NATIVE_TARGET: ${{ matrix.abi }}
       APK_ABI_LABEL: ${{ matrix.label }}

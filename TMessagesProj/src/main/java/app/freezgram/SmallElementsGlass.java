@@ -5,6 +5,8 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.os.Build;
 import android.view.View;
+import android.view.ViewTreeObserver;
+import java.lang.ref.WeakReference;
 import app.exteraless.appearance.AppearanceConfig;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LiteMode;
@@ -87,13 +89,21 @@ public final class SmallElementsGlass {
         }
     }
 
-    /** One in-memory snapshot per displayed notice. Released when its view detaches. */
+    /** Scroll-aware in-memory backdrop. Released when its notice detaches. */
     public static final class NotificationBackdrop {
         private final BlurredBackgroundSourceBitmap bitmapSource = new BlurredBackgroundSourceBitmap();
         private BlurredBackgroundDrawable glass;
         private Bitmap bitmap;
         private View capturedRoot;
         private int rootWidth, rootHeight;
+        private boolean captureDirty;
+        private ViewTreeObserver scrollObserver;
+        private WeakReference<View> capturedOwner;
+        private final ViewTreeObserver.OnScrollChangedListener scrollListener = () -> {
+            captureDirty = true;
+            View owner = capturedOwner == null ? null : capturedOwner.get();
+            if (owner != null) owner.invalidate();
+        };
         private final int[] ownerLocation = new int[2], rootLocation = new int[2];
 
         public boolean draw(Canvas canvas, View owner, Rect bounds, Theme.ResourcesProvider provider, int radiusDp) {
@@ -102,12 +112,21 @@ public final class SmallElementsGlass {
             if (root.getWidth() <= 0 || root.getHeight() <= 0) return false;
             if (bitmap == null || root != capturedRoot || rootWidth != root.getWidth() || rootHeight != root.getHeight()) {
                 release(); capturedRoot = root; rootWidth = root.getWidth(); rootHeight = root.getHeight();
+                capturedOwner = new WeakReference<>(owner);
+                scrollObserver = root.getViewTreeObserver();
+                scrollObserver.addOnScrollChangedListener(scrollListener);
+                captureDirty = true;
+            }
+            if (captureDirty) {
+                captureDirty = false;
                 // Bulletin/Undo draw guards exclude notices from this capture, including this owner.
                 AndroidUtilities.makeGlobalBlurBitmap(value -> { bitmap = value; bitmapSource.setBitmap(value); }, 4f, 0, root, null);
-                if (bitmap == null) return false;
+                if (bitmap == null) { captureDirty = true; return false; }
                 Blur3Utils.checkBitmapSourceMatrixScale(bitmapSource, root);
-                glass = createSource(bitmapSource).createDrawable();
-                glass.setColorProvider(LiquidGlassStyle.colors(provider, SmallElementsGlass::isEnabled));
+                if (glass == null) {
+                    glass = createSource(bitmapSource).createDrawable();
+                    glass.setColorProvider(LiquidGlassStyle.colors(provider, SmallElementsGlass::isEnabled));
+                }
             }
             owner.getLocationOnScreen(ownerLocation); root.getLocationOnScreen(rootLocation);
             glass.setSourceOffset(ownerLocation[0] - rootLocation[0], ownerLocation[1] - rootLocation[1]);
@@ -119,6 +138,8 @@ public final class SmallElementsGlass {
         }
 
         public void release() {
+            if (scrollObserver != null && scrollObserver.isAlive()) scrollObserver.removeOnScrollChangedListener(scrollListener);
+            scrollObserver = null; capturedOwner = null; captureDirty = false;
             glass = null; bitmapSource.setBitmap(null);
             // RenderNodes can still reference the old image until the frame completes; let GC release it.
             bitmap = null; capturedRoot = null;

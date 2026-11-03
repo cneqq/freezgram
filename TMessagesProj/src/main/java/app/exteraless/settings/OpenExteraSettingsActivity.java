@@ -238,7 +238,7 @@ public class OpenExteraSettingsActivity extends BaseNekoSettingsActivity {
                                 "cneqq/freezgram", R.drawable.msg_language, true);
                     } else if (position == upstreamRow) {
                         cell.setTextAndValueAndIcon(getString(R.string.FreezgramUpstream),
-                                "Freezgram", R.drawable.msg_language, false);
+                                "exteraless", R.drawable.msg_language, false);
                     }
                     // ВАЖНО: только после setTextAndIcon* — они сбрасывают imageLeft в 16dp.
                     // Метрики сняты с 12.9.0 (420 dpi): иконка 88px от края экрана, текст 219px,

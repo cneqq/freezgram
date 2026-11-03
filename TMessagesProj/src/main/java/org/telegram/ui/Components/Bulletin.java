@@ -777,6 +777,11 @@ public class Bulletin {
         private final app.freezgram.SmallElementsGlass.NotificationBackdrop smallElementBackdrop = new app.freezgram.SmallElementsGlass.NotificationBackdrop();
         private int smallElementRadius = 16;
 
+        public void freezeGlassOnScroll() {
+            smallElementBackdrop.freezeOnScroll();
+            invalidate();
+        }
+
         @Override public void draw(Canvas canvas) {
             if (AndroidUtilities.makingGlobalBlurBitmap && app.freezgram.SmallElementsGlass.isEnabled()) return;
             super.draw(canvas);

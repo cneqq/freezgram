@@ -110,6 +110,12 @@ public final class SmallElementsGlass {
         private View capturedRoot;
         private int rootWidth, rootHeight;
         private boolean captureDirty;
+        private boolean refreshOnScroll = true;
+
+        public void freezeOnScroll() {
+            refreshOnScroll = false;
+            release();
+        }
         private ViewTreeObserver scrollObserver;
         private WeakReference<View> capturedOwner;
         private final ViewTreeObserver.OnScrollChangedListener scrollListener = () -> {
@@ -125,9 +131,11 @@ public final class SmallElementsGlass {
             if (root.getWidth() <= 0 || root.getHeight() <= 0) return false;
             if (bitmap == null || root != capturedRoot || rootWidth != root.getWidth() || rootHeight != root.getHeight()) {
                 release(); capturedRoot = root; rootWidth = root.getWidth(); rootHeight = root.getHeight();
-                capturedOwner = new WeakReference<>(owner);
-                scrollObserver = root.getViewTreeObserver();
-                scrollObserver.addOnScrollChangedListener(scrollListener);
+                if (refreshOnScroll) {
+                    capturedOwner = new WeakReference<>(owner);
+                    scrollObserver = root.getViewTreeObserver();
+                    scrollObserver.addOnScrollChangedListener(scrollListener);
+                }
                 captureDirty = true;
             }
             if (captureDirty) {

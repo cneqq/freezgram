@@ -68,4 +68,6 @@
 
     <item name="tag_view_on_post_draw_state" type="id" />
     <item name="tag_view_on_post_draw_root_state" type="id" />
+    <item name="freezgram_live_glass_source" type="id" />
+    <item name="freezgram_live_glass_scope" type="id" />
 </resources>

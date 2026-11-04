@@ -62,7 +62,6 @@ public final class FreezgramBadges {
         Bulletin bulletin = BulletinFactory.of(fragment).createSimpleBulletin(
                 getDrawable(fragment.getContext()), channel ? getChannelTitle() : getTitle(),
                 LocaleController.getString(R.string.FreezgramBadgeLocalInfo));
-        bulletin.getLayout().freezeGlassOnScroll();
         bulletin.show();
     }
 }

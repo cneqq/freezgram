@@ -3613,6 +3613,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         viewPositionWatcher = new ViewPositionWatcher(fragmentView);
         iBlur3FactoryLiquidGlass.setSourceRootView(viewPositionWatcher, (ViewGroup) fragmentView);
+        if (Build.VERSION.SDK_INT >= 33) {
+            app.freezgram.LiveGlassBackdrop.install((ViewGroup) fragmentView, iBlur3FactoryLiquidGlass.getSource());
+        }
         scrimBlur3Factory.setSourceRootView(viewPositionWatcher, (ViewGroup) fragmentView);
 
         FrameLayout frameLayout = (FrameLayout) fragmentView;
@@ -17843,6 +17846,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private boolean iBlur3Invalidated;
 
     private final ArrayList<RectF> iBlur3Positions = new ArrayList<>();
+    private final ArrayList<RectF> liveGlassPositions = new ArrayList<>();
     private final RectF iBlur3PositionActionBar = new RectF();
     private final RectF iBlur3PositionMainTabs = new RectF(); {
         iBlur3Positions.add(iBlur3PositionActionBar);
@@ -17860,7 +17864,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         app.exteraless.appearance.MainTabsUiHelper.setBlurBounds(iBlur3PositionMainTabs, fragmentView, navigationBarHeight);
         iBlur3PositionMainTabs.inset(0, LiteMode.isEnabled(LiteMode.FLAG_LIQUID_GLASS) ? 0 : -dp(48));
 
-        scrollableViewNoiseSuppressor.setupRenderNodes(iBlur3Positions, 2);
+        int glassRegionCount = app.freezgram.LiveGlassBackdrop.captureBounds((ViewGroup) fragmentView,
+                iBlur3Positions, 2, liveGlassPositions);
+        scrollableViewNoiseSuppressor.setupRenderNodes(liveGlassPositions, glassRegionCount);
         scrollableViewNoiseSuppressor.invalidateResultRenderNodes(iBlur3Capture, fragmentView.getMeasuredWidth(), fragmentView.getMeasuredHeight());
     }
 

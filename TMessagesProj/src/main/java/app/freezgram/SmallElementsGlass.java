@@ -102,6 +102,7 @@ public final class SmallElementsGlass {
         public static boolean isExcluded(View view) { return excludedOwner == view; }
         private final java.util.function.BooleanSupplier enabled;
         private final boolean hideOwner;
+        private final LiveGlassBackdrop liveBackdrop = new LiveGlassBackdrop();
         public NotificationBackdrop() { this(SmallElementsGlass::isEnabled, false); }
         public NotificationBackdrop(java.util.function.BooleanSupplier enabled, boolean hideOwner) { this.enabled = enabled; this.hideOwner = hideOwner; }
         private final BlurredBackgroundSourceBitmap bitmapSource = new BlurredBackgroundSourceBitmap();
@@ -126,7 +127,12 @@ public final class SmallElementsGlass {
         private final int[] ownerLocation = new int[2], rootLocation = new int[2];
 
         public boolean draw(Canvas canvas, View owner, Rect bounds, Theme.ResourcesProvider provider, int radiusDp) {
-            if (!enabled.getAsBoolean() || !canvas.isHardwareAccelerated() || AndroidUtilities.makingGlobalBlurBitmap) return false;
+            if (!enabled.getAsBoolean()) { release(); return false; }
+            if (!canvas.isHardwareAccelerated() || AndroidUtilities.makingGlobalBlurBitmap) return false;
+            if (refreshOnScroll && liveBackdrop.attach(owner)) {
+                releaseSnapshot();
+                return liveBackdrop.draw(canvas, owner, bounds, provider, radiusDp, enabled, hideOwner);
+            }
             View root = owner.getRootView();
             if (root.getWidth() <= 0 || root.getHeight() <= 0) return false;
             if (bitmap == null || root != capturedRoot || rootWidth != root.getWidth() || rootHeight != root.getHeight()) {
@@ -168,6 +174,11 @@ public final class SmallElementsGlass {
         }
 
         public void release() {
+            liveBackdrop.release();
+            releaseSnapshot();
+        }
+
+        private void releaseSnapshot() {
             if (scrollObserver != null && scrollObserver.isAlive()) scrollObserver.removeOnScrollChangedListener(scrollListener);
             scrollObserver = null; capturedOwner = null; captureDirty = false;
             glass = null; bitmapSource.setBitmap(null);

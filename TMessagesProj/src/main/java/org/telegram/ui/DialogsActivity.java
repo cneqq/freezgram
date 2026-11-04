@@ -4270,6 +4270,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         iBlur3FactoryLiquidGlass.setSourceRootView(viewPositionWatcher, contentView);
         iBlur3FactoryFade.setSourceRootView(viewPositionWatcher, contentView);
         iBlur3FactoryBlur.setSourceRootView(viewPositionWatcher, contentView);
+        if (Build.VERSION.SDK_INT >= 33) {
+            app.freezgram.LiveGlassBackdrop.install(contentView, iBlur3FactoryLiquidGlass.getSource());
+        }
 
         final PointF tmpPoint = new PointF();
         iBlur3Capture = (canvas, position) -> {
@@ -14879,6 +14882,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private IBlur3Capture iBlur3Capture;
 
     private final ArrayList<RectF> iBlur3Positions = new ArrayList<>();
+    private final ArrayList<RectF> liveGlassPositions = new ArrayList<>();
     private final RectF iBlur3PositionActionBar = new RectF();
     private final RectF iBlur3PositionMainTabs = new RectF(); {
         iBlur3Positions.add(iBlur3PositionActionBar);
@@ -14920,7 +14924,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             hasBottomBlur = true;
         }
 
-        scrollableViewNoiseSuppressor.setupRenderNodes(iBlur3Positions, hasBottomBlur ? 2 : 1);
+        int glassRegionCount = app.freezgram.LiveGlassBackdrop.captureBounds((ViewGroup) fragmentView,
+                iBlur3Positions, hasBottomBlur ? 2 : 1, liveGlassPositions);
+        scrollableViewNoiseSuppressor.setupRenderNodes(liveGlassPositions, glassRegionCount);
         if (foldersGlassDrawable != null) {
             boolean enabled = Build.VERSION.SDK_INT >= 33 && SharedConfig.chatBlurEnabled() && !LiteMode.isGlassPowerSaverApplied();
             if (foldersGlassEnabled == null || foldersGlassEnabled != enabled || foldersGlassRevision != app.freezgram.LiquidGlassStyle.revision()) {

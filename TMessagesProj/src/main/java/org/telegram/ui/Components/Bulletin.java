@@ -126,6 +126,7 @@ public class Bulletin {
         } else if (fragment instanceof DialogsActivity) {
             contentLayout.setWideScreenParams(ViewGroup.LayoutParams.MATCH_PARENT, Gravity.NO_GRAVITY);
         }
+        app.freezgram.LiveGlassBackdrop.bind(contentLayout, fragment.getFragmentView());
         return new Bulletin(fragment, fragment.getBulletinLayoutContainer(), contentLayout, duration);
     }
 

@@ -10,7 +10,6 @@ import com.google.firebase.crashlytics.CustomKeysAndValues;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
 import org.json.JSONObject;
-import org.lsposed.hiddenapibypass.HiddenApiBypass;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.MessagesController;
@@ -173,9 +172,9 @@ public final class CrashLog {
             }
             Class<?>[] array = classes.toArray(new Class<?>[0]);
             Class<?> vmDebug = Class.forName("dalvik.system.VMDebug");
-            Method method = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
-                    ? HiddenApiBypass.getDeclaredMethod(vmDebug, "countInstancesOfClasses", Class[].class, boolean.class)
-                    : vmDebug.getDeclaredMethod("countInstancesOfClasses", Class[].class, boolean.class);
+            // Object counts are optional; restricted Android APIs may reject reflection.
+            // Keep diagnostics independent of the removed plugin/hidden-API runtime.
+            Method method = vmDebug.getDeclaredMethod("countInstancesOfClasses", Class[].class, boolean.class);
             long[] counts = (long[]) method.invoke(null, array, true);
             if (counts == null) {
                 return;

@@ -18874,6 +18874,7 @@ public class ChatActivity extends BaseFragment implements
         protected void onBackgroundViewInvalidate() {
             super.onBackgroundViewInvalidate();
             // Animated wallpaper/snow can change while the message list stays still.
+            app.freezgram.LiveGlassBackdrop.invalidateOwners(this);
             if (invalidateBlurredSourcesView != null) {
                 invalidateMergedVisibleBlurredPositionsAndSources(BLUR_INVALIDATE_FLAG_WALLPAPER);
             }

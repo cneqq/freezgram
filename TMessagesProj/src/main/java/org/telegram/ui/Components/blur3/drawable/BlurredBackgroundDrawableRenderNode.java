@@ -190,7 +190,12 @@ public class BlurredBackgroundDrawableRenderNode extends BlurredBackgroundDrawab
     public void updateColors() {
         int previousRevision = colorsRevision;
         super.updateColors();
-        if (previousRevision == colorsRevision) return;
+        if (previousRevision == colorsRevision) {
+            // A new bitmap or procedural wallpaper frame can arrive with identical colors.
+            // Refresh the fill when drawn, without scheduling another View frame.
+            renderNodeInvalidated = true;
+            return;
+        }
 
         paintShadow.setShadowLayer(shadowLayerRadius, shadowLayerDx, shadowLayerDy, shadowColor);
         if (boundProps.useFullStroke) {

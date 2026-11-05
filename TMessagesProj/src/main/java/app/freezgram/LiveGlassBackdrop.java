@@ -54,6 +54,12 @@ public final class LiveGlassBackdrop {
         return count;
     }
 
+    public static void invalidateOwners(ViewGroup scope) {
+        if (SmallElementsGlass.isEnabled() && scope.getTag(R.id.freezgram_live_glass_source) instanceof Scene scene) {
+            for (View owner : scene.owners.keySet()) if (owner != null) owner.invalidate();
+        }
+    }
+
     private static boolean locate(View owner, ViewGroup scope, RectF bounds, Scene scene) {
         if (ViewPositionWatcher.computeRectInParent(owner, scope, bounds)) return true;
         if (owner.getRootView() != scope.getRootView()) return false;

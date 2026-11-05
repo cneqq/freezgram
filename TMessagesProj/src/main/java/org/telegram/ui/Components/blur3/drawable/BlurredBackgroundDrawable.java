@@ -181,11 +181,13 @@ public abstract class BlurredBackgroundDrawable extends Drawable implements Glas
 
     @CallSuper
     protected void onBoundPropsChanged() {
+        visualChangePending = true;
         dispatchSourceRelativePositionChange();
     }
 
     @CallSuper
     protected void onSourceOffsetChange(float sourceOffsetX, float sourceOffsetY) {
+        visualChangePending = true;
         dispatchSourceRelativePositionChange();
     }
 
@@ -209,6 +211,8 @@ public abstract class BlurredBackgroundDrawable extends Drawable implements Glas
     protected BlurredBackgroundColorProvider colorProvider;
     protected int shadowColor, backgroundColor, strokeColorTop, strokeColorBottom;
     protected int strokeColorFull;
+    protected int colorsRevision;
+    private boolean colorsInitialized, visualChangePending;
 
     public BlurredBackgroundDrawable setColorProvider(BlurredBackgroundColorProvider colorProvider) {
         GlassOutlineStyle.addListener(this);
@@ -257,25 +261,32 @@ public abstract class BlurredBackgroundDrawable extends Drawable implements Glas
         final boolean glare = outlineStyle == GlassOutlineStyle.GLARE;
         final boolean solid = outlineStyle == GlassOutlineStyle.SOLID;
 
+        final int nextBackground = colorProvider.getBackgroundColor();
+        final int nextShadow = glare ? colorProvider.getShadowColor() : 0;
+        final int nextTop = glare ? colorProvider.getStrokeColorTop() : 0;
+        final int nextBottom = glare ? colorProvider.getStrokeColorBottom() : 0;
+        final int nextFull = solid ? colorProvider.getStrokeColorFull() : 0;
+        float nextRadius = shadowLayerRadius, nextDx = shadowLayerDx, nextDy = shadowLayerDy;
+        if (colorProvider instanceof BlurredBackgroundProvider) {
+            final BlurredBackgroundProvider provider = (BlurredBackgroundProvider) colorProvider;
+            nextRadius = glare ? provider.getShadowRadius() : 0;
+            nextDx = glare ? provider.getShadowDx() : 0;
+            nextDy = glare ? provider.getShadowDy() : 0;
+        }
+        boolean changed = !colorsInitialized || boundProps.useFullStroke != solid
+                || backgroundColor != nextBackground || shadowColor != nextShadow || strokeColorTop != nextTop
+                || strokeColorBottom != nextBottom || strokeColorFull != nextFull
+                || shadowLayerRadius != nextRadius || shadowLayerDx != nextDx || shadowLayerDy != nextDy;
+        if (!changed && !visualChangePending) return;
         if (boundProps.useFullStroke != solid) {
             boundProps.useFullStroke = solid;
             boundProps.build();
         }
-
-        backgroundColor = colorProvider.getBackgroundColor();
-        shadowColor = glare ? colorProvider.getShadowColor() : 0;
-        strokeColorTop = glare ? colorProvider.getStrokeColorTop() : 0;
-        strokeColorBottom = glare ? colorProvider.getStrokeColorBottom() : 0;
-        strokeColorFull = solid ? colorProvider.getStrokeColorFull() : 0;
-
-        if (colorProvider instanceof BlurredBackgroundProvider) {
-            final BlurredBackgroundProvider provider = (BlurredBackgroundProvider) colorProvider;
-            if (glare) {
-                setShadowParams(provider.getShadowRadius(), provider.getShadowDx(), provider.getShadowDy());
-            } else {
-                setShadowParams(0, 0, 0);
-            }
-        }
+        backgroundColor = nextBackground; shadowColor = nextShadow;
+        strokeColorTop = nextTop; strokeColorBottom = nextBottom; strokeColorFull = nextFull;
+        setShadowParams(nextRadius, nextDx, nextDy);
+        if (changed) { colorsInitialized = true; colorsRevision++; }
+        visualChangePending = false;
 
         invalidateSelf();
     }

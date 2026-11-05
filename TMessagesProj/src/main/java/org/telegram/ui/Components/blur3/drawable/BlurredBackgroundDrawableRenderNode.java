@@ -188,7 +188,9 @@ public class BlurredBackgroundDrawableRenderNode extends BlurredBackgroundDrawab
 
     @Override
     public void updateColors() {
+        int previousRevision = colorsRevision;
         super.updateColors();
+        if (previousRevision == colorsRevision) return;
 
         paintShadow.setShadowLayer(shadowLayerRadius, shadowLayerDx, shadowLayerDy, shadowColor);
         if (boundProps.useFullStroke) {

@@ -51,7 +51,9 @@ public class SettingsHelper {
     private static final Map<String, String> MOVED_ROWS = new HashMap<>();
 
     static {
-        SEARCH_TITLE_ALIASES.put("OEGeneral:lastfm", "OEGeneralLastFm");
+        SEARCH_TITLE_ALIASES.put("OEGeneral:botPrivacyAlwaysAsk", "OEBotPrivacyAlwaysAsk");
+        SEARCH_TITLE_ALIASES.put("OEGeneral:botPrivacyEnabled", "OEBotPrivacyEnabled");
+        SEARCH_TITLE_ALIASES.put("OEGeneral:botPrivacyAccount", "OEBotPrivacyAccount");
         SEARCH_TITLE_ALIASES.put("OEAyu:ayuGhost", "GhostMode");
         SEARCH_TITLE_ALIASES.put("OEAyu:ayuDisableAll", "OEGeneralAyuMomentsDisableAll");
         SEARCH_TITLE_ALIASES.put("OEAyu:ayuClearDatabase", "ClearMessageDatabase");
@@ -128,6 +130,7 @@ public class SettingsHelper {
         NAGRAM_ROWS.put("MainTabsHideContacts", "navigation");
         NAGRAM_ROWS.put("MainTabsHideCallsSettings", "navigation");
         NAGRAM_ROWS.put("MainTabsHideProfile", "navigation");
+        NAGRAM_ROWS.put("AlwaysShowDownloadIcon", "navigation");
         NAGRAM_ROWS.put("DisableSystemAccount", "privacy");
         NAGRAM_ROWS.put("PerformanceClass", "powersaving");
         NAGRAM_ROWS.put("VideoPlayerDecoder", "chats");

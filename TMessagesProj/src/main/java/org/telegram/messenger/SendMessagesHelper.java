@@ -197,6 +197,12 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         } else if (replyQuote != null && replyQuote.todo && replyQuote.task != null) {
             replyTo.flags |= 64;
             replyTo.todo_item_id = replyQuote.task.id;
+        } else if (replyQuote != null && replyQuote.isRich) {
+            if (replyQuote.rich != null && !replyQuote.rich.isEmpty()) {
+                replyTo.quote_rich = new ArrayList<>(replyQuote.rich);
+                replyTo.flags |= 16;
+                replyTo.quote_offset = replyQuote.getQuoteOffset();
+            }
         } else if (replyQuote != null && !replyQuote.todo && !replyQuote.poll) {
             replyTo.quote_text = replyQuote.getText();
             if (!TextUtils.isEmpty(replyTo.quote_text)) {
@@ -233,11 +239,13 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             replyTo.reply_to_peer_id = MessagesController.getInstance(currentAccount).getInputPeer(replyHeader.reply_to_peer_id);
         }
         if (replyHeader.quote) {
-            if ((replyHeader.flags & 64) != 0) {
+            if (replyHeader.quote_rich != null) {
+                replyTo.quote_rich = replyHeader.quote_rich;
+            } else if ((replyHeader.flags & 64) != 0) {
                 replyTo.flags |= 4;
                 replyTo.quote_text = replyHeader.quote_text;
             }
-            if ((replyHeader.flags & 128) != 0) {
+            if (replyHeader.quote_rich == null && (replyHeader.flags & 128) != 0) {
                 replyTo.flags |= 8;
                 replyTo.quote_entities = replyHeader.quote_entities;
             }
@@ -2252,6 +2260,13 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         if (messages == null || messages.isEmpty()) {
             return 0;
         }
+        if (scheduleDate == 0 && payStars == 0 && monoForumPeerId == 0 && suggestionParams == null && shouldGhostSchedule(peer)) {
+            return sendMessage(messages, peer, forwardFromMyName, hideCaption, notify, getConnectionsManager().getCurrentTime() + 12, scheduleRepeatPeriod,
+                    replyToTopMsg, video_timestamp, payStars, monoForumPeerId, suggestionParams);
+        }
+        if (app.exteraless.privacy.BotAccountRouter.guardSend(currentAccount, peer,
+                () -> sendMessage(messages, peer, forwardFromMyName, hideCaption, notify, scheduleDate, scheduleRepeatPeriod,
+                        replyToTopMsg, video_timestamp, payStars, monoForumPeerId, suggestionParams))) return 0;
         int sendResult = 0;
         long myId = getUserConfig().getClientUserId();
         boolean isChannel = false;
@@ -4459,12 +4474,17 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     private boolean shouldSendAsGhostScheduled(SendMessageParams params, long peer, String quickReplyShortcut, int quickReplyShortcutId) {
-        if (!NaConfig.INSTANCE.getGhostScheduledSend().Bool() || NekoConfig.sendOnlinePackets.Bool()) {
+        if (params.retryMessageObject != null || params.sendingStory != null || params.invoice != null || params.game != null
+                || params.stars > 0 || params.payStars > 0 || params.monoForumPeer != 0 || params.suggestionParams != null
+                || quickReplyShortcut != null || quickReplyShortcutId != 0
+                || (params.sendMessageChatArguments != null && params.sendMessageChatArguments.welcomeMessageChatId != 0)) {
             return false;
         }
-        if (params.retryMessageObject != null || params.sendingStory != null || params.invoice != null || params.game != null
-                || params.stars > 0 || quickReplyShortcut != null || quickReplyShortcutId != 0
-                || (params.sendMessageChatArguments != null && params.sendMessageChatArguments.welcomeMessageChatId != 0)) {
+        return shouldGhostSchedule(peer);
+    }
+
+    private boolean shouldGhostSchedule(long peer) {
+        if (!NaConfig.INSTANCE.getGhostScheduledSend().Bool() || NekoConfig.sendOnlinePackets.Bool()) {
             return false;
         }
         if (peer == 0 || DialogObject.isEncryptedDialog(peer) || peer == UserConfig.getInstance(currentAccount).getClientUserId()) {
@@ -4479,6 +4499,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
     public void sendMessage(SendMessageParams originalParams) {
         final SendMessageParams sendMessageParams = originalParams;
+        if (app.exteraless.privacy.BotAccountRouter.guardSend(currentAccount, sendMessageParams.peer, () -> sendMessage(sendMessageParams))) return;
         app.exteraless.chats.DeletedReplyQuote.rewrite(currentAccount, sendMessageParams);
         app.exteraless.chats.LinkedCustomEmoji.replaceForSend(currentAccount, sendMessageParams.peer, sendMessageParams.entities);
         final SendMessageChatArguments sendMessageChatArguments = sendMessageParams.sendMessageChatArguments != null ?
@@ -5173,7 +5194,8 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         newMsg.reply_to.quote = true;
                         newMsg.reply_to.flags |= 64;
                         newMsg.reply_to.flags |= 1024;
-                        newMsg.reply_to.quote_offset = replyQuote.start;
+                        newMsg.reply_to.quote_offset = replyQuote.getQuoteOffset();
+                        newMsg.reply_to.quote_rich = replyQuote.isRich ? RichQuote.copyList(replyQuote.rich) : null;
                         newMsg.reply_to.quote_entities = replyQuote.getEntities();
                         if (newMsg.reply_to.quote_entities != null && !newMsg.reply_to.quote_entities.isEmpty()) {
                             newMsg.reply_to.quote_entities = new ArrayList<>(newMsg.reply_to.quote_entities);
@@ -5300,7 +5322,8 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             newMsg.reply_to.flags |= 64;
                             newMsg.reply_to.quote_text = replyQuote.getText();
                             newMsg.reply_to.flags |= 1024;
-                            newMsg.reply_to.quote_offset = replyQuote.start;
+                            newMsg.reply_to.quote_offset = replyQuote.getQuoteOffset();
+                            newMsg.reply_to.quote_rich = replyQuote.isRich ? RichQuote.copyList(replyQuote.rich) : null;
                         }
                         if (replyQuote.getEntities() != null) {
                             newMsg.reply_to.flags |= 128;
@@ -10239,10 +10262,17 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     }
                     mediaCount++;
                     long prevGroupId = groupId[0];
-                    error = prepareSendingDocumentInternal(accountInstance, paths.get(a), originalPaths.get(a), null, mime, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, a == 0 ? captionEntities : null, editingMessageObject, groupId, !forcedPollDoNotSendFinal && (pollSendParams == null && mediaCount == 10 || a == count - 1), captionFinal, notify, scheduleDate, scheduleRepeatPeriod, docType, inputContent == null, sendMessageChatArguments, first ? effectId : 0, invertMedia, payStars, monoForumPeerId, suggestionParams, pollSendParams, pollSendIndexes!= null ? pollSendIndexes.get(a) : -1);
+                    final boolean isGroupFinal = !forcedPollDoNotSendFinal && (pollSendParams == null && mediaCount == 10 || a == count - 1);
+                    error = prepareSendingDocumentInternal(accountInstance, paths.get(a), originalPaths.get(a), null, mime, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, a == 0 ? captionEntities : null, editingMessageObject, groupId, isGroupFinal, captionFinal, notify, scheduleDate, scheduleRepeatPeriod, docType, inputContent == null, sendMessageChatArguments, first ? effectId : 0, invertMedia, payStars, monoForumPeerId, suggestionParams, pollSendParams, pollSendIndexes!= null ? pollSendIndexes.get(a) : -1);
                     first = false;
                     if (prevGroupId != groupId[0] || groupId[0] == -1) {
                         mediaCount = 1;
+                    }
+                    if (error != 0 && isGroupFinal && pollSendParams == null && groupId[0] != 0) {
+                        // the file that should have closed the group was not sent, close it with the files already queued
+                        finishGroup(accountInstance, groupId[0], scheduleDate);
+                        groupId[0] = 0;
+                        mediaCount = 0;
                     }
                 }
             }
@@ -10262,10 +10292,17 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     }
                     mediaCount++;
                     long prevGroupId = groupId[0];
-                    error = prepareSendingDocumentInternal(accountInstance, null, null, uris.get(a), mime, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, captionEntitiesFinal, editingMessageObject, groupId, !forcedPollDoNotSendFinal && (pollSendParams == null && mediaCount == 10 || a == count - 1), captionFinal, notify, scheduleDate, scheduleRepeatPeriod, docType, inputContent == null, sendMessageChatArguments, first ? effectId : 0, invertMedia, payStars, monoForumPeerId, suggestionParams, pollSendParams, pollSendUriIndexes != null ? pollSendUriIndexes.get(a) : -1);
+                    final boolean isGroupFinal = !forcedPollDoNotSendFinal && (pollSendParams == null && mediaCount == 10 || a == count - 1);
+                    error = prepareSendingDocumentInternal(accountInstance, null, null, uris.get(a), mime, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, captionEntitiesFinal, editingMessageObject, groupId, isGroupFinal, captionFinal, notify, scheduleDate, scheduleRepeatPeriod, docType, inputContent == null, sendMessageChatArguments, first ? effectId : 0, invertMedia, payStars, monoForumPeerId, suggestionParams, pollSendParams, pollSendUriIndexes != null ? pollSendUriIndexes.get(a) : -1);
                     first = false;
                     if (prevGroupId != groupId[0] || groupId[0] == -1) {
                         mediaCount = 1;
+                    }
+                    if (error != 0 && isGroupFinal && pollSendParams == null && groupId[0] != 0) {
+                        // the file that should have closed the group was not sent, close it with the files already queued
+                        finishGroup(accountInstance, groupId[0], scheduleDate);
+                        groupId[0] = 0;
+                        mediaCount = 0;
                     }
                 }
             }

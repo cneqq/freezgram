@@ -283,9 +283,10 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
     }
 
     private boolean drawServiceGlass(Canvas canvas) {
-        if (!app.freezgram.SmallElementsGlass.areServiceBubblesEnabled() || !canvas.isHardwareAccelerated()) {
+        if (!app.freezgram.SmallElementsGlass.areServiceBubblesEnabled()) {
             serviceGlass.release(); return false;
         }
+        if (!canvas.isHardwareAccelerated() || AndroidUtilities.makingGlobalBlurBitmap) return false;
         fullBounds.roundOut(serviceGlassBounds);
         return serviceGlass.attach(this) && serviceGlass.draw(canvas, this, serviceGlassBounds, resourcesProvider,
                 16, app.freezgram.SmallElementsGlass::areServiceBubblesEnabled, true);

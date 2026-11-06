@@ -37,6 +37,7 @@ import androidx.core.content.ContextCompat;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
@@ -53,6 +54,8 @@ import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.DotDividerSpan;
 import org.telegram.ui.Components.FlickerLoadingView;
 import org.telegram.ui.Components.LayoutHelper;
+
+import java.util.Locale;
 
 public class SessionCell extends FrameLayout {
 
@@ -320,6 +323,7 @@ public class SessionCell extends FrameLayout {
     }
 
     public static CombinedDrawable createDrawable(int sz, TLRPC.TL_authorization session) {
+        boolean freezgram = isFreezgramSession(session);
         String platform = session.platform.toLowerCase();
         if (platform.isEmpty()) {
             platform = session.system_version.toLowerCase();
@@ -327,7 +331,11 @@ public class SessionCell extends FrameLayout {
         String deviceModel = session.device_model.toLowerCase();
         int iconId;
         int colorKey, colorKey2;
-        if (deviceModel.contains("safari")) {
+        if (freezgram) {
+            iconId = R.drawable.freezgram_settings_icon;
+            colorKey = Theme.key_avatar_backgroundBlue;
+            colorKey2 = Theme.key_avatar_background2Blue;
+        } else if (deviceModel.contains("safari")) {
             iconId = R.drawable.device_web_safari;
             colorKey = Theme.key_avatar_backgroundPink;
             colorKey2 = Theme.key_avatar_background2Pink;
@@ -410,13 +418,26 @@ public class SessionCell extends FrameLayout {
             colorKey2 = Theme.key_avatar_background2Pink;
         }
         Drawable iconDrawable = ContextCompat.getDrawable(ApplicationLoader.applicationContext, iconId).mutate();
-        iconDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_avatar_text), PorterDuff.Mode.SRC_IN));
+        if (!freezgram) {
+            iconDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_avatar_text), PorterDuff.Mode.SRC_IN));
+        }
         Drawable bgDrawable = new CircleGradientDrawable(dp(sz), colorKey == -1 ? 0xFF000000 : Theme.getColor(colorKey), colorKey2 == -1 ? 0xFF000000 : Theme.getColor(colorKey2));
         CombinedDrawable drawable = new CombinedDrawable(bgDrawable, iconDrawable);
-        if (platform != null && platform.contains("fragment")) {
+        if (freezgram) {
+            drawable.setIconSize(dp(sz * 0.76f), dp(sz * 0.76f));
+        } else if (platform != null && platform.contains("fragment")) {
             drawable.setIconSize((int) (iconDrawable.getIntrinsicWidth() / 44.0f * sz), (int) (iconDrawable.getIntrinsicHeight() / 44.0f * sz));
         }
         return drawable;
+    }
+
+    private static boolean isFreezgramSession(TLRPC.TL_authorization session) {
+        if (session.app_name != null && session.app_name.toLowerCase(Locale.ROOT).contains("freezgram")) {
+            return true;
+        }
+        // Shared official credentials cannot identify a Freezgram installation.
+        return BuildVars.APP_ID > 0 && BuildVars.APP_ID != 6 && BuildVars.APP_ID != 2040
+                && session.api_id == BuildVars.APP_ID;
     }
 
     public static class CircleGradientDrawable extends Drawable {

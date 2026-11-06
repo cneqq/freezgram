@@ -841,6 +841,12 @@ public class Bulletin {
             }
         }
 
+        public void clearCustomBackground() {
+            hasCustomBackground = false;
+            setBackground(getThemedColor(Theme.key_undo_background), smallElementRadius);
+            invalidate();
+        }
+
         private boolean hasCustomBackground;
         public void setCustomBackground(Drawable drawable) {
             background = drawable;

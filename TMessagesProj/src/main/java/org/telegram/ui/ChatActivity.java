@@ -32185,6 +32185,10 @@ public class ChatActivity extends BaseFragment implements
 
             @Override
             public void onShow(Bulletin bulletin) {
+                if (app.freezgram.SmallElementsGlass.isEnabled()) {
+                    bulletin.getLayout().clearCustomBackground();
+                    return;
+                }
                 bulletin.getLayout().setCustomBackground(glassBackgroundDrawableFactory
                     // fake multiwindow flag because bulleting parent is not child of fragment
                     // todo: fix?

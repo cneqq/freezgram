@@ -493,15 +493,7 @@ public class ActionBarMenuItem extends FrameLayout {
         location = new int[2];
         popupLayout = new ActionBarPopupWindow.ActionBarPopupWindowLayout(getContext(), R.drawable.popup_fixed_alert4, resourcesProvider, ActionBarPopupWindow.ActionBarPopupWindowLayout.FLAG_USE_SWIPEBACK);
 
-        if (subMenuFactory != null) {
-            popupLayout.setBackground(subMenuFactory.create(popupLayout, true)
-                    .setColorProvider(subMenuProvider)
-                    .setRadius(dp(12))
-                    .setPadding(dp(8)));
-            if (app.freezgram.SmallElementsGlass.isEnabled()) {
-                app.exteraless.appearance.GlassMenuHelper.applyDividers(popupLayout, resourcesProvider);
-            }
-        }
+        refreshSuppliedSmallGlass();
 
         popupLayout.setOnTouchListener((v, event) -> {
             if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
@@ -855,10 +847,40 @@ public class ActionBarMenuItem extends FrameLayout {
     }
 
     private boolean automaticSmallGlass;
+    private Boolean suppliedSmallGlass;
+
+    private void refreshSuppliedSmallGlass() {
+        if (popupLayout == null || subMenuFactory == null) return;
+        boolean liquid = app.freezgram.SmallElementsGlass.isEnabled();
+        if (suppliedSmallGlass != null && suppliedSmallGlass == liquid) {
+            if (popupLayout.getBackground() instanceof org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable background) {
+                if (liquid) app.freezgram.LiquidGlassStyle.configure(background);
+                // The capture can change between openings while the menu stays in the same place.
+                background.updateColors();
+            }
+            return;
+        }
+        if (liquid) {
+            app.exteraless.appearance.GlassMenuHelper.applyToPopup(subMenuFactory, resourcesProvider, popupLayout);
+            app.exteraless.appearance.GlassMenuHelper.applyToGaps(popupLayout,
+                    app.exteraless.appearance.GlassMenuHelper.separatorColor(true, resourcesProvider));
+        } else {
+            popupLayout.setBackground(subMenuFactory.create(popupLayout, true)
+                    .setColorProvider(subMenuProvider).setRadius(dp(12)).setPadding(dp(8)));
+            if (popupLayout.getSwipeBack() != null) popupLayout.getSwipeBack().setGlassForeground(null);
+            app.exteraless.appearance.GlassMenuHelper.applyToGaps(popupLayout,
+                    app.exteraless.appearance.GlassMenuHelper.separatorColor(false, resourcesProvider), true);
+        }
+        suppliedSmallGlass = liquid;
+    }
     private org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceBitmap automaticGlassSnapshot;
 
     private void refreshAutomaticSmallGlass() {
         if (popupLayout == null) return;
+        if (subMenuFactory != null && !automaticSmallGlass) {
+            refreshSuppliedSmallGlass();
+            return;
+        }
         if (!app.freezgram.SmallElementsGlass.isEnabled()) {
             if (automaticSmallGlass) {
                 app.exteraless.appearance.GlassMenuHelper.applyToReusedMenu(subMenuFactory, automaticGlassSnapshot,
@@ -868,8 +890,6 @@ public class ActionBarMenuItem extends FrameLayout {
             }
             return;
         }
-        // Preserve explicitly supplied capture sources, such as chat message menus.
-        if (subMenuFactory != null && !automaticSmallGlass) return;
         View root = getRootView();
         if (!(root instanceof ViewGroup)) return;
         automaticGlassSnapshot = new org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceBitmap();
@@ -888,17 +908,10 @@ public class ActionBarMenuItem extends FrameLayout {
     public void setBlurredBackgroundFactory(BlurredBackgroundDrawableViewFactory subMenuFactory, BlurredBackgroundProvider subMenuProvider) {
         automaticSmallGlass = false;
         automaticGlassSnapshot = null;
+        suppliedSmallGlass = null;
         this.subMenuFactory = subMenuFactory;
         this.subMenuProvider = subMenuProvider;
-        if (popupLayout != null && subMenuFactory != null) {
-            popupLayout.setBackground(subMenuFactory.create(popupLayout, true)
-                    .setColorProvider(subMenuProvider)
-                    .setRadius(dp(12))
-                    .setPadding(dp(8)));
-            if (app.freezgram.SmallElementsGlass.isEnabled()) {
-                app.exteraless.appearance.GlassMenuHelper.applyDividers(popupLayout, resourcesProvider);
-            }
-        }
+        refreshSuppliedSmallGlass();
     }
 
     public void toggleSubMenu(View topView, View fromView) {
@@ -955,11 +968,10 @@ public class ActionBarMenuItem extends FrameLayout {
             }
             if (topView instanceof ActionBarMenuSubItem || topView instanceof LinearLayout) {
                 if (subMenuFactory != null) {
-                    frameLayout.setBackground(subMenuFactory.create(popupLayout, true)
-                        .setColorProvider(subMenuProvider)
-                        .setRadius(dp(12))
-                        .setPadding(dp(8))
-                        .setHasPadding(true));
+                    frameLayout.setBackground(app.freezgram.SmallElementsGlass.isEnabled()
+                            ? app.exteraless.appearance.GlassMenuHelper.createPanelBackground(subMenuFactory, resourcesProvider, frameLayout)
+                            : subMenuFactory.create(frameLayout, true).setColorProvider(subMenuProvider)
+                                    .setRadius(dp(12)).setPadding(dp(8)).setHasPadding(true));
                 } else {
                     Drawable drawable = ContextCompat.getDrawable(getContext(), R.drawable.popup_fixed_alert4).mutate();
                     drawable.setColorFilter(new PorterDuffColorFilter(popupLayout.getBackgroundColor(), PorterDuff.Mode.MULTIPLY));

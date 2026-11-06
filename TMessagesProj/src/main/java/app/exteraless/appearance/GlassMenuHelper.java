@@ -110,6 +110,7 @@ public abstract class GlassMenuHelper {
             Math.round(rect.top + offsetY),
             Math.round(rect.right + offsetX),
             Math.round(rect.bottom + offsetY));
+        drawable.updateColors();
         drawable.draw(canvas);
         if (translate) {
             canvas.restore();
@@ -149,6 +150,19 @@ public abstract class GlassMenuHelper {
             popupLayout.getSwipeBack().setGlassForeground(app.freezgram.SmallElementsGlass.isEnabled()
                     ? createFill(factory, resourcesProvider, popupLayout.getSwipeBack()) : null);
         }
+    }
+
+    /** Standalone notification menus have no ActionBarMenuItem capture factory. Capture once on open. */
+    public static void applyToStandalonePopup(ActionBarPopupWindow.ActionBarPopupWindowLayout popup,
+                                             Theme.ResourcesProvider provider, View root) {
+        if (!app.freezgram.SmallElementsGlass.isEnabled() || !(root instanceof ViewGroup)) return;
+        BlurredBackgroundSourceBitmap bitmap = new BlurredBackgroundSourceBitmap();
+        BlurredBackgroundDrawableViewFactory factory = new BlurredBackgroundDrawableViewFactory(bitmap);
+        // Attach the position observer to the popup, so it stops when the window closes.
+        factory.setSourceRootView(new org.telegram.ui.Components.chat.ViewPositionWatcher(popup), (ViewGroup) root);
+        applyToPopup(factory, provider, popup);
+        applyToGaps(popup, separatorColor(true, provider));
+        captureBlur(bitmap, factory, root);
     }
 
     public static void applyToReactions(BlurredBackgroundDrawableViewFactory factory,

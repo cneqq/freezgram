@@ -272,6 +272,8 @@ public class ChatNotificationsPopupWrapper {
         if (parentFragment == null || parentFragment.getFragmentView() == null) {
             return;
         }
+        app.exteraless.appearance.GlassMenuHelper.applyToStandalonePopup(windowLayout,
+                parentFragment.getResourceProvider(), parentFragment.getFragmentView().getRootView());
         popupWindow = new ActionBarPopupWindow(windowLayout, LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT);
         popupWindow.setPauseNotifications(true);
         popupWindow.setDismissAnimationDuration(220);

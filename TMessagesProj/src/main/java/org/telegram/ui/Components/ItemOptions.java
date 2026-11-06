@@ -1173,14 +1173,32 @@ public class ItemOptions {
 
     public ItemOptions setBlurBackgroundForSwipeback(BlurredBackgroundDrawableViewFactory factory, BlurredBackgroundProvider colorProvider, boolean multiwindow) {
         if (linearLayout != null) {
-            linearLayout.setBackground(factory.create(linearLayout, multiwindow)
-                .setColorProvider(colorProvider));
+            linearLayout.setBackground(app.freezgram.SmallElementsGlass.isEnabled()
+                    ? app.exteraless.appearance.GlassMenuHelper.createFill(factory, resourcesProvider, linearLayout)
+                    : factory.create(linearLayout, multiwindow).setColorProvider(colorProvider));
         }
         return this;
     }
 
     public ItemOptions setBlurBackground(BlurredBackgroundDrawableViewFactory factory, BlurredBackgroundProvider colorProvider, boolean multiwindow) {
         customMenuBackground = true;
+        if (app.freezgram.SmallElementsGlass.isEnabled()) {
+            if (layout instanceof ActionBarPopupWindow.ActionBarPopupWindowLayout) {
+                app.exteraless.appearance.GlassMenuHelper.applyToPopup(factory, resourcesProvider,
+                        (ActionBarPopupWindow.ActionBarPopupWindowLayout) layout);
+            } else {
+                layout.setBackground(null);
+                for (int i = 0; i < layout.getChildCount(); i++) {
+                    View child = layout.getChildAt(i);
+                    if (child instanceof ActionBarPopupWindow.ActionBarPopupWindowLayout) {
+                        app.exteraless.appearance.GlassMenuHelper.applyToPopup(factory, resourcesProvider,
+                                (ActionBarPopupWindow.ActionBarPopupWindowLayout) child);
+                    }
+                }
+            }
+            setGapBackgroundColor(app.exteraless.appearance.GlassMenuHelper.separatorColor(true, resourcesProvider));
+            return this;
+        }
         if (layout instanceof ActionBarPopupWindow.ActionBarPopupWindowLayout) {
             layout.setBackground(factory.create(layout, multiwindow)
                 .setColorProvider(colorProvider)

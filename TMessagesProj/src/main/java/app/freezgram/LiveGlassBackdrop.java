@@ -55,7 +55,7 @@ public final class LiveGlassBackdrop {
     }
 
     public static void invalidateOwners(ViewGroup scope) {
-        if (SmallElementsGlass.isEnabled() && scope.getTag(R.id.freezgram_live_glass_source) instanceof Scene scene) {
+        if (SmallElementsGlass.areServiceBubblesEnabled() && scope.getTag(R.id.freezgram_live_glass_source) instanceof Scene scene) {
             for (View owner : scene.owners.keySet()) if (owner != null) owner.invalidate();
         }
     }
@@ -122,6 +122,8 @@ public final class LiveGlassBackdrop {
         LiquidGlassStyle.configure(glass); glass.updateColors(); glass.draw(canvas);
         return true;
     }
+
+    public boolean verifies(android.graphics.drawable.Drawable drawable) { return glass == drawable; }
 
     public void release() {
         if (glass != null) glass.setCallback(null);

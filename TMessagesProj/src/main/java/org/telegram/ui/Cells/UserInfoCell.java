@@ -61,6 +61,9 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
     private float rowsKeysWidth;
     private float rowsValuesWidth;
 
+    private final app.freezgram.LiveGlassBackdrop serviceGlass = new app.freezgram.LiveGlassBackdrop();
+    private final android.graphics.Rect serviceGlassBounds = new android.graphics.Rect();
+    private int foregroundColor = Color.WHITE;
     private final RectF fullBounds = new RectF();
     private final ButtonBounce fullBounce = new ButtonBounce(this);
 
@@ -134,7 +137,7 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
 
     @Override
     protected boolean verifyDrawable(@NonNull Drawable who) {
-        return who == groupsRipple ||  super.verifyDrawable(who);
+        return serviceGlass != null && serviceGlass.verifies(who) || who == groupsRipple || super.verifyDrawable(who);
     }
 
     public void set(long dialogId, TLRPC.PeerSettings settings) {
@@ -266,6 +269,7 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.userInfoDidLoad);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.commonChatsLoaded);
         groupsAvatars.onDetachedFromWindow();
+        serviceGlass.release();
     }
 
     @Override
@@ -276,6 +280,15 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
 
     public static boolean isEmpty(TLRPC.PeerSettings settings) {
         return settings == null || settings.phone_country == null && settings.registration_month == null;
+    }
+
+    private boolean drawServiceGlass(Canvas canvas) {
+        if (!app.freezgram.SmallElementsGlass.areServiceBubblesEnabled() || !canvas.isHardwareAccelerated()) {
+            serviceGlass.release(); return false;
+        }
+        fullBounds.roundOut(serviceGlassBounds);
+        return serviceGlass.attach(this) && serviceGlass.draw(canvas, this, serviceGlassBounds, resourcesProvider,
+                16, app.freezgram.SmallElementsGlass::areServiceBubblesEnabled, true);
     }
 
     @Override
@@ -292,10 +305,18 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
         final float s2 = fullBounce.getScale(0.025f);
         canvas.scale(s2, s2, fullBounds.centerX(), fullBounds.centerY());
         applyServiceShaderMatrix();
-        Paint backgroundPaint = Theme.getThemePaint(Theme.key_paint_chatActionBackground, resourcesProvider);
-        canvas.drawRoundRect(fullBounds, dp(16), dp(16), backgroundPaint);
-        if (hasGradientService()) {
-            canvas.drawRoundRect(fullBounds, dp(16), dp(16), Theme.getThemePaint(Theme.key_paint_chatActionBackgroundDarken, resourcesProvider));
+        boolean glass = drawServiceGlass(canvas);
+        if (!glass) {
+            Paint backgroundPaint = Theme.getThemePaint(Theme.key_paint_chatActionBackground, resourcesProvider);
+            canvas.drawRoundRect(fullBounds, dp(16), dp(16), backgroundPaint);
+            if (hasGradientService()) {
+                canvas.drawRoundRect(fullBounds, dp(16), dp(16), Theme.getThemePaint(Theme.key_paint_chatActionBackgroundDarken, resourcesProvider));
+            }
+        }
+        final int textColor = glass ? Theme.getColor(Theme.key_glass_defaultIcon, resourcesProvider) : Color.WHITE;
+        if (foregroundColor != textColor) {
+            foregroundColor = textColor;
+            groupsArrow.setColorFilter(new PorterDuffColorFilter(textColor, PorterDuff.Mode.SRC_IN));
         }
 
         canvas.translate(0, (getHeight() - height) / 2.0f);
@@ -304,12 +325,12 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
         Y += dp(14);
         title
             .ellipsize(width - dp(32))
-            .draw(canvas, cx - title.getWidth() / 2.0f, title.getHeight() / 2.0f, Color.WHITE, 1.0f);
+            .draw(canvas, cx - title.getWidth() / 2.0f, title.getHeight() / 2.0f, textColor, 1.0f);
         canvas.translate(0, title.getHeight() + dp(3));
         Y += title.getHeight() + dp(3);
         subtitle
             .ellipsize(width - dp(32))
-            .draw(canvas, cx - subtitle.getWidth() / 2.0f, subtitle.getHeight() / 2.0f, Color.WHITE, 0.7f);
+            .draw(canvas, cx - subtitle.getWidth() / 2.0f, subtitle.getHeight() / 2.0f, textColor, 0.7f);
         canvas.translate(0, subtitle.getHeight() + dp(11));
         Y += subtitle.getHeight() + dp(11);
 
@@ -324,7 +345,7 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
             final float valueX = cx - width / 2.0f + dp(16) + rowsKeysWidth + dp(7.66f);
             row.key
                 .ellipsize(valueX - keyX - dp(7.66f))
-                .draw(canvas, keyX, row.key.getHeight() / 2.0f, Color.WHITE, 0.7f);
+                .draw(canvas, keyX, row.key.getHeight() / 2.0f, textColor, 0.7f);
             row.bounds.set(
                 cx - width / 2.0f + dp(16) + rowsKeysWidth + dp(7.66f),
                 Y,
@@ -343,7 +364,7 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
             }
             row.value
                 .ellipsize(cx + width / 2.0f - dp(8) - valueX)
-                .draw(canvas, valueX, row.value.getHeight() / 2.0f, Color.WHITE, 1.0f);
+                .draw(canvas, valueX, row.value.getHeight() / 2.0f, textColor, 1.0f);
             if (row.avatars) {
                 canvas.save();
                 canvas.translate(cx - width / 2.0f + dp(16) + rowsKeysWidth + dp(7.66f) + row.value.getCurrentWidth() + dp(4), dp(1));
@@ -362,11 +383,11 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
         if (footer != null) {
             canvas.translate(0, dp(12));
             if (footer.isMultiline()) {
-                footer.draw(canvas, cx - footer.getWidth() / 2.0f, 0, Color.WHITE, 0.7f);
+                footer.draw(canvas, cx - footer.getWidth() / 2.0f, 0, textColor, 0.7f);
             } else {
                 footer
                     .ellipsize(width - dp(32))
-                    .draw(canvas, cx - footer.getWidth() / 2.0f, footer.getHeight() / 2.0f, Color.WHITE, 0.7f);
+                    .draw(canvas, cx - footer.getWidth() / 2.0f, footer.getHeight() / 2.0f, textColor, 0.7f);
             }
         }
 

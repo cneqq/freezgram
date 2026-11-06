@@ -853,7 +853,7 @@ public class ActionBarMenuItem extends FrameLayout {
         if (popupLayout == null || subMenuFactory == null) return;
         boolean liquid = app.freezgram.SmallElementsGlass.isEnabled();
         if (suppliedSmallGlass != null && suppliedSmallGlass == liquid) {
-            if (popupLayout.getBackground() instanceof org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable background) {
+            if (popupLayout.getBackgroundDrawable() instanceof org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable background) {
                 if (liquid) app.freezgram.LiquidGlassStyle.configure(background);
                 // The capture can change between openings while the menu stays in the same place.
                 background.updateColors();

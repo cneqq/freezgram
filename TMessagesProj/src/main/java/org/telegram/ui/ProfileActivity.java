@@ -65,6 +65,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import app.freezgram.ProfileHeaderAppearance;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
 import android.net.Uri;
@@ -1287,40 +1288,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
-    private static int profileHeaderStyle() {
-        int style = app.exteraless.appearance.AppearanceConfig.profileHeaderStyle();
-        return style == 1 && !isProfileHeaderGlassEnabled() ? 0 : style;
-    }
-
-    private static boolean isProfileHeaderGlassEnabled() {
-        return app.exteraless.appearance.AppearanceConfig.profileHeaderStyle() == 1
-                && Build.VERSION.SDK_INT >= 33 && SharedConfig.chatBlurEnabled()
-                && !LiteMode.isGlassPowerSaverApplied();
-    }
-
-    private Drawable profileHeaderControlBackground(View control, int style) {
-        if (style == 1) {
-            BlurredBackgroundDrawable background = iBlur3FactoryLiquidGlass.create(control,
-                    app.freezgram.LiquidGlassStyle.surfaceColors(resourcesProvider, ProfileActivity::isProfileHeaderGlassEnabled));
-            background.setPadding(dp(6));
-            background.setRadius(dp(20));
-            app.freezgram.LiquidGlassStyle.configure(background);
-            if (background instanceof org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode renderNode) {
-                renderNode.setLiquidGlassEffectAllowed(true);
-            }
-            return background;
-        }
-        int color = getThemedColor(Theme.key_windowBackgroundWhite);
-        return new android.graphics.drawable.InsetDrawable(
-                Theme.createSimpleSelectorCircleDrawable(dp(40), Theme.multAlpha(color, .66f),
-                        getThemedColor(Theme.key_listSelector)), dp(5), dp(6), dp(5), dp(6));
-    }
+    private BlurredBackgroundDrawableViewFactory profileHeaderGlassFactory;
 
     private class TopView extends FrameLayout {
-        private final RectF headerGlassBounds = new RectF();
-        private final app.freezgram.ViewElementGlass headerGlass = new app.freezgram.ViewElementGlass(
-                ProfileActivity::isProfileHeaderGlassEnabled);
-
+        private BlurredBackgroundDrawable headerGlass;
 
         private int currentColor;
         private Paint paint = new Paint();
@@ -1410,7 +1381,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         @Override
         protected void onDetachedFromWindow() {
-            headerGlass.release();
+            headerGlass = null;
             super.onDetachedFromWindow();
             emoji.detach();
         }
@@ -1478,13 +1449,17 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             int y1 = (int) (v * (1.0f - mediaHeaderAnimationProgress));
             int headerBottom = Math.min(height, (int) v);
             int restoreHeader = -1;
-            if (headerBottom > 0 && !openAnimationInProgress && !AndroidUtilities.makingGlobalBlurBitmap) {
-                headerGlassBounds.set(0, 0, getMeasuredWidth(), headerBottom);
-                if (profileHeaderStyle() == 2 || (isProfileHeaderGlassEnabled()
-                        && headerGlass.draw(canvas, this, headerGlassBounds, resourcesProvider, 0))) {
-                    restoreHeader = canvas.save();
-                    canvas.clipRect(0, headerBottom, getMeasuredWidth(), Math.max(headerBottom, v));
+            if (headerBottom > 0 && !openAnimationInProgress && !AndroidUtilities.makingGlobalBlurBitmap
+                    && canvas.isHardwareAccelerated() && profileHeaderGlassFactory != null
+                    && ProfileHeaderAppearance.style() == ProfileHeaderAppearance.GLASS) {
+                if (headerGlass == null) {
+                    headerGlass = app.freezgram.LiquidGlassStyle.createSurface(profileHeaderGlassFactory, this, resourcesProvider);
                 }
+                headerGlass.setBounds(0, 0, getMeasuredWidth(), headerBottom);
+                headerGlass.updateColors();
+                headerGlass.draw(canvas);
+                restoreHeader = canvas.save();
+                canvas.clipRect(0, headerBottom, getMeasuredWidth(), Math.max(headerBottom, v));
             }
 
             if (y1 != 0) {
@@ -1510,17 +1485,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         canvas.restore();
                     }
                 }
-                if (previousTransitionFragment != null) {
-                    ActionBar actionBar = previousTransitionFragment.getActionBar();
-                    ActionBarMenu menu = actionBar.menu;
-                    if (actionBar != null && menu != null) {
-                        int restoreCount = canvas.save();
-                        canvas.translate(actionBar.getX() + menu.getX(), actionBar.getY() + menu.getY());
-                        canvas.saveLayerAlpha(0, 0, menu.getMeasuredWidth(), menu.getMeasuredHeight(), (int) (255 * (1f - avatarAnimationProgress)), Canvas.ALL_SAVE_FLAG);
-                        menu.draw(canvas);
-                        canvas.restoreToCount(restoreCount);
-                    }
-                }
+
             }
             if (y1 != v && !openAnimationInProgress) {
                 int color = getThemedColor(Theme.key_windowBackgroundWhite);
@@ -2616,6 +2581,22 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 super.onLayout(changed, left, top, right, bottom);
                 updateStoriesViewBounds(false);
             }
+
+            @Override
+            public void setItemsBackgroundColor(int color, boolean actionMode) {
+                View back = getBackButton();
+                Drawable backMaterial = back == null ? null : back.getBackground();
+                Drawable menuMaterial = otherItem == null ? null : otherItem.getBackground();
+                super.setItemsBackgroundColor(color, actionMode);
+                if (!actionMode && ProfileHeaderAppearance.style() != ProfileHeaderAppearance.CLASSIC) {
+                    if (backMaterial instanceof BlurredBackgroundDrawable || backMaterial instanceof android.graphics.drawable.InsetDrawable) {
+                        back.setBackground(backMaterial);
+                    }
+                    if (menuMaterial instanceof BlurredBackgroundDrawable || menuMaterial instanceof android.graphics.drawable.InsetDrawable) {
+                        otherItem.setBackground(menuMaterial);
+                    }
+                }
+            }
         };
         actionBar.setForceSkipTouches(true);
         actionBar.setBackgroundColor(Color.TRANSPARENT);
@@ -2631,7 +2612,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         if (hasMainTabs) {
             actionBar.setBackButtonDrawable(new BackDrawable(false));
             actionBar.getBackButton().setTranslationX(dp(2));
-            if (profileHeaderStyle() != 0) {
+            if (ProfileHeaderAppearance.style() != ProfileHeaderAppearance.CLASSIC) {
                 actionBar.getBackButton().setVisibility(View.INVISIBLE);
             } else {
                 actionBar.backButtonImageView.setContentDescription(getString(R.string.QrCode));
@@ -3681,6 +3662,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         viewPositionWatcher = new ViewPositionWatcher(fragmentView);
         iBlur3FactoryLiquidGlass.setSourceRootView(viewPositionWatcher, (ViewGroup) fragmentView);
+        profileHeaderGlassFactory = Build.VERSION.SDK_INT >= 33 && iBlur3SourceGlass != null
+                ? iBlur3FactoryLiquidGlass.withSource(app.freezgram.SmallElementsGlass.createSource(iBlur3SourceGlass))
+                : null;
         if (Build.VERSION.SDK_INT >= 33) {
             app.freezgram.LiveGlassBackdrop.install((ViewGroup) fragmentView, iBlur3FactoryLiquidGlass.getSource());
         }
@@ -4216,13 +4200,16 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             editItem = menu.addItem(edit_channel, R.drawable.group_edit_profile);
             editItem.setContentDescription(LocaleController.getString(R.string.Edit));
         }
-        int profileHeaderStyle = profileHeaderStyle();
-        otherItem = menu.addItem(10, hasMainTabs && profileHeaderStyle == 1
+        int profileHeaderStyle = ProfileHeaderAppearance.style();
+        otherItem = menu.addItem(10, hasMainTabs && profileHeaderStyle == ProfileHeaderAppearance.GLASS
                 ? R.drawable.msg_settings : R.drawable.ic_ab_other, resourcesProvider);
-        if (profileHeaderStyle != 0) {
-            otherItem.setBackground(profileHeaderControlBackground(otherItem, profileHeaderStyle));
+        if (profileHeaderStyle != ProfileHeaderAppearance.CLASSIC) {
+            otherItem.setBackground(ProfileHeaderAppearance.control(profileHeaderGlassFactory, otherItem,
+                    resourcesProvider, profileHeaderStyle));
             if (!hasMainTabs && actionBar.getBackButton() != null) {
-                actionBar.getBackButton().setBackground(profileHeaderControlBackground(actionBar.getBackButton(), profileHeaderStyle));
+                View back = actionBar.getBackButton();
+                back.setBackground(ProfileHeaderAppearance.control(profileHeaderGlassFactory, back,
+                        resourcesProvider, profileHeaderStyle));
             }
         }
 

@@ -53,36 +53,31 @@ public class ChatActivityBlurredRoundButton extends FrameLayout implements Facto
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         backgroundDrawable.setBounds(0, 0, w, h);
+        if (actionGlass != null) {
+            actionGlass.setBounds(0, 0, w, h);
+        }
     }
 
-    private app.freezgram.ViewElementGlass actionGlass;
-    private final android.graphics.RectF actionGlassBounds = new android.graphics.RectF();
+    private BlurredBackgroundDrawable actionGlass;
 
-    public void setActionGlass(Theme.ResourcesProvider provider) {
-        resourcesProvider = provider;
-        actionGlass = new app.freezgram.ViewElementGlass(() ->
-                app.exteraless.appearance.AppearanceConfig.chatActionButtonsGlass()
-                        && Build.VERSION.SDK_INT >= 33
-                        && org.telegram.messenger.SharedConfig.chatBlurEnabled()
-                        && !org.telegram.messenger.LiteMode.isGlassPowerSaverApplied());
+    public void setActionGlass(BlurredBackgroundDrawableViewFactory factory) {
+        actionGlass = app.freezgram.LiquidGlassStyle.createSurface(factory, this, resourcesProvider);
+        actionGlass.setPadding(dp(CLICK_ZONE_MARGIN));
+        actionGlass.setRadius(dp(BUTTON_SIZE / 2f));
+        actionGlass.setBounds(0, 0, getWidth(), getHeight());
     }
 
     @Override
     public void draw(@NonNull Canvas canvas) {
-        if (app.freezgram.SmallElementsGlass.NotificationBackdrop.isExcluded(this)) return;
-        int inset = dp(CLICK_ZONE_MARGIN);
-        actionGlassBounds.set(inset, inset, getWidth() - inset, getHeight() - inset);
-        if (actionGlass == null || actionGlassBounds.isEmpty()
-                || !actionGlass.draw(canvas, this, actionGlassBounds, resourcesProvider, dp(BUTTON_SIZE / 2f))) {
+        if (actionGlass != null && canvas.isHardwareAccelerated()
+                && app.exteraless.appearance.AppearanceConfig.chatActionButtonsGlass()
+                && app.freezgram.LiquidGlassStyle.canDrawGlass()) {
+            actionGlass.updateColors();
+            actionGlass.draw(canvas);
+        } else {
             backgroundDrawable.draw(canvas);
         }
         super.draw(canvas);
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        if (actionGlass != null) actionGlass.release();
-        super.onDetachedFromWindow();
     }
 
     @Override

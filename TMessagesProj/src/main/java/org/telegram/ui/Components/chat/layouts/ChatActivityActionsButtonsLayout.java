@@ -45,18 +45,21 @@ public class ChatActivityActionsButtonsLayout extends LinearLayout {
                                             BlurredBackgroundDrawableViewFactory blurredBackgroundDrawableViewFactory) {
         super(context);
         this.resourcesProvider = resourcesProvider;
+        BlurredBackgroundDrawableViewFactory actionGlassFactory = android.os.Build.VERSION.SDK_INT >= 33
+                ? blurredBackgroundDrawableViewFactory.withSource(app.freezgram.SmallElementsGlass.createSource(
+                        blurredBackgroundDrawableViewFactory.getSource())) : null;
 
         replyButton.button = ChatActivityBlurredRoundButton.create(
             context, blurredBackgroundDrawableViewFactory, colorProvider, resourcesProvider
         );
-        replyButton.button.setActionGlass(resourcesProvider);
+        if (actionGlassFactory != null) replyButton.button.setActionGlass(actionGlassFactory);
         replyButton.button.setOnClickListener(v -> {});
         ScaleStateListAnimator.apply(replyButton.button, .065f, 2f);
 
         forwardButton.button = ChatActivityBlurredRoundButton.create(
             context, blurredBackgroundDrawableViewFactory, colorProvider, resourcesProvider
         );
-        forwardButton.button.setActionGlass(resourcesProvider);
+        if (actionGlassFactory != null) forwardButton.button.setActionGlass(actionGlassFactory);
         forwardButton.button.setOnClickListener(v -> {});
         ScaleStateListAnimator.apply(forwardButton.button, .065f, 2f);
 

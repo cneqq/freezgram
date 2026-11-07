@@ -32,13 +32,18 @@ final class ChatHeaderPreview extends SizeNotifierFrameLayout {
     private final BaseFragment owner;
     private final Theme.ResourcesProvider provider;
     private final int account;
+    private final boolean profile;
     private ChatAvatarContainer avatar;
     private ActionBar bar;
     private BlurredBackgroundSourceRenderNode source;
     private final BlurredBackgroundDrawableViewFactory factory;
     ChatHeaderPreview(Context context, BaseFragment owner, int account, Theme.ResourcesProvider provider) {
+        this(context, owner, account, provider, false);
+    }
+
+    ChatHeaderPreview(Context context, BaseFragment owner, int account, Theme.ResourcesProvider provider, boolean profile) {
         super(context);
-        this.owner = owner; this.account = account; this.provider = provider;
+        this.owner = owner; this.account = account; this.provider = provider; this.profile = profile;
         setBackgroundImage(PreviewView.getBackgroundDrawable(null, account, UserConfig.getInstance(account).getClientUserId(), Theme.isCurrentThemeDark()), false);
         BlurredBackgroundSource wallpaper = new BlurredBackgroundSource() {
             @Override public BlurredBackgroundDrawable createDrawable() { return new BlurredBackgroundDrawableSource(this); }
@@ -50,10 +55,16 @@ final class ChatHeaderPreview extends SizeNotifierFrameLayout {
     }
     void refresh() {
         if (avatar != null) avatar.onDestroy();
+        avatar = null;
         // BackgroundView belongs to SizeNotifierFrameLayout and must survive style changes.
         if (bar != null) removeView(bar);
         bar = new ActionBar(getContext(), provider);
-        bar.setOccupyStatusBar(false); bar.setBackButtonImage(R.drawable.ic_ab_back);
+        bar.setOccupyStatusBar(false);
+        if (profile) {
+            setupProfile();
+            return;
+        }
+        bar.setBackButtonImage(R.drawable.ic_ab_back);
         bar.setItemsColor(Theme.getColor(Theme.key_chat_topPanelTitle, provider), false);
         avatar = new ChatAvatarContainer(getContext(), owner, false, provider) {
             @Override protected boolean isCentered() { return AppearanceConfig.iosChatHeader(); }
@@ -74,6 +85,32 @@ final class ChatHeaderPreview extends SizeNotifierFrameLayout {
         } else {
             bar.createMenu().addItem(1, R.drawable.call);
             bar.createMenu().addItem(0, R.drawable.ic_ab_other);
+        }
+        addView(bar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP, 0, 20, 0, 0));
+        invalidate();
+    }
+
+    private void setupProfile() {
+        int style = ProfileHeaderAppearance.style();
+        var user = UserConfig.getInstance(account).getCurrentUser();
+        bar.setTitle(user == null ? "FreezGram" : UserObject.getUserName(user));
+        bar.setSubtitle(LocaleController.getString(R.string.MyProfile));
+        int titleColor = Theme.getColor(Theme.key_profile_title, provider);
+        bar.setTitleColor(titleColor);
+        bar.setSubtitleColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText, provider));
+        bar.setItemsColor(titleColor, false);
+        if (style == ProfileHeaderAppearance.GLASS) {
+            bar.setBackground(LiquidGlassStyle.createSurface(factory, bar, provider));
+        } else {
+            bar.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite, provider));
+        }
+        if (style == ProfileHeaderAppearance.CLASSIC) {
+            bar.setBackButtonImage(R.drawable.outline_header_qr_24);
+        }
+        var menu = bar.createMenu().addItem(0, style == ProfileHeaderAppearance.GLASS
+                ? R.drawable.msg_settings : R.drawable.ic_ab_other);
+        if (style != ProfileHeaderAppearance.CLASSIC) {
+            menu.setBackground(ProfileHeaderAppearance.control(factory, menu, provider, style));
         }
         addView(bar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP, 0, 20, 0, 0));
         invalidate();

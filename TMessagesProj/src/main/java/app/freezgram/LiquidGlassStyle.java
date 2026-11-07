@@ -1,10 +1,16 @@
 package app.freezgram;
 
 import java.util.function.BooleanSupplier;
+import android.os.Build;
+import android.view.View;
 import app.exteraless.appearance.AppearanceConfig;
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.LiteMode;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
+import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundProvider;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundProviderBuilder;
 
@@ -24,6 +30,21 @@ public final class LiquidGlassStyle {
     public static void configure(BlurredBackgroundDrawable drawable) {
         drawable.setThickness(AndroidUtilities.dp(12));
         drawable.setIntensity(AppearanceConfig.navigationGlassIntensity() / 100f);
+    }
+
+    public static boolean canDrawGlass() {
+        return Build.VERSION.SDK_INT >= 33 && SharedConfig.chatBlurEnabled() && !LiteMode.isGlassPowerSaverApplied();
+    }
+
+    public static BlurredBackgroundDrawable createSurface(BlurredBackgroundDrawableViewFactory factory,
+                                                           View owner, Theme.ResourcesProvider provider) {
+        BlurredBackgroundDrawable drawable = factory.create(owner,
+                surfaceColors(provider, LiquidGlassStyle::canDrawGlass, false));
+        configure(drawable);
+        if (Build.VERSION.SDK_INT >= 33 && drawable instanceof BlurredBackgroundDrawableRenderNode renderNode) {
+            renderNode.setLiquidGlassEffectAllowed(true);
+        }
+        return drawable;
     }
     public static BlurredBackgroundProvider colors(Theme.ResourcesProvider resourcesProvider, BooleanSupplier enabled) {
         return colors(resourcesProvider, enabled, false);

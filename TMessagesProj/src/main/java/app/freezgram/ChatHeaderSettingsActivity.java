@@ -19,6 +19,7 @@ import org.telegram.ui.Components.LayoutHelper;
 public final class ChatHeaderSettingsActivity extends BaseFragment {
     private boolean changed;
     private ChatHeaderPreview preview;
+    private ChatHeaderPreview profilePreview;
     @Override public View createView(Context context) {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setTitle(LocaleController.getString(R.string.FreezgramStyleChatHeader));
@@ -53,6 +54,9 @@ public final class ChatHeaderSettingsActivity extends BaseFragment {
             changed = true; refresh.run(); options.setVisibility(which == 2 ? View.VISIBLE : View.GONE); preview.refresh();
         }).create()));
         LinearLayout profileGroup = StyleEditorUi.section(content, R.string.FreezgramProfileHeaderStyle, resourceProvider);
+        if (profilePreview != null) profilePreview.release();
+        profilePreview = new ChatHeaderPreview(context, this, currentAccount, resourceProvider, true);
+        profileGroup.addView(profilePreview, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 104));
         TextSettingsCell profileStyle = new TextSettingsCell(context, resourceProvider);
         String[] profileStyles = {
                 LocaleController.getString(R.string.FreezgramProfileHeaderCurrent),
@@ -70,6 +74,7 @@ public final class ChatHeaderSettingsActivity extends BaseFragment {
                     AppearanceConfig.profileHeaderStyle.setConfigInt(which);
                     changed = true;
                     refreshProfileStyle.run();
+                    profilePreview.refresh();
                 }).create()));
         profileGroup.addView(profileStyle);
 
@@ -89,6 +94,7 @@ public final class ChatHeaderSettingsActivity extends BaseFragment {
     }
     @Override public void onFragmentDestroy() {
         if (preview != null) preview.release();
+        if (profilePreview != null) profilePreview.release();
         android.app.Activity activity = getParentActivity(); super.onFragmentDestroy();
         if (changed && activity instanceof org.telegram.ui.LaunchActivity) AndroidUtilities.runOnUIThread(() -> ((org.telegram.ui.LaunchActivity) activity).rebuildAllFragments(false));
     }

@@ -607,7 +607,11 @@ object AppearanceConfig {
     @JvmField
     val profileHeaderStyle = addConfig("FreezgramProfileHeaderStyle", ConfigItem.configTypeInt, 0)
     @JvmStatic
-    fun profileHeaderStyle(): Int { ensureLoaded(); return if (profileHeaderStyle.Int() == 1) 1 else 0 }
+    fun profileHeaderStyle(): Int {
+        ensureLoaded()
+        val style = profileHeaderStyle.Int()
+        return if (style == 1 || style == 3) style else 0
+    }
 
     @JvmField
     val chatActionButtonsGlass = addConfig("FreezgramChatActionButtonsGlass", ConfigItem.configTypeBool, true)

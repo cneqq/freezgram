@@ -1479,11 +1479,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 contentView.drawBlurRect(canvas, getY(), blurBounds, paint, true);
             }
             int headerBottom = Math.min(height, (int) v);
+            int headerStyle = ProfileHeaderAppearance.style();
             if (headerBottom > 0 && mediaHeaderAnimationProgress > 0 && !openAnimationInProgress
                     && !AndroidUtilities.makingGlobalBlurBitmap && canvas.isHardwareAccelerated()
-                    && profileHeaderGlassFactory != null && ProfileHeaderAppearance.style() == ProfileHeaderAppearance.GLASS) {
+                    && profileHeaderGlassFactory != null && headerStyle != ProfileHeaderAppearance.CLASSIC) {
                 if (headerGlass == null) {
-                    headerGlass = app.freezgram.LiquidGlassStyle.createSurface(profileHeaderGlassFactory, this, resourcesProvider);
+                    headerGlass = ProfileHeaderAppearance.surface(profileHeaderGlassFactory, this, resourcesProvider, headerStyle, false);
                     headerGlass.setThickness(dp(4));
                 }
                 // Keep the side and top lens edges outside the visible strip.
@@ -3665,7 +3666,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         viewPositionWatcher = new ViewPositionWatcher(fragmentView);
         iBlur3FactoryLiquidGlass.setSourceRootView(viewPositionWatcher, (ViewGroup) fragmentView);
         profileHeaderGlassFactory = Build.VERSION.SDK_INT >= 33 && iBlur3SourceGlass != null
-                ? iBlur3FactoryLiquidGlass.withSource(app.freezgram.SmallElementsGlass.createSource(iBlur3SourceGlass))
+                ? ProfileHeaderAppearance.style() == ProfileHeaderAppearance.FROSTED
+                    ? ProfileHeaderAppearance.frostedFactory(iBlur3FactoryLiquidGlass)
+                    : iBlur3FactoryLiquidGlass.withSource(app.freezgram.SmallElementsGlass.createSource(iBlur3SourceGlass))
                 : null;
         if (Build.VERSION.SDK_INT >= 33) {
             app.freezgram.LiveGlassBackdrop.install((ViewGroup) fragmentView, iBlur3FactoryLiquidGlass.getSource());
@@ -4203,8 +4206,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             editItem.setContentDescription(LocaleController.getString(R.string.Edit));
         }
         int profileHeaderStyle = ProfileHeaderAppearance.style();
-        otherItem = menu.addItem(10, hasMainTabs && profileHeaderStyle == ProfileHeaderAppearance.GLASS
-                ? R.drawable.msg_settings : R.drawable.ic_ab_other, resourcesProvider);
+        otherItem = menu.addItem(10, profileHeaderStyle == ProfileHeaderAppearance.FROSTED ? R.drawable.msg_list
+                : hasMainTabs && profileHeaderStyle == ProfileHeaderAppearance.GLASS ? R.drawable.msg_settings
+                : R.drawable.ic_ab_other, resourcesProvider);
         if (profileHeaderStyle != ProfileHeaderAppearance.CLASSIC) {
             otherItem.setBackground(ProfileHeaderAppearance.control(profileHeaderGlassFactory, otherItem,
                     resourcesProvider));
@@ -5547,6 +5551,21 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         avatarContainer2 = new FrameLayout(context) {
 
             CanvasButton canvasButton;
+            private final float[] originalTitleOffsets = new float[2];
+            private final float[] centeredTitleOffsets = {Float.NaN, Float.NaN};
+
+            private void positionFrostedText(View view, int index, boolean centered) {
+                if (view == null || view.getWidth() == 0) return;
+                float offset = view.getTranslationX();
+                if (centered) {
+                    if (offset != centeredTitleOffsets[index]) originalTitleOffsets[index] = offset;
+                    centeredTitleOffsets[index] = (getWidth() - view.getWidth()) / 2f - view.getLeft();
+                    view.setTranslationX(centeredTitleOffsets[index]);
+                } else if (!Float.isNaN(centeredTitleOffsets[index])) {
+                    if (offset == centeredTitleOffsets[index]) view.setTranslationX(originalTitleOffsets[index]);
+                    centeredTitleOffsets[index] = Float.NaN;
+                }
+            }
 
             @Override
             protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
@@ -5570,6 +5589,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
             @Override
             protected void dispatchDraw(Canvas canvas) {
+                boolean centered = !openAnimationInProgress && mediaHeaderAnimationProgress >= .5f
+                        && ProfileHeaderAppearance.style() == ProfileHeaderAppearance.FROSTED;
+                positionFrostedText(nameTextView[1], 0, centered);
+                positionFrostedText(mediaCounterTextView, 1, centered);
                 super.dispatchDraw(canvas);
                 if (transitionOnlineText != null) {
                     canvas.save();
@@ -8225,7 +8248,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
         ActionBarMenuItem mediaSearchItem = sharedMediaLayout.getSearchItem();
         ImageView mediaOptionsItem = sharedMediaLayout.getSearchOptionsItem();
-        if (visible && profileHeaderGlassFactory != null && ProfileHeaderAppearance.style() == ProfileHeaderAppearance.GLASS) {
+        if (visible && profileHeaderGlassFactory != null && ProfileHeaderAppearance.style() != ProfileHeaderAppearance.CLASSIC) {
             if (mediaOptionsItem != null && !(mediaOptionsItem.getBackground() instanceof BlurredBackgroundDrawable)) {
                 mediaOptionsItem.setBackground(ProfileHeaderAppearance.control(profileHeaderGlassFactory, mediaOptionsItem, resourcesProvider));
             }

@@ -3784,7 +3784,15 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 setVisibleHeight(lastVisibleHeight);
             });
 
-            BlurredBackgroundDrawable filterTabsViewBackground = iBlur3FactoryLiquidGlass.create(scrollSlidingTextTabStrip, BlurredBackgroundProviderImpl.topPanel(resourcesProvider));
+            BlurredBackgroundDrawable filterTabsViewBackground;
+            if (viewType == VIEW_TYPE_PROFILE_ACTIVITY
+                    && app.freezgram.ProfileHeaderAppearance.style() == app.freezgram.ProfileHeaderAppearance.FROSTED) {
+                filterTabsViewBackground = app.freezgram.ProfileHeaderAppearance.surface(
+                        app.freezgram.ProfileHeaderAppearance.frostedFactory(iBlur3FactoryLiquidGlass),
+                        scrollSlidingTextTabStrip, resourcesProvider, app.freezgram.ProfileHeaderAppearance.FROSTED, true);
+            } else {
+                filterTabsViewBackground = iBlur3FactoryLiquidGlass.create(scrollSlidingTextTabStrip, BlurredBackgroundProviderImpl.topPanel(resourcesProvider));
+            }
             filterTabsViewBackground.setRadius(dp(18));
             filterTabsViewBackground.setPadding(dp(6.666f));
             scrollSlidingTextTabStrip.setPadding(0, dp(7), 0, dp(7));

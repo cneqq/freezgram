@@ -92,6 +92,8 @@ final class ChatHeaderPreview extends SizeNotifierFrameLayout {
 
     private void setupProfile() {
         int style = ProfileHeaderAppearance.style();
+        boolean frosted = style == ProfileHeaderAppearance.FROSTED;
+        if (frosted) bar.centerTitle();
         var user = UserConfig.getInstance(account).getCurrentUser();
         bar.setTitle(user == null ? "FreezGram" : UserObject.getUserName(user));
         bar.setSubtitle(LocaleController.getString(R.string.MyProfile));
@@ -99,18 +101,24 @@ final class ChatHeaderPreview extends SizeNotifierFrameLayout {
         bar.setTitleColor(titleColor);
         bar.setSubtitleColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText, provider));
         bar.setItemsColor(titleColor, false);
-        if (style == ProfileHeaderAppearance.GLASS) {
-            bar.setBackground(LiquidGlassStyle.createSurface(factory, bar, provider));
+        if (style != ProfileHeaderAppearance.CLASSIC) {
+            var backgroundFactory = frosted ? ProfileHeaderAppearance.frostedFactory(factory) : factory;
+            bar.setBackground(ProfileHeaderAppearance.surface(backgroundFactory, bar, provider, style, false));
+            if (frosted) {
+                bar.setBackButtonImage(R.drawable.ic_ab_back);
+                bar.getBackButton().setBackground(ProfileHeaderAppearance.control(backgroundFactory, bar.getBackButton(), provider));
+            }
         } else {
             bar.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite, provider));
         }
         if (style == ProfileHeaderAppearance.CLASSIC) {
             bar.setBackButtonImage(R.drawable.outline_header_qr_24);
         }
-        var menu = bar.createMenu().addItem(0, style == ProfileHeaderAppearance.GLASS
-                ? R.drawable.msg_settings : R.drawable.ic_ab_other);
+        var menu = bar.createMenu().addItem(0, frosted ? R.drawable.msg_list
+                : style == ProfileHeaderAppearance.GLASS ? R.drawable.msg_settings : R.drawable.ic_ab_other);
         if (style != ProfileHeaderAppearance.CLASSIC) {
-            menu.setBackground(ProfileHeaderAppearance.control(factory, menu, provider));
+            menu.setBackground(ProfileHeaderAppearance.control(
+                    frosted ? ProfileHeaderAppearance.frostedFactory(factory) : factory, menu, provider));
         }
         addView(bar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP, 0, 20, 0, 0));
         invalidate();

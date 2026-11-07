@@ -1,6 +1,7 @@
 <resources>
     <string name="FreezgramProfileHeaderStyle">Profile header</string>
     <string name="FreezgramProfileHeaderCurrent">Classic</string>
+    <string name="FreezgramProfileHeaderFrosted">Frosted glass</string>
     <string name="FreezgramChatActionButtonsGlass">Glass reply and forward buttons</string>
     <string name="FreezgramEnableGlass">Enable glass</string>
     <string name="FreezgramDisableGlass">Disable glass</string>

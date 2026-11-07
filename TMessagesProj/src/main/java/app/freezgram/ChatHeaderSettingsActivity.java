@@ -60,17 +60,20 @@ public final class ChatHeaderSettingsActivity extends BaseFragment {
         TextSettingsCell profileStyle = new TextSettingsCell(context, resourceProvider);
         String[] profileStyles = {
                 LocaleController.getString(R.string.FreezgramProfileHeaderCurrent),
-                LocaleController.getString(R.string.FreezgramStyleGlass)
+                LocaleController.getString(R.string.FreezgramStyleGlass),
+                LocaleController.getString(R.string.FreezgramProfileHeaderFrosted)
         };
+        int[] profileStyleValues = {ProfileHeaderAppearance.CLASSIC, ProfileHeaderAppearance.GLASS, ProfileHeaderAppearance.FROSTED};
         Runnable refreshProfileStyle = () -> profileStyle.setTextAndValue(
                 LocaleController.getString(R.string.FreezgramMessageSurfaceStyle),
-                profileStyles[AppearanceConfig.profileHeaderStyle()], false);
+                profileStyles[AppearanceConfig.profileHeaderStyle() == ProfileHeaderAppearance.FROSTED
+                        ? 2 : AppearanceConfig.profileHeaderStyle()], false);
         refreshProfileStyle.run();
         profileStyle.setBackground(Theme.getSelectorDrawable(false));
         profileStyle.setOnClickListener(v -> showDialog(new AlertDialog.Builder(context)
                 .setTitle(LocaleController.getString(R.string.FreezgramProfileHeaderStyle))
                 .setItems(profileStyles, (dialog, which) -> {
-                    AppearanceConfig.profileHeaderStyle.setConfigInt(which);
+                    AppearanceConfig.profileHeaderStyle.setConfigInt(profileStyleValues[which]);
                     changed = true;
                     refreshProfileStyle.run();
                     profilePreview.refresh();

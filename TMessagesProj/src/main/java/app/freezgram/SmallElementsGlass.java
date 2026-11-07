@@ -48,6 +48,10 @@ public final class SmallElementsGlass {
         return source instanceof SnapshotSource ? source : new SnapshotSource(source);
     }
 
+    public static BlurredBackgroundSource createFrostedSource(BlurredBackgroundSource source) {
+        return new SnapshotSource(source, false, 18);
+    }
+
     /** Gift optics are independent; unwrap an existing bridge to avoid blurring twice. */
     public static BlurredBackgroundSource createGiftSource(BlurredBackgroundSource source) {
         return new SnapshotSource(source instanceof SnapshotSource ? ((SnapshotSource) source).input : source, true);
@@ -56,15 +60,22 @@ public final class SmallElementsGlass {
     private static final class SnapshotSource extends BlurredBackgroundSourceRenderNode {
         private final BlurredBackgroundSource input;
         private final boolean gift;
+        private final int minimumBlur;
         private Bitmap lastBitmap;
         private BlurredBackgroundSourceRenderNode recording;
         private int lastRevision = Integer.MIN_VALUE;
         private int lastLeft = Integer.MIN_VALUE, lastTop = Integer.MIN_VALUE;
         SnapshotSource(BlurredBackgroundSource source) { this(source, false); }
-        SnapshotSource(BlurredBackgroundSource source, boolean gift) { super(source); input = source; this.gift = gift; }
+        SnapshotSource(BlurredBackgroundSource source, boolean gift) { this(source, gift, 0); }
+        SnapshotSource(BlurredBackgroundSource source, boolean gift, int minimumBlur) {
+            super(source);
+            input = source;
+            this.gift = gift;
+            this.minimumBlur = minimumBlur;
+        }
         @Override public BlurredBackgroundDrawable createDrawable() {
             // Each shape owns its recording. Reaction bubbles must not resize the main panel's source.
-            return new BlurredBackgroundDrawableRenderNode(new SnapshotSource(input, gift));
+            return new BlurredBackgroundDrawableRenderNode(new SnapshotSource(input, gift, minimumBlur));
         }
         @Override public void draw(Canvas canvas, float left, float top, float right, float bottom) {
             if (!canvas.isHardwareAccelerated()) { input.draw(canvas, left, top, right, bottom); return; }
@@ -86,7 +97,7 @@ public final class SmallElementsGlass {
                 capture.translate(-originX, -originY);
                 input.draw(capture, originX, originY, originX + width, originY + height);
                 recording.endRecording();
-                recording.setBlur(AndroidUtilities.dpf2(gift ? GiftGlassStyle.blurRadiusDp() : LiquidGlassStyle.blurRadiusDp()), !gift && LiquidGlassStyle.enhanceColors()
+                recording.setBlur(AndroidUtilities.dpf2(Math.max(minimumBlur, gift ? GiftGlassStyle.blurRadiusDp() : LiquidGlassStyle.blurRadiusDp())), !gift && LiquidGlassStyle.enhanceColors()
                         ? org.telegram.messenger.utils.RenderNodeEffects.getSaturationX3RenderEffect() : null);
             }
             canvas.save();

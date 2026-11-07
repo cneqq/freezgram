@@ -4,9 +4,13 @@ import app.freezgram.network.FreezgramCommunity;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.LayerDrawable;
+import android.view.Gravity;
 
 import androidx.core.content.ContextCompat;
 
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.R;
@@ -26,12 +30,40 @@ public final class FreezgramBadges {
     }
 
     public static Drawable getDrawable(Context context) {
-        return getDrawable(context, true);
+        Drawable plane = ContextCompat.getDrawable(context, R.drawable.freezgram_settings_icon);
+        return plane == null ? null : new FreezgramBadgeDrawable(plane.mutate());
     }
 
-    public static Drawable getDrawable(Context context, boolean hasPlate) {
-        Drawable plane = ContextCompat.getDrawable(context, R.drawable.freezgram_settings_icon);
-        return plane == null ? null : new FreezgramBadgeDrawable(plane.mutate(), hasPlate);
+    public static Drawable getExteraDrawable(Context context, boolean official) {
+        Drawable arrow = ContextCompat.getDrawable(context, R.drawable.extera_profile_arrow).mutate();
+        if (!official) {
+            return arrow;
+        }
+        GradientDrawable plate = new GradientDrawable();
+        plate.setShape(GradientDrawable.OVAL);
+        plate.setColor(0xFF767676);
+        plate.setSize(AndroidUtilities.dp(18), AndroidUtilities.dp(18));
+        arrow.setTint(0xFFFFFFFF);
+        LayerDrawable badge = new LayerDrawable(new Drawable[]{plate, arrow});
+        badge.setLayerSize(1, AndroidUtilities.dp(12), AndroidUtilities.dp(12));
+        badge.setLayerGravity(1, Gravity.CENTER);
+        return badge;
+    }
+
+    public static Drawable getPairedDrawable(Context context, Drawable extera) {
+        Drawable freezgram = getDrawable(context);
+        if (freezgram == null) {
+            return extera;
+        }
+        int gap = AndroidUtilities.dp(2);
+        LayerDrawable pair = new LayerDrawable(new Drawable[]{freezgram, extera});
+        pair.setPaddingMode(LayerDrawable.PADDING_MODE_STACK);
+        pair.setLayerSize(0, freezgram.getIntrinsicWidth(), freezgram.getIntrinsicHeight());
+        pair.setLayerSize(1, extera.getIntrinsicWidth(), extera.getIntrinsicHeight());
+        pair.setLayerGravity(0, Gravity.LEFT | Gravity.CENTER_VERTICAL);
+        pair.setLayerGravity(1, Gravity.LEFT | Gravity.CENTER_VERTICAL);
+        pair.setLayerInset(1, freezgram.getIntrinsicWidth() + gap, 0, 0, 0);
+        return pair;
     }
 
     public static boolean hasChannelBadge(TLRPC.Chat chat) {

@@ -11678,15 +11678,27 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         return emojiStatusDrawable[a];
     }
 
-    private void setExteraBadge(int index, ProfileStatus role, boolean chat) {
+    private void setExteraBadge(int index, ProfileStatus role, boolean chat, boolean hasFreezgramBadge) {
         boolean official = role == ProfileStatus.DEVELOPER;
         int title = !official ? R.string.ExteraGramSupporterBadge
                 : chat ? R.string.ExteraGramOfficialSourceBadge : R.string.ExteraGramDeveloperBadge;
         String text = getString(title);
-        nameTextView[index].setRightDrawable2(FreezgramBadges.getDrawable(getContext(), official));
-        nameTextView[index].setRightDrawable2OnClick(v -> BulletinFactory.of(this)
-                .createSimpleBulletin(FreezgramBadges.getDrawable(getContext(), official), text).show());
-        nameTextViewRightDrawable2ContentDescription = text;
+        String freezgramTitle = hasFreezgramBadge
+                ? (chat ? FreezgramBadges.getChannelTitle() : FreezgramBadges.getTitle()) : null;
+        Drawable extera = FreezgramBadges.getExteraDrawable(getContext(), official);
+        nameTextView[index].setRightDrawable2(hasFreezgramBadge
+                ? FreezgramBadges.getPairedDrawable(getContext(), extera) : extera);
+        nameTextView[index].setRightDrawable2OnClick(v -> {
+            Drawable icon = FreezgramBadges.getExteraDrawable(getContext(), official);
+            if (freezgramTitle != null) {
+                BulletinFactory.of(this).createSimpleBulletin(
+                        FreezgramBadges.getPairedDrawable(getContext(), icon), freezgramTitle, text).show();
+            } else {
+                BulletinFactory.of(this).createSimpleBulletin(icon, text).show();
+            }
+        });
+        nameTextViewRightDrawable2ContentDescription = freezgramTitle == null
+                ? text : freezgramTitle + ", " + text;
     }
 
     private void setFreezgramBadge(int index) {
@@ -11986,7 +11998,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     nameTextView[a].setRightDrawable2(titleTextView.getRightDrawable2());
                     nameTextView[a].setRightDrawable2OnClick(null);
                     if (exteraRole != null) {
-                        setExteraBadge(a, exteraRole, false);
+                        setExteraBadge(a, exteraRole, false, FreezgramBadges.hasBadge(user));
                     } else if (FreezgramBadges.hasBadge(user)) {
                         setFreezgramBadge(a);
                     }
@@ -12031,7 +12043,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         nameTextView[a].setRightDrawable2(getVerifiedCrossfadeDrawable(a));
                         nameTextViewRightDrawable2ContentDescription = LocaleController.getString(R.string.AccDescrVerified);
                     } else if (exteraRole != null) {
-                        setExteraBadge(a, exteraRole, false);
+                        setExteraBadge(a, exteraRole, false, FreezgramBadges.hasBadge(user));
                     } else if (FreezgramBadges.hasBadge(user)) {
                         setFreezgramBadge(a);
                     } else if (userBadge != null) {
@@ -12074,7 +12086,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     } else if (user.verified) {
                         nameTextView[a].setRightDrawable2(getVerifiedCrossfadeDrawable(a));
                     } else if (exteraRole != null) {
-                        setExteraBadge(a, exteraRole, false);
+                        setExteraBadge(a, exteraRole, false, FreezgramBadges.hasBadge(user));
                     } else if (FreezgramBadges.hasBadge(user)) {
                         setFreezgramBadge(a);
                     } else if (userBadge != null) {
@@ -12352,7 +12364,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     }
                     nameTextView[a].setRightDrawable2OnClick(null);
                     if (exteraRole != null) {
-                        setExteraBadge(a, exteraRole, true);
+                        setExteraBadge(a, exteraRole, true, FreezgramBadges.hasChannelBadge(chat));
                         changed = true;
                     } else if (FreezgramBadges.hasChannelBadge(chat)) {
                         setFreezgramChannelBadge(a);
@@ -12396,7 +12408,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         nameTextView[a].setRightDrawable2(getVerifiedCrossfadeDrawable(a));
                         nameTextViewRightDrawableContentDescription = LocaleController.getString(R.string.AccDescrVerified);
                     } else if (exteraRole != null) {
-                        setExteraBadge(a, exteraRole, true);
+                        setExteraBadge(a, exteraRole, true, FreezgramBadges.hasChannelBadge(chat));
                     } else if (FreezgramBadges.hasChannelBadge(chat)) {
                         setFreezgramChannelBadge(a);
                     } else if (chatBadge != null) {
@@ -12434,7 +12446,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     } else if (chat.verified) {
                         nameTextView[a].setRightDrawable2(getVerifiedCrossfadeDrawable(a));
                     } else if (exteraRole != null) {
-                        setExteraBadge(a, exteraRole, true);
+                        setExteraBadge(a, exteraRole, true, FreezgramBadges.hasChannelBadge(chat));
                     } else if (FreezgramBadges.hasChannelBadge(chat)) {
                         setFreezgramChannelBadge(a);
                     } else if (getMessagesController().isDialogMuted(-chatId, topicId)) {

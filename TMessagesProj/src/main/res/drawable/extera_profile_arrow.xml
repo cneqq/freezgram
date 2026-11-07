@@ -1,11 +1,22 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="14dp"
     android:height="14dp"
-    android:viewportWidth="38"
-    android:viewportHeight="38">
-    <group android:translateX="-33" android:translateY="-37">
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <group android:translateX="-29" android:translateY="-32">
         <path
-            android:fillColor="#FF767676"
+            android:fillColor="#FFD8FCFF"
+            android:strokeColor="#50618086"
+            android:strokeWidth="1.1"
             android:pathData="M46.7426 61.2165C49.2977 63.7717 51.6917 68.0833 53.5104 71.9328C54.7312 74.5165 58.7411 74.417 59.6453 71.7062L69.0108 43.6294C69.9673 40.762 67.2384 38.034 64.3713 38.9913L36.33 48.3542C33.6167 49.2601 33.5214 53.2793 36.1085 54.4998C39.9309 56.3031 44.2004 58.6744 46.7426 61.2165Z" />
     </group>
+    <path
+        android:fillColor="#FFD8FCFF"
+        android:fillAlpha="0.80"
+        android:pathData="M39,0 L40.5,5.5 46,7 40.5,8.5 39,14 37.5,8.5 32,7 37.5,5.5 Z
+                          M44,15 L45,18 48,19 45,20 44,23 43,20 40,19 43,18 Z
+                          M7,5 L8,8 11,9 8,10 7,13 6,10 3,9 6,8 Z
+                          M4,30 L5,33 8,34 5,35 4,38 3,35 0,34 3,33 Z
+                          M29,37 L30.2,41.8 35,43 30.2,44.2 29,48 27.8,44.2 23,43 27.8,41.8 Z
+                          M41,34 L41.8,36.2 44,37 41.8,37.8 41,40 40.2,37.8 38,37 40.2,36.2 Z" />
 </vector>

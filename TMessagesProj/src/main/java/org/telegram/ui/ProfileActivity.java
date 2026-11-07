@@ -3657,11 +3657,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
                 bottomButtonContainer[a] = new FrameLayout(context);
 
-                    bottomButton[a] = new ButtonWithCounterView(context, resourcesProvider).setElementGlass(true);
+                bottomButton[a] = new ButtonWithCounterView(context, resourcesProvider).setElementGlass(true);
                 bottomButton[a].setRoundRadius(dp(19));
                 bottomButton[a].setUseWrapContent(true);
                 bottomButton[a].setPadding(dp(16), 0, dp(16), 0);
                 if (a == 0) {
+                    button2.setBorderlessGlassButton(bottomButton[a]);
                     bottomButtonPostText = new SpannableStringBuilder("c");
                     bottomButtonPostText.setSpan(new ColoredImageSpan(R.drawable.filled_premium_camera), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     bottomButtonPostText.append("  ").append(getString(R.string.StoriesAddPost));
@@ -17916,9 +17917,33 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     /* * */
 
     public static class Button2 extends FrameLayout {
+        private ButtonWithCounterView borderlessGlassButton;
+
         public Button2(@NonNull Context context) {
             super(context);
             setPadding(dp(8 + 3), dp(8 + 3), dp(8 + 3), dp(8 + 3));
+        }
+
+        public void setBorderlessGlassButton(ButtonWithCounterView button) {
+            borderlessGlassButton = button.setElementGlassStroke(false);
+        }
+
+        @Override
+        public void draw(Canvas canvas) {
+            final Drawable background = getBackground();
+            if (background == null || borderlessGlassButton == null || borderlessGlassButton.getVisibility() != View.VISIBLE
+                    || !app.freezgram.SmallElementsGlass.isEnabled()
+                    || (!canvas.isHardwareAccelerated() && !AndroidUtilities.makingGlobalBlurBitmap)) {
+                super.draw(canvas);
+                return;
+            }
+            final int alpha = background.getAlpha();
+            background.setAlpha(0);
+            try {
+                super.draw(canvas);
+            } finally {
+                background.setAlpha(alpha);
+            }
         }
     }
 

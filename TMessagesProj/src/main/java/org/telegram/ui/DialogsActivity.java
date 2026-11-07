@@ -14294,8 +14294,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             io.add(R.drawable.msg_settings, getString(glassEnabled
                     ? R.string.FreezgramDisableGlass : R.string.FreezgramEnableGlass), () -> {
                 AppearanceConfig.glassEnabled.setConfigBool(!glassEnabled);
-                if (getParentActivity() instanceof LaunchActivity activity) {
-                    AndroidUtilities.runOnUIThread(() -> activity.rebuildAllFragments(false));
+                if (launchActivity != null) {
+                    AndroidUtilities.runOnUIThread(() -> launchActivity.rebuildAllFragments(false));
                 }
             });
             io.addGap();

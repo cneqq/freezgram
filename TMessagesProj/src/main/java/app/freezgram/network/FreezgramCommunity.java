@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.SystemClock;
 
+import com.exteragram.messenger.api.model.ProfileStatus;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
@@ -43,7 +45,7 @@ public final class FreezgramCommunity {
     private static BadgeList badges;
     private static long nextBadgeFetch;
     private static long nextExteraFetch;
-    private static volatile Map<Long, Long> exteraSupporterBadges = Collections.emptyMap();
+    private static volatile Map<Long, ProfileStatus> exteraRoles = Collections.emptyMap();
     private static final Map<Long, Call> activityCalls = new HashMap<>();
 
     private FreezgramCommunity() {}
@@ -106,12 +108,11 @@ public final class FreezgramCommunity {
         });
     }
 
-    public static long getExteraSupporterBadge(long userId) {
-        Long documentId = exteraSupporterBadges.get(userId);
-        return documentId == null ? 0 : documentId;
+    public static ProfileStatus getExteraRole(long dialogId) {
+        return exteraRoles.get(dialogId);
     }
 
-    public static synchronized void refreshExteraSupporterBadges() {
+    public static synchronized void refreshExteraRoles() {
         long now = SystemClock.elapsedRealtime();
         if (now < nextExteraFetch) return;
         nextExteraFetch = now + TimeUnit.MINUTES.toMillis(1);
@@ -126,22 +127,28 @@ public final class FreezgramCommunity {
                     byte[] payload = response.peekBody(MAX_EXTERA_PROFILES_BYTES + 1).bytes();
                     if (payload.length > MAX_EXTERA_PROFILES_BYTES) return;
                     JSONArray profiles = new JSONArray(new String(payload, java.nio.charset.StandardCharsets.UTF_8));
-                    Map<Long, Long> updated = new HashMap<>();
+                    Map<Long, ProfileStatus> updated = new HashMap<>();
                     for (int i = 0; i < profiles.length(); i++) {
                         JSONObject profile = profiles.optJSONObject(i);
-                        if (profile == null || !"USER".equals(profile.optString("type"))
-                                || !"SUPPORTER".equals(profile.optString("status"))) continue;
-                        JSONObject badge = profile.optJSONObject("badge");
+                        if (profile == null) continue;
                         long id = profile.optLong("id");
-                        long documentId = badge == null ? 0 : badge.optLong("documentId");
-                        if (id > 0 && id <= MAX_ID && documentId != 0) {
-                            updated.put(id, documentId);
+                        if (id <= 0 || id > MAX_ID) continue;
+                        String type = profile.optString("type");
+                        if (!"USER".equals(type) && !"CHAT".equals(type)) continue;
+                        long dialogId = "CHAT".equals(type) ? -id : id;
+                        switch (profile.optString("status")) {
+                            case "DEVELOPER":
+                                updated.put(dialogId, ProfileStatus.DEVELOPER);
+                                break;
+                            case "SUPPORTER":
+                                updated.putIfAbsent(dialogId, ProfileStatus.SUPPORTER);
+                                break;
                         }
                     }
                     boolean changed;
                     synchronized (FreezgramCommunity.class) {
-                        changed = !exteraSupporterBadges.equals(updated);
-                        exteraSupporterBadges = updated;
+                        changed = !exteraRoles.equals(updated);
+                        exteraRoles = updated;
                         nextExteraFetch = SystemClock.elapsedRealtime() + TimeUnit.MINUTES.toMillis(15);
                     }
                     if (changed) AndroidUtilities.runOnUIThread(FreezgramCommunity::updateBadges);
@@ -156,7 +163,7 @@ public final class FreezgramCommunity {
         for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
             if (UserConfig.getInstance(i).isClientActivated()) {
                 NotificationCenter.getInstance(i).postNotificationName(NotificationCenter.updateInterfaces,
-                        MessagesController.UPDATE_MASK_NAME);
+                        MessagesController.UPDATE_MASK_NAME | MessagesController.UPDATE_MASK_CHAT_NAME);
             }
         }
     }

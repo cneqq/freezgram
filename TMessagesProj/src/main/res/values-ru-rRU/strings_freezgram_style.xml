@@ -1,5 +1,7 @@
 <resources>
     <string name="ExteraGramSupporterBadge">Поддержал exteraGram</string>
+    <string name="ExteraGramDeveloperBadge">Разработчик exteraGram</string>
+    <string name="ExteraGramOfficialSourceBadge">Официальный источник exteraGram</string>
     <string name="FreezgramStyleTitle">Стиль FreezGram</string>
     <string name="FreezgramStyleGeneralTitle">Общее оформление</string>
     <string name="FreezgramPreviewIncomingText">Привет! Так будут выглядеть сообщения с выбранным оформлением.</string>

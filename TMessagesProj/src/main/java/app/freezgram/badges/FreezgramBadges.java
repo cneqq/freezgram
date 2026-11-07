@@ -26,8 +26,12 @@ public final class FreezgramBadges {
     }
 
     public static Drawable getDrawable(Context context) {
+        return getDrawable(context, true);
+    }
+
+    public static Drawable getDrawable(Context context, boolean hasPlate) {
         Drawable plane = ContextCompat.getDrawable(context, R.drawable.freezgram_settings_icon);
-        return plane == null ? null : new FreezgramBadgeDrawable(plane.mutate());
+        return plane == null ? null : new FreezgramBadgeDrawable(plane.mutate(), hasPlate);
     }
 
     public static boolean hasChannelBadge(TLRPC.Chat chat) {

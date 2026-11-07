@@ -276,7 +276,7 @@ class BotButton {
         path.rewind();
         path.addRoundRect(rect, radii, Path.Direction.CW);
         boolean glass = false;
-        if (glassRenderer != null && button != null && TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeCallback.class)) {
+        if (glassRenderer != null) {
             glassBackground = glassRenderer.draw(canvas, rect, radii, glassBackground);
             glass = glassBackground != null;
         } else {

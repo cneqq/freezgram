@@ -41,7 +41,7 @@ public final class LiveGlassBackdrop {
             if (i == result.size()) result.add(new RectF());
             result.get(i).set(base.get(i));
         }
-        if (scope.getTag(R.id.freezgram_live_glass_source) instanceof Scene scene && SmallElementsGlass.isEnabled()) {
+        if (scope.getTag(R.id.freezgram_live_glass_source) instanceof Scene scene && LiquidGlassStyle.canDrawGlass()) {
             for (View owner : scene.owners.keySet()) {
                 if (owner == null || !owner.isShown() || owner.getWidth() <= 0 || owner.getHeight() <= 0) continue;
                 if (count == result.size()) result.add(new RectF());

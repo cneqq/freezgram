@@ -1485,11 +1485,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     && profileHeaderGlassFactory != null && headerStyle != ProfileHeaderAppearance.CLASSIC) {
                 if (headerGlass == null) {
                     headerGlass = ProfileHeaderAppearance.surface(profileHeaderGlassFactory, this, resourcesProvider, headerStyle, false);
-                    headerGlass.setThickness(dp(4));
                 }
-                // Keep the side and top lens edges outside the visible strip.
-                int overscan = dp(12);
-                headerGlass.setBounds(-overscan, -overscan, getMeasuredWidth() + overscan, headerBottom + dp(1));
+                headerGlass.setBounds(0, 0, getMeasuredWidth(), headerBottom);
                 headerGlass.setAlpha(Math.round(255 * mediaHeaderAnimationProgress));
                 headerGlass.updateColors();
                 int save = canvas.save();
@@ -4206,17 +4203,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             editItem.setContentDescription(LocaleController.getString(R.string.Edit));
         }
         int profileHeaderStyle = ProfileHeaderAppearance.style();
-        otherItem = menu.addItem(10, profileHeaderStyle == ProfileHeaderAppearance.FROSTED ? R.drawable.msg_list
-                : hasMainTabs && profileHeaderStyle == ProfileHeaderAppearance.GLASS ? R.drawable.msg_settings
-                : R.drawable.ic_ab_other, resourcesProvider);
-        if (profileHeaderStyle != ProfileHeaderAppearance.CLASSIC) {
-            otherItem.setBackground(ProfileHeaderAppearance.control(profileHeaderGlassFactory, otherItem,
-                    resourcesProvider));
-            if (!hasMainTabs && actionBar.getBackButton() != null) {
-                View back = actionBar.getBackButton();
-                back.setBackground(ProfileHeaderAppearance.control(profileHeaderGlassFactory, back,
-                        resourcesProvider));
-            }
+        otherItem = menu.addItem(10, R.drawable.ic_ab_other, resourcesProvider);
+        if (profileHeaderStyle != ProfileHeaderAppearance.CLASSIC && !hasMainTabs && actionBar.getBackButton() != null) {
+            View back = actionBar.getBackButton();
+            back.setBackground(ProfileHeaderAppearance.control(profileHeaderGlassFactory, back, resourcesProvider));
         }
 
         otherItem.setSubMenuDelegate(new ActionBarMenuItem.ActionBarSubMenuItemDelegate() {
@@ -18022,14 +18012,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
 
         public void setBorderlessGlassButton(ButtonWithCounterView button) {
-            borderlessGlassButton = button.setElementGlassStroke(false);
+            borderlessGlassButton = button.setProfileGlass().setElementGlassStroke(false);
         }
 
         @Override
         public void draw(Canvas canvas) {
             final Drawable background = getBackground();
             if (background == null || borderlessGlassButton == null || borderlessGlassButton.getVisibility() != View.VISIBLE
-                    || !app.freezgram.SmallElementsGlass.isEnabled()
+                    || !borderlessGlassButton.isElementGlassEnabled()
                     || (!canvas.isHardwareAccelerated() && !AndroidUtilities.makingGlobalBlurBitmap)) {
                 super.draw(canvas);
                 return;

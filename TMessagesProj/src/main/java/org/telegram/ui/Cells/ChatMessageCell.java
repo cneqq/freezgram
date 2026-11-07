@@ -13668,7 +13668,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     @Override
     protected boolean verifyDrawable(@NonNull Drawable who) {
         if (decorationGlass != null && (who == decorationGlass[0] || who == decorationGlass[1])) return true;
-        if ((messageSurface != null && who == messageSurface.glass) || who == shareGlassBackground || super.verifyDrawable(who) || who == selectorDrawable[0] || who == animatedInfoLayout || who == selectorDrawable[1] || who == linkPreviewSelector || who == nameLayoutSelector || who == replySelector || reactionsLayoutInBubble != null && reactionsLayoutInBubble.verifyDrawable(who) || who instanceof LoadingDrawable) {
+        if ((messageSurface != null && who == messageSurface.glass) || who == shareGlassBackground || who == instantLinkGlass || super.verifyDrawable(who) || who == selectorDrawable[0] || who == animatedInfoLayout || who == selectorDrawable[1] || who == linkPreviewSelector || who == nameLayoutSelector || who == replySelector || reactionsLayoutInBubble != null && reactionsLayoutInBubble.verifyDrawable(who) || who instanceof LoadingDrawable) {
             return true;
         }
         if (pollAddButtonDrawable != null && pollAddButtonDrawable.verifyDrawable(who)) {
@@ -16577,6 +16577,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             if (drawInstantButtonInside) {
                 int instantY = startY + linkPreviewHeight + dp(14);
+                if (drawInstantViewType == 16) {
+                    drawInstantLinkGlass(canvas, linkX + dp(10), instantY - dp(7), linkX + width - dp(7), instantY + dp(23));
+                }
                 int wasAlpha = Theme.chat_instantViewPaint.getAlpha();
                 Theme.chat_instantViewPaint.setAlpha((int) (wasAlpha * .18f));
                 canvas.drawRect(linkX + dp(3 + 7), startY + linkPreviewHeight + dp(2), linkX + width - dp(7), startY + linkPreviewHeight + dp(2) + Math.max(1, dp(0.66f)), Theme.chat_instantViewPaint);
@@ -16628,6 +16631,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 selectorDrawableMaskType[0] = 0;
                 createSelectorDrawable(0);
                 selectorDrawable[0].setBounds(linkX, instantY, linkX + instantWidth, instantY + dp(36));
+                boolean glass = drawInstantViewType == 16 && drawInstantLinkGlass(canvas,
+                        instantButtonRect.left, instantButtonRect.top, instantButtonRect.right, instantButtonRect.bottom);
                 selectorDrawable[0].draw(canvas);
                 if (instantButtonLoading != null && !instantButtonLoading.isDisappeared()) {
                     instantButtonLoading.setBounds(instantButtonRect);
@@ -16635,7 +16640,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     instantButtonLoading.draw(canvas);
                     invalidate();
                 }
-                canvas.drawRoundRect(instantButtonRect, dp(6), dp(6), Theme.chat_instantViewButtonPaint);
+                if (!glass) canvas.drawRoundRect(instantButtonRect, dp(6), dp(6), Theme.chat_instantViewButtonPaint);
                 if (drawInstantViewType == 0) {
                     setDrawableBounds(instantDrawable, instantTextLeftX + instantTextX + linkX - dp(15), instantY + dp(11.5f), dp(9), dp(13));
                     instantDrawable.setAlpha((int) (0xFF * alpha));
@@ -18918,7 +18923,27 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
     }
 
+    private org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable instantLinkGlass;
+    private final RectF instantLinkGlassBounds = new RectF();
+    private final float[] instantLinkGlassRadii = new float[8];
+
+    private boolean drawInstantLinkGlass(Canvas canvas, float left, float top, float right, float bottom) {
+        if (delegate == null || !app.freezgram.SmallElementsGlass.isEnabled() || right <= left || bottom <= top) {
+            return false;
+        }
+        instantLinkGlassBounds.set(left, top, right, bottom);
+        java.util.Arrays.fill(instantLinkGlassRadii, dp(6));
+        var drawable = delegate.drawBotButtonGlass(this, canvas, instantLinkGlassBounds, instantLinkGlassRadii, instantLinkGlass);
+        if (drawable == null) return false;
+        instantLinkGlass = drawable;
+        return true;
+    }
+
     private void releaseBotGlass() {
+        if (instantLinkGlass != null) {
+            instantLinkGlass.setCallback(null);
+            instantLinkGlass = null;
+        }
         for (BotButton button : botButtons) button.releaseGlass();
         if (transitionParams != null) {
             for (BotButton button : transitionParams.transitionBotButtons) button.releaseGlass();

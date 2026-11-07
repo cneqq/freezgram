@@ -3785,11 +3785,14 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             });
 
             BlurredBackgroundDrawable filterTabsViewBackground;
-            if (viewType == VIEW_TYPE_PROFILE_ACTIVITY
-                    && app.freezgram.ProfileHeaderAppearance.style() == app.freezgram.ProfileHeaderAppearance.FROSTED) {
+            int profileStyle = viewType == VIEW_TYPE_PROFILE_ACTIVITY
+                    ? app.freezgram.ProfileHeaderAppearance.style() : app.freezgram.ProfileHeaderAppearance.CLASSIC;
+            if (profileStyle != app.freezgram.ProfileHeaderAppearance.CLASSIC) {
+                BlurredBackgroundDrawableViewFactory tabsFactory = profileStyle == app.freezgram.ProfileHeaderAppearance.FROSTED
+                        ? app.freezgram.ProfileHeaderAppearance.frostedFactory(iBlur3FactoryLiquidGlass)
+                        : iBlur3FactoryLiquidGlass.withSource(app.freezgram.SmallElementsGlass.createSource(iBlur3FactoryLiquidGlass.getSource()));
                 filterTabsViewBackground = app.freezgram.ProfileHeaderAppearance.surface(
-                        app.freezgram.ProfileHeaderAppearance.frostedFactory(iBlur3FactoryLiquidGlass),
-                        scrollSlidingTextTabStrip, resourcesProvider, app.freezgram.ProfileHeaderAppearance.FROSTED, true);
+                        tabsFactory, scrollSlidingTextTabStrip, resourcesProvider, profileStyle, true);
             } else {
                 filterTabsViewBackground = iBlur3FactoryLiquidGlass.create(scrollSlidingTextTabStrip, BlurredBackgroundProviderImpl.topPanel(resourcesProvider));
             }

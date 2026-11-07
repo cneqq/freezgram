@@ -114,12 +114,7 @@ final class ChatHeaderPreview extends SizeNotifierFrameLayout {
         if (style == ProfileHeaderAppearance.CLASSIC) {
             bar.setBackButtonImage(R.drawable.outline_header_qr_24);
         }
-        var menu = bar.createMenu().addItem(0, frosted ? R.drawable.msg_list
-                : style == ProfileHeaderAppearance.GLASS ? R.drawable.msg_settings : R.drawable.ic_ab_other);
-        if (style != ProfileHeaderAppearance.CLASSIC) {
-            menu.setBackground(ProfileHeaderAppearance.control(
-                    frosted ? ProfileHeaderAppearance.frostedFactory(factory) : factory, menu, provider));
-        }
+        bar.createMenu().addItem(0, R.drawable.ic_ab_other);
         addView(bar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP, 0, 20, 0, 0));
         invalidate();
     }

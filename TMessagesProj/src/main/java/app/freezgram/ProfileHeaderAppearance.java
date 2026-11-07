@@ -31,10 +31,17 @@ public final class ProfileHeaderAppearance {
     public static BlurredBackgroundDrawable surface(BlurredBackgroundDrawableViewFactory factory, View owner,
                                                     Theme.ResourcesProvider provider, int style, boolean control) {
         if (style != FROSTED) {
-            return LiquidGlassStyle.createSurface(factory, owner, provider);
+            if (control) return LiquidGlassStyle.createSurface(factory, owner, provider);
+            BlurredBackgroundDrawable drawable = factory.create(owner,
+                    LiquidGlassStyle.colors(provider, LiquidGlassStyle::canDrawGlass));
+            LiquidGlassStyle.configure(drawable);
+            if (Build.VERSION.SDK_INT >= 33 && drawable instanceof BlurredBackgroundDrawableRenderNode renderNode) {
+                renderNode.setLiquidGlassEffectAllowed(true);
+            }
+            return drawable;
         }
         BlurredBackgroundDrawable drawable = factory.create(owner, new BlurredBackgroundColorProviderThemed(
-                provider, Theme.key_windowBackgroundWhite, control ? .62f : .42f));
+                provider, Theme.key_windowBackgroundWhite, control ? .34f : .18f));
         if (Build.VERSION.SDK_INT >= 33 && drawable instanceof BlurredBackgroundDrawableRenderNode renderNode) {
             renderNode.setLiquidGlassEffectAllowed(false);
         }

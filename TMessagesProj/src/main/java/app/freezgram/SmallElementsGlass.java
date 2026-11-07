@@ -112,6 +112,14 @@ public final class SmallElementsGlass {
         private int rootWidth, rootHeight;
         private boolean captureDirty;
         private boolean refreshOnScroll = true;
+        private boolean drawStroke = true;
+
+        public void setDrawStroke(boolean drawStroke) {
+            if (this.drawStroke != drawStroke) {
+                this.drawStroke = drawStroke;
+                release();
+            }
+        }
 
         public void freezeOnScroll() {
             refreshOnScroll = false;
@@ -131,7 +139,7 @@ public final class SmallElementsGlass {
             if (!canvas.isHardwareAccelerated() || AndroidUtilities.makingGlobalBlurBitmap) return false;
             if (refreshOnScroll && liveBackdrop.attach(owner)) {
                 releaseSnapshot();
-                return liveBackdrop.draw(canvas, owner, bounds, provider, radiusDp, enabled, hideOwner);
+                return liveBackdrop.draw(canvas, owner, bounds, provider, radiusDp, enabled, hideOwner, drawStroke);
             }
             View root = owner.getRootView();
             if (root.getWidth() <= 0 || root.getHeight() <= 0) return false;
@@ -161,7 +169,7 @@ public final class SmallElementsGlass {
                 Blur3Utils.checkBitmapSourceMatrixScale(bitmapSource, root);
                 if (glass == null) {
                     glass = createSource(bitmapSource).createDrawable();
-                    glass.setColorProvider(hideOwner ? LiquidGlassStyle.surfaceColors(provider, enabled) : LiquidGlassStyle.colors(provider, enabled));
+                    glass.setColorProvider(hideOwner ? LiquidGlassStyle.surfaceColors(provider, enabled, drawStroke) : LiquidGlassStyle.colors(provider, enabled));
                 }
             }
             owner.getLocationOnScreen(ownerLocation); root.getLocationOnScreen(rootLocation);

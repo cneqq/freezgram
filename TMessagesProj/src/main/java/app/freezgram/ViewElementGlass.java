@@ -19,5 +19,6 @@ public final class ViewElementGlass {
         try { return backdrop.draw(canvas, owner, bounds, provider, Math.round(radiusPx / AndroidUtilities.density)); }
         finally { rect.set(original); }
     }
+    public void setDrawStroke(boolean drawStroke) { backdrop.setDrawStroke(drawStroke); }
     public void release() { backdrop.release(); }
 }

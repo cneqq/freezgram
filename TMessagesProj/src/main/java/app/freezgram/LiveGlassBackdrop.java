@@ -106,7 +106,7 @@ public final class LiveGlassBackdrop {
     }
 
     public boolean draw(Canvas canvas, View owner, Rect bounds, Theme.ResourcesProvider provider,
-            int radiusDp, BooleanSupplier enabled, boolean surface) {
+            int radiusDp, BooleanSupplier enabled, boolean surface, boolean drawStroke) {
         if (scene == null || !canvas.isHardwareAccelerated() || AndroidUtilities.makingGlobalBlurBitmap || !enabled.getAsBoolean()) return false;
         // An overlay encountered while recording a source must not capture that source recursively.
         if (scene.input instanceof BlurredBackgroundSourceRenderNode node && node.inRecording()) return false;
@@ -114,12 +114,13 @@ public final class LiveGlassBackdrop {
         if (glass == null) {
             glass = scene.blurred.createDrawable(); glass.setCallback(owner);
             ((BlurredBackgroundDrawableRenderNode) glass).setLiquidGlassEffectAllowed(true);
-            glass.setColorProvider(surface ? LiquidGlassStyle.surfaceColors(provider, enabled) : LiquidGlassStyle.colors(provider, enabled));
+            glass.setColorProvider(surface ? LiquidGlassStyle.surfaceColors(provider, enabled, drawStroke) : LiquidGlassStyle.colors(provider, enabled));
         }
         glass.setSourceOffset(position.left + (panelBackground == null ? 0 : panelBackground.getSourceOffsetX()),
                 position.top + (panelBackground == null ? 0 : panelBackground.getSourceOffsetY()));
         glass.setBounds(bounds); glass.setRadius(AndroidUtilities.dp(radiusDp));
-        LiquidGlassStyle.configure(glass); glass.updateColors(); glass.draw(canvas);
+        LiquidGlassStyle.configure(glass);
+        glass.updateColors(); glass.draw(canvas);
         return true;
     }
 

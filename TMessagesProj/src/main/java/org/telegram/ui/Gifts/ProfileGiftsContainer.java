@@ -1288,7 +1288,25 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
         BlurredBackgroundSourceColor source = new BlurredBackgroundSourceColor();
         source.setColor(Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider));
         BlurredBackgroundDrawableViewFactory factory = new BlurredBackgroundDrawableViewFactory(source);
-        ProfileActivity.Button2 button2 = new ProfileActivity.Button2(context);
+        ProfileActivity.Button2 button2 = new ProfileActivity.Button2(context) {
+            @Override
+            public void draw(Canvas canvas) {
+                final Drawable background = getBackground();
+                if (background == null || button == null || button.getVisibility() != View.VISIBLE
+                        || !app.freezgram.SmallElementsGlass.isEnabled()
+                        || (!canvas.isHardwareAccelerated() && !AndroidUtilities.makingGlobalBlurBitmap)) {
+                    super.draw(canvas);
+                    return;
+                }
+                final int alpha = background.getAlpha();
+                background.setAlpha(0);
+                try {
+                    super.draw(canvas);
+                } finally {
+                    background.setAlpha(alpha);
+                }
+            }
+        };
         BlurredBackgroundDrawable drawable = factory.create(button2, new BlurredBackgroundColorProviderThemed(resourcesProvider, Theme.key_windowBackgroundWhite));
         drawable.setPadding(dp(8));
         drawable.setRadius(dp(22));
@@ -1363,7 +1381,9 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
         sb2.setSpan(span2, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         addGiftsText = sb2;
 
-        button = new ButtonWithCounterView(context, resourcesProvider).setElementGlass(true);
+        button = new ButtonWithCounterView(context, resourcesProvider)
+                .setElementGlass(true)
+                .setElementGlassStroke(false);
         button.setUseWrapContent(true);
         button.setPadding(dp(16), 0, dp(16), 0);
         button.setRoundRadius(dp(19));

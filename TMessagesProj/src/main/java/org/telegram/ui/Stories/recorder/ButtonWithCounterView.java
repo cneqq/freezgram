@@ -470,6 +470,10 @@ public class ButtonWithCounterView extends FrameLayout implements Loadable {
     private boolean useElementGlass;
     private final app.freezgram.ViewElementGlass elementGlass = new app.freezgram.ViewElementGlass(app.freezgram.SmallElementsGlass::isEnabled);
     public ButtonWithCounterView setElementGlass(boolean enabled) { useElementGlass = enabled; return this; }
+    public ButtonWithCounterView setElementGlassStroke(boolean drawStroke) {
+        elementGlass.setDrawStroke(drawStroke);
+        return this;
+    }
     @Override public void draw(Canvas canvas) {
         if (app.freezgram.SmallElementsGlass.NotificationBackdrop.isExcluded(this)) return;
         AndroidUtilities.rectTmp.set(0, 0, getWidth(), getHeight());

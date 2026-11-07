@@ -9,6 +9,7 @@
 package org.telegram.ui;
 
 import app.freezgram.badges.FreezgramBadges;
+import app.freezgram.network.FreezgramCommunity;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.dpf2;
@@ -9923,6 +9924,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     @Override
     public void onResume() {
         super.onResume();
+        if (userId != 0) {
+            FreezgramCommunity.refreshExteraSupporterBadges();
+        }
         if (pendingInterfaceUpdateMask != 0) {
             final int mask = pendingInterfaceUpdateMask;
             pendingInterfaceUpdateMask = 0;
@@ -11673,6 +11677,15 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         return emojiStatusDrawable[a];
     }
 
+    private BadgeDTO getUserProfileBadge(TLRPC.User user) {
+        BadgeDTO badge = BadgesController.INSTANCE.getBadge(user);
+        if (badge != null) {
+            return badge;
+        }
+        long documentId = FreezgramCommunity.getExteraSupporterBadge(user.id);
+        return documentId == 0 ? null : new BadgeDTO(documentId, getString(R.string.ExteraGramSupporterBadge));
+    }
+
     private void setFreezgramBadge(int index) {
         nameTextView[index].setRightDrawable2(FreezgramBadges.getDrawable(getContext()));
         nameTextView[index].setRightDrawable2OnClick(v -> FreezgramBadges.showInfo(this));
@@ -12001,7 +12014,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 boolean rightIconIsPremium = false, rightIconIsStatus = false;
                 nameTextView[a].setRightDrawableOutside(a == 0);
                 if (a == 0 && !copyFromChatActivity) {
-                    BadgeDTO userBadge = BadgesController.INSTANCE.getBadge(user);
+                    BadgeDTO userBadge = getUserProfileBadge(user);
                     nameTextView[a].setRightDrawable2OnClick(null);
                     if (user.scam || user.fake) {
                         nameTextView[a].setRightDrawable2(getScamDrawable(user.scam ? 0 : 1));
@@ -12044,7 +12057,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         nameTextViewRightDrawableContentDescription = null;
                     }
                 } else if (a == 1) {
-                    BadgeDTO userBadge = BadgesController.INSTANCE.getBadge(user);
+                    BadgeDTO userBadge = getUserProfileBadge(user);
                     nameTextView[a].setRightDrawable2OnClick(null);
                     if (user.scam || user.fake) {
                         nameTextView[a].setRightDrawable2(getScamDrawable(user.scam ? 0 : 1));

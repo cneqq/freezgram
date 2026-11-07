@@ -1,4 +1,5 @@
 <resources>
+    <string name="ExteraGramSupporterBadge">Supported exteraGram</string>
     <string name="FreezgramStyleTitle">FreezGram style</string>
     <string name="FreezgramStyleGeneralTitle">General appearance</string>
     <string name="FreezgramPreviewIncomingText">Hi! Here is how your messages will look with these settings.</string>

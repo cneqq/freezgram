@@ -30,6 +30,8 @@ import okhttp3.Response;
 
 public final class FreezgramCommunity {
     private static final String API = "https://gift.cneqq.com/freezgram/api/";
+    private static final String EXTERA_PROFILES_URL = "https://api.exteragram.app/api/v1/profiles";
+    private static final long MAX_EXTERA_PROFILES_BYTES = 4 * 1024 * 1024;
     private static final String ACTIVITY_ENABLED = "activity_opt_in";
     private static final String BADGES = "badges";
     private static final long MAX_ID = (1L << 52) - 1;
@@ -40,6 +42,8 @@ public final class FreezgramCommunity {
     private static final Map<Long, Long> lastActivity = new HashMap<>();
     private static BadgeList badges;
     private static long nextBadgeFetch;
+    private static long nextExteraFetch;
+    private static volatile Map<Long, Long> exteraSupporterBadges = Collections.emptyMap();
     private static final Map<Long, Call> activityCalls = new HashMap<>();
 
     private FreezgramCommunity() {}
@@ -95,6 +99,52 @@ public final class FreezgramCommunity {
                         badges = updated;
                         nextBadgeFetch = SystemClock.elapsedRealtime() + TimeUnit.MINUTES.toMillis(15);
                     }
+                } catch (Exception ignored) {
+                    // Keep the last valid list on network or format errors.
+                }
+            }
+        });
+    }
+
+    public static long getExteraSupporterBadge(long userId) {
+        Long documentId = exteraSupporterBadges.get(userId);
+        return documentId == null ? 0 : documentId;
+    }
+
+    public static synchronized void refreshExteraSupporterBadges() {
+        long now = SystemClock.elapsedRealtime();
+        if (now < nextExteraFetch) return;
+        nextExteraFetch = now + TimeUnit.MINUTES.toMillis(1);
+        HTTP.newCall(new Request.Builder().url(EXTERA_PROFILES_URL).build()).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException error) {}
+
+            @Override
+            public void onResponse(Call call, Response response) {
+                try (Response closeable = response) {
+                    if (!response.isSuccessful() || response.body() == null) return;
+                    byte[] payload = response.peekBody(MAX_EXTERA_PROFILES_BYTES + 1).bytes();
+                    if (payload.length > MAX_EXTERA_PROFILES_BYTES) return;
+                    JSONArray profiles = new JSONArray(new String(payload, java.nio.charset.StandardCharsets.UTF_8));
+                    Map<Long, Long> updated = new HashMap<>();
+                    for (int i = 0; i < profiles.length(); i++) {
+                        JSONObject profile = profiles.optJSONObject(i);
+                        if (profile == null || !"USER".equals(profile.optString("type"))
+                                || !"SUPPORTER".equals(profile.optString("status"))) continue;
+                        JSONObject badge = profile.optJSONObject("badge");
+                        long id = profile.optLong("id");
+                        long documentId = badge == null ? 0 : badge.optLong("documentId");
+                        if (id > 0 && id <= MAX_ID && documentId != 0) {
+                            updated.put(id, documentId);
+                        }
+                    }
+                    boolean changed;
+                    synchronized (FreezgramCommunity.class) {
+                        changed = !exteraSupporterBadges.equals(updated);
+                        exteraSupporterBadges = updated;
+                        nextExteraFetch = SystemClock.elapsedRealtime() + TimeUnit.MINUTES.toMillis(15);
+                    }
+                    if (changed) AndroidUtilities.runOnUIThread(FreezgramCommunity::updateBadges);
                 } catch (Exception ignored) {
                     // Keep the last valid list on network or format errors.
                 }

@@ -1,7 +1,6 @@
 <resources>
     <string name="FreezgramProfileHeaderStyle">Шапка профиля</string>
     <string name="FreezgramProfileHeaderCurrent">Классическая</string>
-    <string name="FreezgramProfileHeaderRound">Контрастная</string>
     <string name="FreezgramChatActionButtonsGlass">Стекло для кнопок «Ответить» и «Переслать»</string>
     <string name="FreezgramEnableGlass">Включить стекло</string>
     <string name="FreezgramDisableGlass">Выключить стекло</string>

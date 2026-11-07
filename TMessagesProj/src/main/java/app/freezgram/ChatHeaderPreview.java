@@ -110,7 +110,7 @@ final class ChatHeaderPreview extends SizeNotifierFrameLayout {
         var menu = bar.createMenu().addItem(0, style == ProfileHeaderAppearance.GLASS
                 ? R.drawable.msg_settings : R.drawable.ic_ab_other);
         if (style != ProfileHeaderAppearance.CLASSIC) {
-            menu.setBackground(ProfileHeaderAppearance.control(factory, menu, provider, style));
+            menu.setBackground(ProfileHeaderAppearance.control(factory, menu, provider));
         }
         addView(bar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP, 0, 20, 0, 0));
         invalidate();

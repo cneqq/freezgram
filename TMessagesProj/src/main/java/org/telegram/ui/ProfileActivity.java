@@ -1447,21 +1447,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             final float v = height + extraHeight + searchTransitionOffset;
 
             int y1 = (int) (v * (1.0f - mediaHeaderAnimationProgress));
-            int headerBottom = Math.min(height, (int) v);
-            int restoreHeader = -1;
-            if (headerBottom > 0 && !openAnimationInProgress && !AndroidUtilities.makingGlobalBlurBitmap
-                    && canvas.isHardwareAccelerated() && profileHeaderGlassFactory != null
-                    && ProfileHeaderAppearance.style() == ProfileHeaderAppearance.GLASS) {
-                if (headerGlass == null) {
-                    headerGlass = app.freezgram.LiquidGlassStyle.createSurface(profileHeaderGlassFactory, this, resourcesProvider);
-                }
-                headerGlass.setBounds(0, 0, getMeasuredWidth(), headerBottom);
-                headerGlass.updateColors();
-                headerGlass.draw(canvas);
-                restoreHeader = canvas.save();
-                canvas.clipRect(0, headerBottom, getMeasuredWidth(), Math.max(headerBottom, v));
-            }
-
             if (y1 != 0) {
                 paint.setColor(currentColor);
                 updateBackgroundPaint();
@@ -1493,7 +1478,24 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 blurBounds.set(0, y1, getMeasuredWidth(), (int) v);
                 contentView.drawBlurRect(canvas, getY(), blurBounds, paint, true);
             }
-            if (restoreHeader != -1) canvas.restoreToCount(restoreHeader);
+            int headerBottom = Math.min(height, (int) v);
+            if (headerBottom > 0 && mediaHeaderAnimationProgress > 0 && !openAnimationInProgress
+                    && !AndroidUtilities.makingGlobalBlurBitmap && canvas.isHardwareAccelerated()
+                    && profileHeaderGlassFactory != null && ProfileHeaderAppearance.style() == ProfileHeaderAppearance.GLASS) {
+                if (headerGlass == null) {
+                    headerGlass = app.freezgram.LiquidGlassStyle.createSurface(profileHeaderGlassFactory, this, resourcesProvider);
+                    headerGlass.setThickness(dp(4));
+                }
+                // Keep the side and top lens edges outside the visible strip.
+                int overscan = dp(12);
+                headerGlass.setBounds(-overscan, -overscan, getMeasuredWidth() + overscan, headerBottom + dp(1));
+                headerGlass.setAlpha(Math.round(255 * mediaHeaderAnimationProgress));
+                headerGlass.updateColors();
+                int save = canvas.save();
+                canvas.clipRect(0, 0, getMeasuredWidth(), headerBottom);
+                headerGlass.draw(canvas);
+                canvas.restoreToCount(save);
+            }
         }
 
         private Rect blurBounds = new Rect();
@@ -2589,10 +2591,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 Drawable menuMaterial = otherItem == null ? null : otherItem.getBackground();
                 super.setItemsBackgroundColor(color, actionMode);
                 if (!actionMode && ProfileHeaderAppearance.style() != ProfileHeaderAppearance.CLASSIC) {
-                    if (backMaterial instanceof BlurredBackgroundDrawable || backMaterial instanceof android.graphics.drawable.InsetDrawable) {
+                    if (backMaterial instanceof BlurredBackgroundDrawable) {
                         back.setBackground(backMaterial);
                     }
-                    if (menuMaterial instanceof BlurredBackgroundDrawable || menuMaterial instanceof android.graphics.drawable.InsetDrawable) {
+                    if (menuMaterial instanceof BlurredBackgroundDrawable) {
                         otherItem.setBackground(menuMaterial);
                     }
                 }
@@ -4205,11 +4207,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 ? R.drawable.msg_settings : R.drawable.ic_ab_other, resourcesProvider);
         if (profileHeaderStyle != ProfileHeaderAppearance.CLASSIC) {
             otherItem.setBackground(ProfileHeaderAppearance.control(profileHeaderGlassFactory, otherItem,
-                    resourcesProvider, profileHeaderStyle));
+                    resourcesProvider));
             if (!hasMainTabs && actionBar.getBackButton() != null) {
                 View back = actionBar.getBackButton();
                 back.setBackground(ProfileHeaderAppearance.control(profileHeaderGlassFactory, back,
-                        resourcesProvider, profileHeaderStyle));
+                        resourcesProvider));
             }
         }
 
@@ -5545,6 +5547,26 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         avatarContainer2 = new FrameLayout(context) {
 
             CanvasButton canvasButton;
+
+            @Override
+            protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
+                if (!openAnimationInProgress) {
+                    boolean showMediaCounter = mediaHeaderAnimationProgress >= .5f;
+                    if ((child == mediaCounterTextView && !showMediaCounter)
+                            || (showMediaCounter && (child == onlineTextView[0] || child == onlineTextView[1]
+                            || child == onlineTextView[2] || child == onlineTextView[3] || child == ratingView))) {
+                        return false;
+                    }
+                    if (!showMediaCounter && (child == onlineTextView[1] || child == onlineTextView[2] || child == onlineTextView[3])) {
+                        View subtitle = onlineTextView[2];
+                        if (subtitle.getVisibility() != View.VISIBLE || subtitle.getAlpha() <= .5f) {
+                            subtitle = onlineTextView[1].getAlpha() > 0f ? onlineTextView[1] : onlineTextView[3];
+                        }
+                        if (child != subtitle) return false;
+                    }
+                }
+                return super.drawChild(canvas, child, drawingTime);
+            }
 
             @Override
             protected void dispatchDraw(Canvas canvas) {
@@ -8203,6 +8225,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
         ActionBarMenuItem mediaSearchItem = sharedMediaLayout.getSearchItem();
         ImageView mediaOptionsItem = sharedMediaLayout.getSearchOptionsItem();
+        if (visible && profileHeaderGlassFactory != null && ProfileHeaderAppearance.style() == ProfileHeaderAppearance.GLASS) {
+            if (mediaOptionsItem != null && !(mediaOptionsItem.getBackground() instanceof BlurredBackgroundDrawable)) {
+                mediaOptionsItem.setBackground(ProfileHeaderAppearance.control(profileHeaderGlassFactory, mediaOptionsItem, resourcesProvider));
+            }
+            if (mediaSearchItem != null && !(mediaSearchItem.getBackground() instanceof BlurredBackgroundDrawable)) {
+                mediaSearchItem.setBackground(ProfileHeaderAppearance.control(profileHeaderGlassFactory, mediaSearchItem, resourcesProvider));
+            }
+        }
         TextView saveItem = sharedMediaLayout.getSaveItem();
         if (!mediaHeaderVisible) {
             if (callItemVisible) {

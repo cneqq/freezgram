@@ -364,6 +364,9 @@ public final class EtgBackup {
         bool(list, "smallElementsGlass", AppearanceConfig.smallElementsGlass);
         bool(list, "foldersLiquidGlass", AppearanceConfig.foldersLiquidGlass);
         bool(list, "chatHeaderGlassDim", AppearanceConfig.chatHeaderGlassDim);
+        bool(list, "glassEnabled", AppearanceConfig.glassEnabled);
+        bool(list, "chatActionButtonsGlass", AppearanceConfig.chatActionButtonsGlass);
+        integer(list, "profileHeaderStyle", AppearanceConfig.profileHeaderStyle, 0, 2);
         bool(list, "glassWallpaperDim", AppearanceConfig.glassWallpaperDim);
         bool(list, "glassEnhanceColors", AppearanceConfig.glassEnhanceColors);
         integer(list, "navigationGlassBlur", AppearanceConfig.navigationGlassBlur, 0, 30);

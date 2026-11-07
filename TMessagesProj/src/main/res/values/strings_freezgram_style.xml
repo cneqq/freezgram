@@ -1,4 +1,10 @@
 <resources>
+    <string name="FreezgramProfileHeaderStyle">Profile header</string>
+    <string name="FreezgramProfileHeaderCurrent">Current</string>
+    <string name="FreezgramProfileHeaderRound">Round controls</string>
+    <string name="FreezgramChatActionButtonsGlass">Glass reply and forward buttons</string>
+    <string name="FreezgramEnableGlass">Enable glass</string>
+    <string name="FreezgramDisableGlass">Disable glass</string>
     <string name="ExteraGramSupporterBadge">Supported exteraGram</string>
     <string name="ExteraGramDeveloperBadge">exteraGram developer</string>
     <string name="ExteraGramOfficialSourceBadge">Official exteraGram source</string>

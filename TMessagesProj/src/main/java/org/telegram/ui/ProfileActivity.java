@@ -1287,7 +1287,40 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
+    private static int profileHeaderStyle() {
+        int style = app.exteraless.appearance.AppearanceConfig.profileHeaderStyle();
+        return style == 1 && !isProfileHeaderGlassEnabled() ? 0 : style;
+    }
+
+    private static boolean isProfileHeaderGlassEnabled() {
+        return app.exteraless.appearance.AppearanceConfig.profileHeaderStyle() == 1
+                && Build.VERSION.SDK_INT >= 33 && SharedConfig.chatBlurEnabled()
+                && !LiteMode.isGlassPowerSaverApplied();
+    }
+
+    private Drawable profileHeaderControlBackground(View control, int style) {
+        if (style == 1) {
+            BlurredBackgroundDrawable background = iBlur3FactoryLiquidGlass.create(control,
+                    app.freezgram.LiquidGlassStyle.surfaceColors(resourcesProvider, ProfileActivity::isProfileHeaderGlassEnabled));
+            background.setPadding(dp(6));
+            background.setRadius(dp(20));
+            app.freezgram.LiquidGlassStyle.configure(background);
+            if (background instanceof org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode renderNode) {
+                renderNode.setLiquidGlassEffectAllowed(true);
+            }
+            return background;
+        }
+        int color = getThemedColor(Theme.key_windowBackgroundWhite);
+        return new android.graphics.drawable.InsetDrawable(
+                Theme.createSimpleSelectorCircleDrawable(dp(40), Theme.multAlpha(color, .66f),
+                        getThemedColor(Theme.key_listSelector)), dp(5), dp(6), dp(5), dp(6));
+    }
+
     private class TopView extends FrameLayout {
+        private final RectF headerGlassBounds = new RectF();
+        private final app.freezgram.ViewElementGlass headerGlass = new app.freezgram.ViewElementGlass(
+                ProfileActivity::isProfileHeaderGlassEnabled);
+
 
         private int currentColor;
         private Paint paint = new Paint();
@@ -1377,6 +1410,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         @Override
         protected void onDetachedFromWindow() {
+            headerGlass.release();
             super.onDetachedFromWindow();
             emoji.detach();
         }
@@ -1442,6 +1476,16 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             final float v = height + extraHeight + searchTransitionOffset;
 
             int y1 = (int) (v * (1.0f - mediaHeaderAnimationProgress));
+            int headerBottom = Math.min(height, (int) v);
+            int restoreHeader = -1;
+            if (headerBottom > 0 && !openAnimationInProgress && !AndroidUtilities.makingGlobalBlurBitmap) {
+                headerGlassBounds.set(0, 0, getMeasuredWidth(), headerBottom);
+                if (profileHeaderStyle() == 2 || (isProfileHeaderGlassEnabled()
+                        && headerGlass.draw(canvas, this, headerGlassBounds, resourcesProvider, 0))) {
+                    restoreHeader = canvas.save();
+                    canvas.clipRect(0, headerBottom, getMeasuredWidth(), Math.max(headerBottom, v));
+                }
+            }
 
             if (y1 != 0) {
                 paint.setColor(currentColor);
@@ -1484,6 +1528,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 blurBounds.set(0, y1, getMeasuredWidth(), (int) v);
                 contentView.drawBlurRect(canvas, getY(), blurBounds, paint, true);
             }
+            if (restoreHeader != -1) canvas.restoreToCount(restoreHeader);
         }
 
         private Rect blurBounds = new Rect();
@@ -2586,15 +2631,19 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         if (hasMainTabs) {
             actionBar.setBackButtonDrawable(new BackDrawable(false));
             actionBar.getBackButton().setTranslationX(dp(2));
-            actionBar.backButtonImageView.setContentDescription(getString(R.string.QrCode));
-            actionBar.backButtonImageView.setImageResource(R.drawable.outline_header_qr_24);
-            actionBar.backButtonImageView.setColorFilter(getThemedColor(Theme.key_actionBarDefaultIcon), PorterDuff.Mode.SRC_IN);
-            actionBar.backButtonImageView.setOnClickListener(v -> {
-                Bundle args = new Bundle();
-                args.putLong("chat_id", chatId);
-                args.putLong("user_id", userId);
-                presentFragment(new QrShareActivity(args));
-            });
+            if (profileHeaderStyle() != 0) {
+                actionBar.getBackButton().setVisibility(View.INVISIBLE);
+            } else {
+                actionBar.backButtonImageView.setContentDescription(getString(R.string.QrCode));
+                actionBar.backButtonImageView.setImageResource(R.drawable.outline_header_qr_24);
+                actionBar.backButtonImageView.setColorFilter(getThemedColor(Theme.key_actionBarDefaultIcon), PorterDuff.Mode.SRC_IN);
+                actionBar.backButtonImageView.setOnClickListener(v -> {
+                    Bundle args = new Bundle();
+                    args.putLong("chat_id", chatId);
+                    args.putLong("user_id", userId);
+                    presentFragment(new QrShareActivity(args));
+                });
+            }
         } else {
             actionBar.setBackButtonDrawable(new BackDrawable(false));
             actionBar.getBackButton().setTranslationX(dp(2));
@@ -4167,7 +4216,15 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             editItem = menu.addItem(edit_channel, R.drawable.group_edit_profile);
             editItem.setContentDescription(LocaleController.getString(R.string.Edit));
         }
-        otherItem = menu.addItem(10, R.drawable.ic_ab_other, resourcesProvider);
+        int profileHeaderStyle = profileHeaderStyle();
+        otherItem = menu.addItem(10, hasMainTabs && profileHeaderStyle == 1
+                ? R.drawable.msg_settings : R.drawable.ic_ab_other, resourcesProvider);
+        if (profileHeaderStyle != 0) {
+            otherItem.setBackground(profileHeaderControlBackground(otherItem, profileHeaderStyle));
+            if (!hasMainTabs && actionBar.getBackButton() != null) {
+                actionBar.getBackButton().setBackground(profileHeaderControlBackground(actionBar.getBackButton(), profileHeaderStyle));
+            }
+        }
 
         otherItem.setSubMenuDelegate(new ActionBarMenuItem.ActionBarSubMenuItemDelegate() {
             @Override

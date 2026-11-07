@@ -55,10 +55,34 @@ public class ChatActivityBlurredRoundButton extends FrameLayout implements Facto
         backgroundDrawable.setBounds(0, 0, w, h);
     }
 
+    private app.freezgram.ViewElementGlass actionGlass;
+    private final android.graphics.RectF actionGlassBounds = new android.graphics.RectF();
+
+    public void setActionGlass(Theme.ResourcesProvider provider) {
+        resourcesProvider = provider;
+        actionGlass = new app.freezgram.ViewElementGlass(() ->
+                app.exteraless.appearance.AppearanceConfig.chatActionButtonsGlass()
+                        && Build.VERSION.SDK_INT >= 33
+                        && org.telegram.messenger.SharedConfig.chatBlurEnabled()
+                        && !org.telegram.messenger.LiteMode.isGlassPowerSaverApplied());
+    }
+
     @Override
     public void draw(@NonNull Canvas canvas) {
-        backgroundDrawable.draw(canvas);
+        if (app.freezgram.SmallElementsGlass.NotificationBackdrop.isExcluded(this)) return;
+        int inset = dp(CLICK_ZONE_MARGIN);
+        actionGlassBounds.set(inset, inset, getWidth() - inset, getHeight() - inset);
+        if (actionGlass == null || actionGlassBounds.isEmpty()
+                || !actionGlass.draw(canvas, this, actionGlassBounds, resourcesProvider, dp(BUTTON_SIZE / 2f))) {
+            backgroundDrawable.draw(canvas);
+        }
         super.draw(canvas);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        if (actionGlass != null) actionGlass.release();
+        super.onDetachedFromWindow();
     }
 
     @Override

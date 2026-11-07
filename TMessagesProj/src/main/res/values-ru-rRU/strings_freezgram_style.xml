@@ -1,4 +1,10 @@
 <resources>
+    <string name="FreezgramProfileHeaderStyle">Шапка профиля</string>
+    <string name="FreezgramProfileHeaderCurrent">Как сейчас</string>
+    <string name="FreezgramProfileHeaderRound">Круглые кнопки</string>
+    <string name="FreezgramChatActionButtonsGlass">Стекло для кнопок «Ответить» и «Переслать»</string>
+    <string name="FreezgramEnableGlass">Включить стекло</string>
+    <string name="FreezgramDisableGlass">Выключить стекло</string>
     <string name="ExteraGramSupporterBadge">Поддержал exteraGram</string>
     <string name="ExteraGramDeveloperBadge">Разработчик exteraGram</string>
     <string name="ExteraGramOfficialSourceBadge">Официальный источник exteraGram</string>

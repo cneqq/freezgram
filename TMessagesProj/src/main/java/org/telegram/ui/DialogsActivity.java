@@ -14289,50 +14289,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             return;
         }
 
-        final boolean isCurrentThemeDark;
         final boolean hideBottomNavigationBar = NaConfig.INSTANCE.getHideBottomNavigationBar().Bool();
-            if (resourceProvider != null) {
-                isCurrentThemeDark = resourceProvider.isDark();
-            } else {
-                isCurrentThemeDark = Theme.isCurrentThemeDark();
-            }
-            io.add(isCurrentThemeDark ? R.drawable.menu_day_mode_24 : R.drawable.menu_night_mode_24,
-                    getString(isCurrentThemeDark ? R.string.SwitchThemeToDay : R.string.SwitchThemeToNight),
-                    () -> presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC)),
-                    () -> {
-                        if (switchingTheme) {
-                            return;
-                        }
-                        switchingTheme = true;
-                        SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("themeconfig", Activity.MODE_PRIVATE);
-                        String dayThemeName = preferences.getString("lastDayTheme", "Blue");
-                        if (Theme.getTheme(dayThemeName) == null || Theme.getTheme(dayThemeName).isDark()) {
-                            dayThemeName = "Blue";
-                        }
-                        String nightThemeName = preferences.getString("lastDarkTheme", "Dark Blue");
-                        if (Theme.getTheme(nightThemeName) == null || !Theme.getTheme(nightThemeName).isDark()) {
-                            nightThemeName = "Dark Blue";
-                        }
-                        Theme.ThemeInfo themeInfo = Theme.getActiveTheme();
-                        if (dayThemeName.equals(nightThemeName)) {
-                            if (themeInfo.isDark() || dayThemeName.equals("Dark Blue") || dayThemeName.equals("Night")) {
-                                dayThemeName = "Blue";
-                            } else {
-                                nightThemeName = "Dark Blue";
-                            }
-                        }
-
-                        boolean toDark;
-                        if (toDark = dayThemeName.equals(themeInfo.getKey())) {
-                            themeInfo = Theme.getTheme(nightThemeName);
-                        } else {
-                            themeInfo = Theme.getTheme(dayThemeName);
-                        }
-                        switchTheme(themeInfo, toDark);
-                        Theme.turnOffAutoNight(BulletinFactory.of(this), () -> {
-                            presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_NIGHT));
-                        });
-                    });
+            final boolean glassEnabled = AppearanceConfig.glassEnabled();
+            io.add(R.drawable.msg_settings, getString(glassEnabled
+                    ? R.string.FreezgramDisableGlass : R.string.FreezgramEnableGlass), () -> {
+                AppearanceConfig.glassEnabled.setConfigBool(!glassEnabled);
+                if (getParentActivity() instanceof LaunchActivity activity) {
+                    AndroidUtilities.runOnUIThread(() -> activity.rebuildAllFragments(false));
+                }
+            });
             io.addGap();
             // Пользователь настроил свой порядок пунктов (dialogs-03) — берём его вместо
             // захардкоженного списка. Пока OEAppearanceMainMenuLayout пуст, меню в точности

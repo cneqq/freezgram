@@ -151,6 +151,9 @@ public class LiteMode {
     }
 
     public static boolean isEnabled(int flag) {
+        if (flag == FLAG_LIQUID_GLASS && !app.exteraless.appearance.AppearanceConfig.glassEnabled()) {
+            return false;
+        }
         if (flag == FLAG_CHAT_FORUM_TWOCOLUMN && AndroidUtilities.isTablet()) {
             // always enabled for tablets
             return true;
@@ -317,7 +320,7 @@ public class LiteMode {
 
     /** Glass always respects the phone's saver, independently of the app's battery-threshold preference. */
     public static boolean isGlassPowerSaverApplied() {
-        return isPowerSaverApplied() || isSystemPowerSaveMode();
+        return !app.exteraless.appearance.AppearanceConfig.glassEnabled() || isPowerSaverApplied() || isSystemPowerSaveMode();
     }
 
     private static final java.util.HashSet<Utilities.Callback<Boolean>> glassPowerSaverListeners = new java.util.HashSet<>();

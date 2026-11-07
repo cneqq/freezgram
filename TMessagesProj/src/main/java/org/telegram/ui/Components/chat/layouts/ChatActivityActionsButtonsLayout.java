@@ -49,12 +49,14 @@ public class ChatActivityActionsButtonsLayout extends LinearLayout {
         replyButton.button = ChatActivityBlurredRoundButton.create(
             context, blurredBackgroundDrawableViewFactory, colorProvider, resourcesProvider
         );
+        replyButton.button.setActionGlass(resourcesProvider);
         replyButton.button.setOnClickListener(v -> {});
         ScaleStateListAnimator.apply(replyButton.button, .065f, 2f);
 
         forwardButton.button = ChatActivityBlurredRoundButton.create(
             context, blurredBackgroundDrawableViewFactory, colorProvider, resourcesProvider
         );
+        forwardButton.button.setActionGlass(resourcesProvider);
         forwardButton.button.setOnClickListener(v -> {});
         ScaleStateListAnimator.apply(forwardButton.button, .065f, 2f);
 

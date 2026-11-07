@@ -52,6 +52,38 @@ public final class ChatHeaderSettingsActivity extends BaseFragment {
             AppearanceConfig.newChatHeaderStyle.setConfigBool(which == 1);
             changed = true; refresh.run(); options.setVisibility(which == 2 ? View.VISIBLE : View.GONE); preview.refresh();
         }).create()));
+        LinearLayout profileGroup = StyleEditorUi.section(content, R.string.FreezgramProfileHeaderStyle, resourceProvider);
+        TextSettingsCell profileStyle = new TextSettingsCell(context, resourceProvider);
+        String[] profileStyles = {
+                LocaleController.getString(R.string.FreezgramProfileHeaderCurrent),
+                LocaleController.getString(R.string.FreezgramStyleGlass),
+                LocaleController.getString(R.string.FreezgramProfileHeaderRound)
+        };
+        Runnable refreshProfileStyle = () -> profileStyle.setTextAndValue(
+                LocaleController.getString(R.string.FreezgramMessageSurfaceStyle),
+                profileStyles[AppearanceConfig.profileHeaderStyle()], false);
+        refreshProfileStyle.run();
+        profileStyle.setBackground(Theme.getSelectorDrawable(false));
+        profileStyle.setOnClickListener(v -> showDialog(new AlertDialog.Builder(context)
+                .setTitle(LocaleController.getString(R.string.FreezgramProfileHeaderStyle))
+                .setItems(profileStyles, (dialog, which) -> {
+                    AppearanceConfig.profileHeaderStyle.setConfigInt(which);
+                    changed = true;
+                    refreshProfileStyle.run();
+                }).create()));
+        profileGroup.addView(profileStyle);
+
+        TextCheckCell actionButtons = new TextCheckCell(context, resourceProvider);
+        actionButtons.setTextAndCheck(LocaleController.getString(R.string.FreezgramChatActionButtonsGlass),
+                AppearanceConfig.chatActionButtonsGlass(), false);
+        actionButtons.setBackground(Theme.getSelectorDrawable(false));
+        actionButtons.setOnClickListener(v -> {
+            boolean enabled = !AppearanceConfig.chatActionButtonsGlass();
+            AppearanceConfig.chatActionButtonsGlass.setConfigBool(enabled);
+            actionButtons.setChecked(enabled);
+            changed = true;
+        });
+        group.addView(actionButtons);
         fragmentView = scroll;
         return scroll;
     }

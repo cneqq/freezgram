@@ -17827,7 +17827,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             linearLayout.addView(cell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 6, 0, 6, 8));
         }
         {
-            ButtonWithCounterView button = new ButtonWithCounterView(context, resourcesProvider).setElementGlass(true);
+            ButtonWithCounterView button = new ButtonWithCounterView(context, resourcesProvider);
             button.setOnClickListener(v -> dismiss.run());
             button.setText(replaceUnderstood(getString(R.string.Understood)), false);
             linearLayout.addView(button, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, 16, 10, 16, 8));

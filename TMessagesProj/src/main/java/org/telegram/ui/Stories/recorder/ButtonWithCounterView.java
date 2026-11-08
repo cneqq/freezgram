@@ -468,18 +468,8 @@ public class ButtonWithCounterView extends FrameLayout implements Loadable {
     private final int subTextAlpha = 200;
 
     private boolean useElementGlass;
-    private boolean profileGlass;
-    private final app.freezgram.ViewElementGlass elementGlass = new app.freezgram.ViewElementGlass(this::isElementGlassEnabled);
+    private final app.freezgram.ViewElementGlass elementGlass = new app.freezgram.ViewElementGlass(app.freezgram.SmallElementsGlass::isEnabled);
     public ButtonWithCounterView setElementGlass(boolean enabled) { useElementGlass = enabled; return this; }
-    public ButtonWithCounterView setProfileGlass() {
-        profileGlass = true;
-        return this;
-    }
-
-    public boolean isElementGlassEnabled() {
-        return useElementGlass && (app.freezgram.SmallElementsGlass.isEnabled()
-                || (profileGlass && app.freezgram.ProfileHeaderAppearance.style() == app.freezgram.ProfileHeaderAppearance.GLASS));
-    }
     public ButtonWithCounterView setElementGlassStroke(boolean drawStroke) {
         elementGlass.setDrawStroke(drawStroke);
         return this;

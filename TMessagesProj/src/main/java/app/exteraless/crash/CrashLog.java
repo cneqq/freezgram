@@ -47,6 +47,8 @@ public final class CrashLog {
             "org.telegram.ui.Cells.ChatMessageCell",
             "org.telegram.messenger.MessageObject",
             "org.telegram.tgnet.TLRPC$Message",
+            "org.telegram.tgnet.TLObject",
+            "java.lang.String",
             "org.telegram.messenger.ImageReceiver",
             "android.graphics.Bitmap",
             "android.text.StaticLayout",

@@ -142,4 +142,11 @@
     <string name="FreezgramChatComposerDefault">По умолчанию</string>
     <string name="FreezgramChatComposerIos">iOS + Liquid Glass</string>
     <string name="FreezgramChatComposerAndroid">Android + Liquid Glass</string>
+    <string name="OEStartupFolder">Папка при запуске</string>
+    <string name="OEStartupFolderFirst">Первая папка</string>
+    <string name="OEStartupFolderLast">Последняя открытая</string>
+    <string name="OEStartupFolderOpen">Открывать при запуске</string>
+    <string name="OEStartupFolderDontOpen">Не открывать при запуске</string>
+    <string name="OEStartupFolderSet">**%1$s** будет открываться при запуске</string>
+    <string name="OEStartupFolderReset">При запуске откроется первая папка</string>
 </resources>

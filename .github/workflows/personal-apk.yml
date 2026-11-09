@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
     inputs:
       architecture:
-        description: APK variant
+        description: all-three builds ARM64, x86_64 and universal; other options build one APK
         type: choice
-        default: arm64-v8a
+        default: all-three
         options:
-          - both
+          - all-three
           - arm64-v8a
           - x86_64
           - universal
@@ -34,7 +34,7 @@ jobs:
       matrix:
         include: >-
           ${{ fromJSON(
-            github.event_name == 'workflow_dispatch' && inputs.architecture == 'both'
+            github.event_name == 'workflow_dispatch' && inputs.architecture == 'all-three'
             && '[{"abi":"arm64-v8a","label":"arm64"},{"abi":"x86_64","label":"x86_64"},{"abi":"universal","label":"universal"}]'
             || github.event_name == 'workflow_dispatch' && inputs.architecture == 'x86_64'
             && '[{"abi":"x86_64","label":"x86_64"}]'
@@ -326,7 +326,7 @@ jobs:
           rm -f local.properties TMessagesProj/release.keystore "$HOME/.android/debug.keystore"
 
   publish-release:
-    if: github.repository == 'cneqq/freezgram' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.architecture == 'both'))
+    if: github.repository == 'cneqq/freezgram' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.architecture == 'all-three'))
     needs: build
     runs-on: ubuntu-24.04
     permissions:

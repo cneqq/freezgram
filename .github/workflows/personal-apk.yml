@@ -40,6 +40,8 @@ jobs:
             && '[{"abi":"x86_64","label":"x86_64"}]'
           || github.event_name == 'workflow_dispatch' && inputs.architecture == 'universal'
             && '[{"abi":"universal","label":"universal"}]'
+            || github.event_name == 'push'
+            && '[{"abi":"arm64-v8a","label":"arm64"},{"abi":"x86_64","label":"x86_64"},{"abi":"universal","label":"universal"}]'
             || '[{"abi":"arm64-v8a","label":"arm64"}]'
           ) }}
     env:
@@ -324,7 +326,7 @@ jobs:
           rm -f local.properties TMessagesProj/release.keystore "$HOME/.android/debug.keystore"
 
   publish-release:
-    if: github.repository == 'cneqq/freezgram' && github.event_name == 'workflow_dispatch' && inputs.architecture == 'both'
+    if: github.repository == 'cneqq/freezgram' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.architecture == 'both'))
     needs: build
     runs-on: ubuntu-24.04
     permissions:

@@ -5,9 +5,9 @@
 # Freezgram
 
 Telegram-клиент для Android с интерфейсом Freezgram, гибкими настройками
-оформления и сборками для ARM64.
+оформления и сборками для ARM64, x86_64 и обеих архитектур сразу.
 
-[Канал](https://t.me/freezgram) · [Исходники](https://github.com/cneqq/freezgram/tree/no-plugins) · [Сборки](https://github.com/cneqq/freezgram/actions/workflows/personal-apk.yml)
+[Канал](https://t.me/freezgram) · [Исходники](https://github.com/cneqq/freezgram/tree/no-plugins) · [Релизы и APK](https://github.com/cneqq/freezgram/releases/latest) · [Сборки](https://github.com/cneqq/freezgram/actions/workflows/personal-apk.yml)
 
 </div>
 
@@ -44,15 +44,16 @@ Telegram-клиент для Android с интерфейсом Freezgram, гиб
 
 ## Скачать APK
 
-1. Откройте [GitHub Actions → Personal release APK](https://github.com/cneqq/freezgram/actions/workflows/personal-apk.yml).
-2. Выберите успешный запуск с зелёной галочкой из ветки **`no-plugins`**.
-3. Внизу страницы, в разделе **Artifacts**, скачайте архив с APK.
-4. Распакуйте ZIP на телефоне и установите файл `.apk`.
+1. Нажмите [Релизы](https://github.com/cneqq/freezgram/releases/latest) и скачайте APK для устройства.
+2. Для большинства телефонов подходит **ARM64**; для устройств на Intel — **x86_64**.
+   Универсальный APK содержит обе архитектуры и занимает больше места.
+3. Установите скачанный файл `.apk`.
 
-Для скачивания артефактов может потребоваться вход в GitHub. Артефакты хранятся
-три дня; если срок истёк, потребуется новая сборка.
+Если свежего релиза ещё нет, сборку можно запустить в
+[GitHub Actions → Personal release APK](https://github.com/cneqq/freezgram/actions/workflows/personal-apk.yml),
+выбрав **both**. Этот вариант собирает три APK: ARM64, x86_64 и универсальный.
 
-Текущая сборка предназначена для **Android 7.0+ и ARM64**.
+Сборки предназначены для **Android 7.0+**.
 Имя пакета — **`com.freezgram.app`**. Обновление поверх установленного Freezgram
 требует того же пакета, того же ключа подписи и более высокого кода версии.
 

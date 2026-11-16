@@ -92,7 +92,7 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Python 3.11 for CI verification scripts
+      - name: Python 3.11
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
@@ -106,6 +106,7 @@ jobs:
           "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" \
             'platforms;android-37.0' 'build-tools;36.0.0' \
             'ndk;27.2.12479018' 'cmake;3.31.6'
+          echo "CHAQUOPY_BUILD_PYTHON=$(command -v python3)" >> "$GITHUB_ENV"
           echo "CMAKE=${ANDROID_HOME}/cmake/3.31.6/bin/cmake" >> "$GITHUB_ENV"
           ccache --max-size=2G
 
@@ -118,11 +119,11 @@ jobs:
           import os
           import subprocess
           from pathlib import Path
-          digest = hashlib.sha256(b'native-v4-no-plugins-ndk27.2.12479018-cmake3.31.6')
+          digest = hashlib.sha256(b'native-v5-plugins-ndk27.2.12479018-cmake3.31.6-python3.11')
           digest.update(os.environ['NATIVE_TARGET'].encode('utf-8'))
           # CMake caches contain absolute paths: repository renames require a new entry.
           digest.update(os.environ['GITHUB_WORKSPACE'].encode('utf-8'))
-          for path in ('TMessagesProj/jni',):
+          for path in ('TMessagesProj/jni', 'TMessagesProj/chaquopy'):
               digest.update(subprocess.check_output(['git', 'rev-parse', 'HEAD:' + path]).strip())
           for path in ('TMessagesProj/build.gradle', 'build.gradle', 'gradle.properties', 'gradle/wrapper/gradle-wrapper.properties'):
               digest.update(Path(path).read_bytes())
@@ -135,8 +136,6 @@ jobs:
           with open(os.environ['GITHUB_ENV'], 'a') as f:
               f.write(f'BUILD_HEAP_GIB={heap}\nBUILD_WORKERS={workers}\n')
           attempt = int(os.environ['GITHUB_RUN_ATTEMPT'])
-          # Keep this workflow path and formula shared by main and no-plugins.
-          # GITHUB_RUN_NUMBER is the workflow counter across branches.
           version_code = 1_000_000 + 1000 * int(os.environ['GITHUB_RUN_NUMBER']) + attempt
           if not 0 < attempt < 1000 or not 0 < version_code <= 2_100_000_000:
               raise SystemExit('Version code is out of range.')
@@ -162,11 +161,13 @@ jobs:
           restore-keys: native-${{ matrix.abi }}-ndk27-
 
       - name: Restore exact native build outputs
+        id: native_outputs
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             TMessagesProj/.cxx
             TMessagesProj/build/intermediates/cxx
+            TMessagesProj/build/chaquopy/runtime
           key: native-outputs-linux-${{ steps.build_settings.outputs.native_key }}
 
       - name: Configure build
@@ -217,6 +218,7 @@ jobs:
         shell: bash
         env:
           COMMIT_ID: ${{ github.sha }}
+          EXTERALESS_NATIVE_CACHE_HIT: ${{ steps.native_outputs.outputs.cache-hit }}
         run: |
           set -euo pipefail
           export BUILD_TIMESTAMP=$(date +%s)
@@ -274,16 +276,6 @@ jobs:
               packaged_abis = {name.split('/')[1] for name in names if name.startswith('lib/') and name.endswith('.so')}
               if packaged_abis != expected_abis:
                   raise SystemExit('Unexpected native ABI set: ' + repr(packaged_abis))
-              forbidden_paths = ('chaquopy', 'libpython', 'libaliuhook', 'liblsplant')
-              if any(any(token in name.lower() for token in forbidden_paths) for name in z.namelist()):
-                  raise SystemExit('APK contains a removed plugin runtime.')
-              forbidden_classes = (b'Lapp/exteraless/plugins/', b'Lcom/chaquo/python/',
-                                   b'Lde/robv/android/xposed/', b'Lorg/mvel2/', b'Lcom/android/dx/')
-              for name in z.namelist():
-                  if name.startswith('classes') and name.endswith('.dex'):
-                      dex = z.read(name)
-                      if any(token in dex for token in forbidden_classes):
-                          raise SystemExit('APK contains removed plugin runtime classes: ' + name)
           certificate = subprocess.check_output(['keytool', '-exportcert', '-keystore', 'TMessagesProj/release.keystore',
                                                  '-storepass:env', 'KEYSTORE_PASS', '-alias', os.environ.get('ALIAS_NAME') or 'personal'])
           signer_sha256 = hashlib.sha256(certificate).hexdigest()
@@ -306,7 +298,7 @@ jobs:
               f.write(f'Stable personal app: `{expected_package}` — {os.environ["PERSONAL_BUILD_LABEL"]}\n\n')
               f.write('Future versions with the same signing key update this app and preserve its data. Old isolated packages remain separate. Firebase is disabled; background notifications need device verification.\n\n')
               f.write('Telegram API source: API_ID/API_HASH Secrets. A persistent personal signing key is required.\n\n')
-              f.write('The app updater, APK installation and plugin engine are removed. GramWallet remains. Login, transfers and wallet key security were not tested.\n')
+              f.write('The app updater and APK installation are removed. Plugins/GramWallet remain. Login, transfers and wallet key security were not tested.\n')
           PY
           ccache --show-stats
 

@@ -299,6 +299,7 @@ public class ApplicationLoader extends Application implements CameraXConfig.Prov
             // умолчанию — патчим assetName после инициализации конфигов.
             org.telegram.ui.ActionBar.Theme.reloadMonetThemes();
         }
+        app.exteraless.plugins.PluginsController.getInstance().init(applicationContext);
         if (BuildConfig.DEBUG_TOOLS) {
             app.exteraless.debug.EnergyProfiler.resumeIfEnabled(applicationContext);
         }
@@ -876,6 +877,7 @@ public class ApplicationLoader extends Application implements CameraXConfig.Prov
     private void installCrashReportFilter() {
         Thread.UncaughtExceptionHandler crashlyticsHandler = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler((thread, error) -> {
+            app.exteraless.plugins.PluginsWatchdog.onUncaughtException(error);
             app.exteraless.crash.CrashLog.record(thread, error);
             if (AndroidUtil.shouldReportCrashToCrashlytics(error)) {
                 if (crashlyticsHandler != null) {

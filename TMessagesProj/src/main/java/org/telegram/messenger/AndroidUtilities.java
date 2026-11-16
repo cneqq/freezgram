@@ -4271,6 +4271,10 @@ public class AndroidUtilities {
             return;
         }
         if (f != null && f.exists()) {
+            // exteraless plugins: плагин может перехватить открытие файла по расширению.
+            if (app.exteraless.plugins.files.FilesControllerJava.dispatchOpenFile(f, fileName, document.mime_type, message, activity, parentFragment, UserConfig.selectedAccount)) {
+                return;
+            }
             if (parentFragment != null && f.getName().toLowerCase().endsWith("attheme")) {
                 Theme.ThemeInfo themeInfo = Theme.applyThemeFile(f, message.getDocumentName(), null, true);
                 if (themeInfo != null) {
@@ -4355,6 +4359,10 @@ public class AndroidUtilities {
             return true;
         }
         if (f != null && f.exists()) {
+            // exteraless plugins: плагин может перехватить открытие файла по расширению.
+            if (app.exteraless.plugins.files.FilesControllerJava.dispatchOpenFile(f, fileName, mimeType, null, activity, null, UserConfig.selectedAccount)) {
+                return true;
+            }
             String realMimeType = null;
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);

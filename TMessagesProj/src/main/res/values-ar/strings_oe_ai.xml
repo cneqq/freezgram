@@ -48,6 +48,8 @@
     <string name="OEAiRolePrompt">تعليمات للنموذج</string>
     <string name="OEAiThoughtTime">فكّر لمدة %1$d ث</string>
     <string name="OEAiDetails">التفاصيل</string>
+    <string name="OEAiDisableTools">تعطيل الأدوات</string>
+    <string name="OEAiDisableToolsInfo">يرسل فحص الإضافة الشيفرة في طلب واحد كما في السابق: أول 48 كيلوبايت فقط، ولا تُفك البيانات المضمّنة</string>
     <string name="OEAiTelegramHeader">ذكاء Telegram الاصطناعي</string>
     <string name="OEAiReplaceEditor">محرر الذكاء الاصطناعي</string>
     <string name="OEAiReplaceEditorInfo">ترجمة المسودات وتغيير أسلوبها وتدقيقها</string>

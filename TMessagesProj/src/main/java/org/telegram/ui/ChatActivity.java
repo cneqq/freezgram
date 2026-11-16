@@ -650,6 +650,8 @@ public class ChatActivity extends BaseFragment implements
     private ActionBarMenuItem.Item feeItemGap;
     private ActionBarMenuItem.Item feeItemText;
     private ChatNotificationsPopupWrapper chatNotificationsPopupWrapper;
+    // exteraless plugins: подменю CHAT_ACTION_MENU в меню «⋮».
+    private app.exteraless.plugins.menus.MenuInjector.SwipeBackMenu pluginsMenu;
     // private ChatActivitySideControlsButtonsLayout topButtonsLayout;
     private ChatActivitySideControlsButtonsLayout sideControlsButtonsLayout;
     private boolean pagedownButtonShowedByScroll;
@@ -3377,6 +3379,8 @@ public class ChatActivity extends BaseFragment implements
         // na: unread count
         getNotificationCenter().addObserver(this, NotificationCenter.dialogsUnreadCounterChanged);
 
+        // exteraless plugins: реестр пунктов меняется, когда плагин включают/выключают.
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.pluginMenuItemsUpdated);
 
         if (chatMode != MODE_SCHEDULED) {
             if (threadMessageId == 0) {
@@ -3865,6 +3869,7 @@ public class ChatActivity extends BaseFragment implements
 
     @Override
     public void onFragmentDestroy() {
+        app.exteraless.plugins.menus.MenuInjector.releaseMessageMenu(this);
         super.onFragmentDestroy();
         if (commentsMessagesObserver != null) {
             getNotificationCenter().removeObserver(commentsMessagesObserver, NotificationCenter.messagesDidLoad);
@@ -3913,6 +3918,7 @@ public class ChatActivity extends BaseFragment implements
         }
 
         getNotificationCenter().removeObserver(this, NotificationCenter.closeChats);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.pluginMenuItemsUpdated);
 
         if (chatMode == 0 && AndroidUtilities.isTablet()) {
             getNotificationCenter().postNotificationName(NotificationCenter.openedChatChanged, dialog_id, getTopicId(), true);
@@ -5316,6 +5322,30 @@ public class ChatActivity extends BaseFragment implements
             headerItem.lazilyAddSubItem(888, R.drawable.menu_download_round, "Dump Canvas");
         }
 
+        // exteraless plugins: подменю CHAT_ACTION_MENU в конце меню «⋮».
+        // Место общее для всех веток выше — headerItem здесь уже собран целиком.
+        if (headerItem != null) {
+            java.util.Map<String, Object> pluginMenuContext = new java.util.HashMap<>();
+            pluginMenuContext.put("account", currentAccount);
+            pluginMenuContext.put("dialog_id", dialog_id);
+            pluginMenuContext.put("fragment", this);
+            pluginMenuContext.put("context", context);
+            if (currentChat != null) {
+                pluginMenuContext.put("chat", currentChat);
+                pluginMenuContext.put("chatId", currentChat.id);
+            }
+            if (currentUser != null) {
+                pluginMenuContext.put("user", currentUser);
+                pluginMenuContext.put("userId", currentUser.id);
+            }
+            if (currentEncryptedChat != null) {
+                pluginMenuContext.put("encryptedChat", currentEncryptedChat);
+            }
+            pluginsMenu = app.exteraless.plugins.menus.MenuInjector.attachSwipeBackMenu(
+                    headerItem,
+                    app.exteraless.plugins.MenuItemRecord.MenuType.CHAT_ACTION_MENU,
+                    pluginMenuContext, themeDelegate, pluginsMenu);
+        }
 
         actionModeViews.clear();
         selectedMessagesCountTextView = null;
@@ -22361,6 +22391,13 @@ public class ChatActivity extends BaseFragment implements
 
     @Override
     public void didReceivedNotification(int id, int account, final Object... args) {
+        if (id == NotificationCenter.pluginMenuItemsUpdated) {
+            // exteraless plugins: пересобрать подменю CHAT_ACTION_MENU.
+            if (pluginsMenu != null) {
+                pluginsMenu.refresh();
+            }
+            return;
+        }
         if (id == NotificationCenter.messagesDidLoad) {
             didReceivedNotification_messagesDidLoad(id, account, args);
         } else {
@@ -35885,6 +35922,7 @@ public class ChatActivity extends BaseFragment implements
         if (selectedObject == null || getParentActivity() == null) {
             return;
         }
+        // exteraless plugins: id пунктов плагинов живут в своём диапазоне (MenuInjector).
         if (option == oebtn_ask_ai) {
             MessageObject target = selectedObject;
             String content = getMessageContent(target);
@@ -35897,6 +35935,9 @@ public class ChatActivity extends BaseFragment implements
                         });
             }
             closeMenu();
+            return;
+        }
+        if (app.exteraless.plugins.menus.MenuInjector.handleMessageMenuOption(option)) {
             return;
         }
         boolean preserveDim = false;
@@ -45115,6 +45156,12 @@ public class ChatActivity extends BaseFragment implements
                         }
                     };
 
+                    // exteraless plugins: файл плагина ставится, а не открывается
+                    // в подсветке кода (.plugin зарегистрирован как Python
+                    // в MarkdownUtils). Проверка идёт до просмотрщиков, как у exteraGram.
+                    if (app.exteraless.plugins.PluginInstallHelper.handleMessageTap(getParentActivity(), message)) {
+                        return;
+                    }
                     boolean handled = false;
                     if (MessageObject.canPreviewDocument(media.document)) {
                         PhotoViewer.getInstance().setParentActivity(ChatActivity.this, themeDelegate);
@@ -45472,6 +45519,12 @@ public class ChatActivity extends BaseFragment implements
                 } else if (message.getDocumentName().toLowerCase().endsWith(app.exteraless.backup.EtgBackup.EXTENSION)) {
                     app.exteraless.backup.EtgBackupUi.confirmImport(ChatActivity.this, locFile);
                 } else {
+                    // exteraless plugins: файл плагина ставится, а не открывается
+                    // в подсветке кода (.plugin зарегистрирован как Python
+                    // в MarkdownUtils). Проверка идёт до просмотрщиков, как у exteraGram.
+                    if (app.exteraless.plugins.PluginInstallHelper.handleMessageTap(getParentActivity(), message)) {
+                        return;
+                    }
                     boolean handled = false;
                     if (message.canPreviewDocument()) {
                         PhotoViewer.getInstance().setParentActivity(ChatActivity.this, themeDelegate);
@@ -51459,6 +51512,8 @@ public class ChatActivity extends BaseFragment implements
             options.add(oebtn_ask_ai);
             icons.add(R.drawable.msg_discussion);
         }
+        // exteraless plugins: пункты плагинов в конце контекстного меню сообщения.
+        app.exteraless.plugins.menus.MenuInjector.fillMessageMenu(this, message, currentChat, currentUser, currentEncryptedChat, dialog_id, currentAccount, icons, items, options);
         if (isFeedSearch()) {
             FeedMessageUtils.filterAllowedOptions(items, options, icons);
         }

@@ -81,6 +81,7 @@ public class AiSettingsActivity extends BaseNekoSettingsActivity {
     private int temperatureRow;
     private int streamingRow;
     private int saveHistoryRow;
+    private int disableToolsRow;
     private int clearHistoryRow;
     private int generationDividerRow;
 
@@ -140,6 +141,7 @@ public class AiSettingsActivity extends BaseNekoSettingsActivity {
         temperatureRow = addRow("temperature");
         streamingRow = addRow("streaming");
         saveHistoryRow = addRow("saveHistory");
+        disableToolsRow = addRow("disableTools");
         clearHistoryRow = addRow("clearHistory");
         generationDividerRow = addRow();
 
@@ -230,7 +232,9 @@ public class AiSettingsActivity extends BaseNekoSettingsActivity {
         } else if (position == saveHistoryRow) {
             AiConfig.setSaveHistory(!AiConfig.getSaveHistory());
             ((TextCheckCell) view).setChecked(AiConfig.getSaveHistory());
-
+        } else if (position == disableToolsRow) {
+            AiConfig.setDisableTools(!AiConfig.getDisableTools());
+            ((TextCheckCell) view).setChecked(AiConfig.getDisableTools());
         } else if (position == replaceEditorRow) {
             AiConfig.setReplaceTelegramEditor(!AiConfig.getReplaceTelegramEditor(currentAccount));
             ((TextCheckCell) view).setChecked(AiConfig.getReplaceTelegramEditor(currentAccount));
@@ -847,7 +851,9 @@ public class AiSettingsActivity extends BaseNekoSettingsActivity {
                     } else if (position == saveHistoryRow) {
                         cell.setTextAndCheck(getString(R.string.OEAiSaveHistory),
                                 AiConfig.getSaveHistory(), true);
-
+                    } else if (position == disableToolsRow) {
+                        cell.setTextAndValueAndCheck(getString(R.string.OEAiDisableTools),
+                                getString(R.string.OEAiDisableToolsInfo), AiConfig.getDisableTools(), true, true);
                     } else if (position == replaceEditorRow) {
                         cell.setTextAndValueAndCheck(getString(R.string.OEAiReplaceEditor),
                                 getString(R.string.OEAiReplaceEditorInfo), AiConfig.getReplaceTelegramEditor(currentAccount), true, true);
@@ -927,7 +933,7 @@ public class AiSettingsActivity extends BaseNekoSettingsActivity {
             if (position == temperatureRow) {
                 return TYPE_TEMPERATURE;
             }
-            if (position == streamingRow || position == saveHistoryRow
+            if (position == streamingRow || position == saveHistoryRow || position == disableToolsRow
                     || position == replaceEditorRow || position == replaceSummariesRow) {
                 return TYPE_CHECK;
             }

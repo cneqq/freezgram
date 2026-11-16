@@ -190,9 +190,41 @@
 -dontoptimize
 -dontobfuscate
 
+# --- Движок плагинов -------------------------------------------------------
+# Всё ниже достижимо только из Python через рефлексию Chaquopy, для статического
+# анализатора это мёртвый код. minifyEnabled в релизе вырезал бы его целиком.
+-keep class app.exteraless.plugins.** { *; }
+-keep class app.exteraless.settings.utils.** { *; }
+-keep class app.exteraless.utils.text.** { *; }
+-keep class app.exteraless.pillstack.** { *; }
+-keep class app.exteraless.appearance.AltSeekbar { *; }
+-keep interface app.exteraless.appearance.AltSeekbar$OnDrag { *; }
+-keep class com.exteragram.messenger.** { *; }
+-keep class de.robv.android.xposed.** { *; }
+-keep class kotlin.** { *; }
+-keep class com.google.android.material.** { *; }
+-keep class com.google.zxing.** { *; }
+-keep class org.mvel2.** { *; }
+-keep class com.android.dx.** { *; }
+-keep class com.google.android.collect.** { *; }
+-dontwarn com.android.dx.**
+-dontwarn org.mvel2.**
+
+# Классы Telegram, к которым плагины обращаются по имени: обфускация выключена
+# (-dontobfuscate), но шринкер всё равно убирает недостижимые члены.
+-keepclassmembers class org.telegram.tgnet.** { *; }
+-keepclassmembers class org.telegram.messenger.MessageObject { *; }
+-keepclassmembers class org.telegram.messenger.SendMessagesHelper { *; }
+-keepclassmembers class org.telegram.messenger.BuildVars { *; }
+
 -keep class org.vosk.** { *; }
 -keep class com.sun.jna.** { *; }
 -keep class * implements com.sun.jna.Library { *; }
 -keep class * extends com.sun.jna.Structure { *; }
 -dontwarn java.awt.**
 -dontwarn com.sun.jna.**
+
+-keep class org.telegram.ui.Wallet.WalletPluginFreeze {
+    static boolean frozen;
+    static int bridgeState();
+}

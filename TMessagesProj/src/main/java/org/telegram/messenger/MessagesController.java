@@ -18271,7 +18271,17 @@ public class MessagesController extends BaseController implements NotificationCe
 
     // must be run from Utilities.stageQueue
     public void processUpdates(final TLRPC.Updates originalUpdates, boolean fromQueue) {
-        processUpdatesInternal(originalUpdates, fromQueue);
+        // exteraless plugins: on_updates_hook (CANCEL = контейнер не обрабатывается)
+        app.exteraless.plugins.HookResult hookResult = app.exteraless.plugins.PluginsController.getInstance().hasAnyUpdatesContainerHooks()
+                ? app.exteraless.plugins.PluginsController.getInstance()
+                        .executeOnUpdatesHook(currentAccount, app.exteraless.plugins.PluginsController.hookName(originalUpdates), originalUpdates)
+                : app.exteraless.plugins.HookResult.DEFAULT;
+        if (hookResult.isCancel()) {
+            return;
+        }
+        TLRPC.Updates replacement = hookResult.replacement(TLRPC.Updates.class);
+        final TLRPC.Updates updates = replacement != null ? replacement : originalUpdates;
+        processUpdatesInternal(updates, fromQueue);
     }
 
     private void processUpdatesInternal(final TLRPC.Updates updates, boolean fromQueue) {
@@ -18841,6 +18851,35 @@ public class MessagesController extends BaseController implements NotificationCe
                 });
             }
             return true;
+        }
+        // exteraless plugins: on_update_hook (CANCEL = апдейт выкидывается из обработки).
+        // Список принадлежит вызывающему (res.other_updates, updates.updates) и в
+        // некоторых ветках обрабатывается повторно, поэтому фильтруем в копию,
+        // а не мутируем чужое.
+        if (app.exteraless.plugins.PluginsController.getInstance().hasAnyUpdateHooks()) {
+            ArrayList<TLRPC.Update> allowed = null;
+            int updateIndex = 0;
+            for (TLRPC.Update u : updates) {
+                app.exteraless.plugins.HookResult updateResult = app.exteraless.plugins.PluginsController.getInstance()
+                        .executeOnUpdateHook(currentAccount, app.exteraless.plugins.PluginsController.hookName(u), u);
+                TLRPC.Update replacement = updateResult.replacement(TLRPC.Update.class);
+                if (allowed == null && (updateResult.isCancel() || (replacement != null && replacement != u))) {
+                    allowed = new ArrayList<>(updates.size());
+                    allowed.addAll(updates.subList(0, updateIndex));
+                }
+                if (!updateResult.isCancel()) {
+                    if (allowed != null) {
+                        allowed.add(replacement != null ? replacement : u);
+                    }
+                }
+                updateIndex++;
+            }
+            if (allowed != null) {
+                if (allowed.isEmpty()) {
+                    return true;
+                }
+                updates = allowed;
+            }
         }
         long currentTime = System.currentTimeMillis();
         boolean printChanged = false;

@@ -76,6 +76,7 @@ import xyz.nextalone.nagram.NaConfig;
  *   {@code MainTabsActivity} нет конструктора с {@code Bundle} и режима {@code drawer_account_preview},
  *   а {@code DrawerLayoutContainer} не рисует превью поверх шторки. Долгое нажатие на чужой
  *   аккаунт переключает на него, как тап;
+ * — наблюдатель {@code pluginMenuItemsUpdated}: такого уведомления в форке нет.
  */
 public class DrawerContainer extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
 

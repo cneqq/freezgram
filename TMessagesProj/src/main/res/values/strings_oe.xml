@@ -87,6 +87,7 @@
     <string name="OEEnergyProfilerStarted">Energy profiler is running, also in the background and after restarts. Use the phone as usual for a few hours, then stop it here.</string>
     <string name="OEEnergyProfilerShareCurrent">Share energy report so far</string>
     <string name="OEEnergyProfilerShareLast">Share last energy report</string>
+    <string name="OEPluginToggleLogShare">Share plugin toggle log</string>
     <string name="OEProfileIdDate">Registration and join date</string>
     <string name="OEProfileAccountCreated">**%1$s** joined Telegram %2$s</string>
     <string name="OEProfileJoinedChat">You joined **%1$s** on %2$s</string>

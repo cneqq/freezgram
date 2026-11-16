@@ -4498,7 +4498,17 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     public void sendMessage(SendMessageParams originalParams) {
-        final SendMessageParams sendMessageParams = originalParams;
+        app.exteraless.plugins.HookResult hookResult = app.exteraless.plugins.HookResult.DEFAULT;
+        // exteraless plugins: исходящее сообщение через on_send_message_hook (CANCEL = не отправлять)
+        if (app.exteraless.plugins.PluginsController.getInstance().hasSendMessageHooks()) {
+            hookResult = app.exteraless.plugins.PluginsController.getInstance()
+                    .executeOnSendMessageHook(currentAccount, originalParams);
+            if (hookResult.isCancel()) {
+                return;
+            }
+        }
+        SendMessageParams replacement = hookResult.replacement(SendMessageParams.class);
+        final SendMessageParams sendMessageParams = replacement != null ? replacement : originalParams;
         if (app.exteraless.privacy.BotAccountRouter.guardSend(currentAccount, sendMessageParams.peer, () -> sendMessage(sendMessageParams))) return;
         app.exteraless.chats.DeletedReplyQuote.rewrite(currentAccount, sendMessageParams);
         app.exteraless.chats.LinkedCustomEmoji.replaceForSend(currentAccount, sendMessageParams.peer, sendMessageParams.entities);

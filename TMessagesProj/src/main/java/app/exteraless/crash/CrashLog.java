@@ -18,6 +18,8 @@ import org.telegram.ui.ActionBar.INavigationLayout;
 import org.telegram.ui.LaunchActivity;
 import tw.nekomimi.nekogram.utils.AndroidUtil;
 
+import app.exteraless.plugins.Plugin;
+import app.exteraless.plugins.PluginsController;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -129,6 +131,21 @@ public final class CrashLog {
             long uptime = (SystemClock.elapsedRealtime() - Process.getStartElapsedRealtime()) / 60000L;
             report.append("uptime: ").append(uptime / 60).append(" h ").append(uptime % 60).append(" min\n");
             keys.put("uptime_min", uptime);
+        } catch (Throwable ignore) {
+        }
+        try {
+            PluginsController controller = PluginsController.peekInstance();
+            if (controller != null) {
+                int total = 0;
+                int enabled = 0;
+                for (Plugin plugin : controller.plugins.values()) {
+                    total++;
+                    if (plugin.isEnabled()) {
+                        enabled++;
+                    }
+                }
+                report.append("plugins: ").append(enabled).append(" enabled / ").append(total).append('\n');
+            }
         } catch (Throwable ignore) {
         }
         try {

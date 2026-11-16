@@ -48,6 +48,8 @@
     <string name="OEAiRolePrompt">Instruction for the model</string>
     <string name="OEAiThoughtTime">Thought for %1$d s</string>
     <string name="OEAiDetails">Details</string>
+    <string name="OEAiDisableTools">Disable tools</string>
+    <string name="OEAiDisableToolsInfo">Plugin review sends the code in one request, as before: only the first 48 KB, embedded data is not decoded</string>
     <string name="OEAiTelegramHeader">Telegram AI</string>
     <string name="OEAiReplaceEditor">AI Editor</string>
     <string name="OEAiReplaceEditorInfo">Translate, restyle and proofread drafts</string>

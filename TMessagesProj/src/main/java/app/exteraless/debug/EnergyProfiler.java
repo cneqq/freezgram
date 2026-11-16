@@ -41,15 +41,22 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 
+import app.exteraless.plugins.xposed.HookStats;
+import app.exteraless.plugins.xposed.XposedHooks;
+import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XposedBridge;
 
 public final class EnergyProfiler {
 
     private static final String PREFS = "exteraless_energy_profiler";
     private static final String KEY_RUNNING = "running";
+    private static final String KEY_WAKELOCK_PENDING = "wakelock_hooks_pending";
+    private static final String KEY_WAKELOCK_BROKEN = "wakelock_hooks_broken";
     private static final String STATE_FILE = "energy-profiler-state.json";
     private static final String REPORT_PREFIX = "energy-";
     private static final long SAMPLE_INTERVAL_MS = 30_000;
@@ -85,6 +92,9 @@ public final class EnergyProfiler {
             final SharedPreferences prefs = prefs(app);
             if (!prefs.getBoolean(KEY_RUNNING, false)) {
                 return;
+            }
+            if (prefs.getBoolean(KEY_WAKELOCK_PENDING, false)) {
+                prefs.edit().remove(KEY_WAKELOCK_PENDING).putBoolean(KEY_WAKELOCK_BROKEN, true).commit();
             }
             synchronized (EnergyProfiler.class) {
                 if (instance == null) {
@@ -167,6 +177,7 @@ public final class EnergyProfiler {
         long currentSumUa;
         long currentSamples;
         final HashMap<String, Long> threads = new HashMap<>();
+        final HashMap<String, long[]> wakelocks = new HashMap<>();
 
         JSONObject toJson() throws Exception {
             final JSONObject out = new JSONObject();
@@ -184,6 +195,11 @@ public final class EnergyProfiler {
                 threadsJson.put(entry.getKey(), entry.getValue());
             }
             out.put("threads", threadsJson);
+            final JSONObject locksJson = new JSONObject();
+            for (Map.Entry<String, long[]> entry : wakelocks.entrySet()) {
+                locksJson.put(entry.getKey(), new JSONArray().put(entry.getValue()[0]).put(entry.getValue()[1]));
+            }
+            out.put("wakelocks", locksJson);
             return out;
         }
 
@@ -204,6 +220,26 @@ public final class EnergyProfiler {
                     threads.put(key, threadsJson.optLong(key));
                 }
             }
+            final JSONObject locksJson = in.optJSONObject("wakelocks");
+            if (locksJson != null) {
+                for (Iterator<String> it = locksJson.keys(); it.hasNext(); ) {
+                    final String key = it.next();
+                    final JSONArray value = locksJson.optJSONArray(key);
+                    if (value != null) {
+                        wakelocks.put(key, new long[]{value.optLong(0), value.optLong(1)});
+                    }
+                }
+            }
+        }
+    }
+
+    private static final class HeldLock {
+        final String tag;
+        long accountedRealtime;
+
+        HeldLock(String tag, long accountedRealtime) {
+            this.tag = tag;
+            this.accountedRealtime = accountedRealtime;
         }
     }
 
@@ -231,6 +267,11 @@ public final class EnergyProfiler {
     private volatile boolean stopped;
     private final BroadcastReceiver screenReceiver;
     private final Application.ActivityLifecycleCallbacks lifecycleCallbacks;
+    private boolean ownHookStats;
+    private String wakelockStatus = "not tracked";
+    private boolean wakelocksWaiting;
+    private final ArrayList<XC_MethodHook.Unhook> unhooks = new ArrayList<>();
+    private final IdentityHashMap<Object, HeldLock> heldLocks = new IdentityHashMap<>();
     private final Runnable tick = this::tick;
 
     private EnergyProfiler(Context context, JSONObject saved) {
@@ -320,7 +361,14 @@ public final class EnergyProfiler {
             ((Application) context).registerActivityLifecycleCallbacks(lifecycleCallbacks);
         }
 
-        handler.post(this::tick);
+        if (!JankProfiler.isRunning() && !HookStats.isEnabled()) {
+            HookStats.start();
+            ownHookStats = true;
+        }
+        handler.post(() -> {
+            installWakelockHooks();
+            tick();
+        });
     }
 
     private void sampleSoon() {
@@ -333,6 +381,12 @@ public final class EnergyProfiler {
     private void tick() {
         if (stopped) {
             return;
+        }
+        if (wakelocksWaiting) {
+            installWakelockHooks();
+        }
+        if (ownHookStats) {
+            HookStats.armPython();
         }
         sample();
         handler.removeCallbacks(tick);
@@ -413,6 +467,7 @@ public final class EnergyProfiler {
         lastCharge = charge;
         lastCharging = charging;
 
+        accountHeldLocks(realtime, interval);
 
         lastRealtime = realtime;
         lastUptime = uptime;
@@ -512,13 +567,121 @@ public final class EnergyProfiler {
         return out.toString().trim();
     }
 
+    private void installWakelockHooks() {
+        final SharedPreferences prefs = prefs(context);
+        if (prefs.getBoolean(KEY_WAKELOCK_BROKEN, false)) {
+            wakelockStatus = "not tracked: hooking wake locks killed the process earlier";
+            return;
+        }
+        if (!XposedHooks.isReady()) {
+            wakelocksWaiting = true;
+            wakelockStatus = "not tracked: native hooks are not active (no plugin uses hooks)";
+            return;
+        }
+        wakelocksWaiting = false;
+        prefs.edit().putBoolean(KEY_WAKELOCK_PENDING, true).commit();
+        try {
+            final XC_MethodHook acquire = new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) {
+                    onAcquired(param.thisObject);
+                }
+            };
+            final XC_MethodHook release = new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) {
+                    onReleased(param.thisObject);
+                }
+            };
+            unhooks.addAll(XposedBridge.hookAllMethods(PowerManager.WakeLock.class, "acquire", acquire));
+            unhooks.addAll(XposedBridge.hookAllMethods(PowerManager.WakeLock.class, "release", release));
+            wakelockStatus = "tracked";
+        } catch (Throwable t) {
+            wakelockStatus = "not tracked: " + t;
+            FileLog.e(t);
+        } finally {
+            prefs.edit().remove(KEY_WAKELOCK_PENDING).commit();
+        }
+    }
+
+    private static String wakelockTag(Object lock) {
+        final String text = String.valueOf(lock);
+        final int space = text.indexOf(' ');
+        final int held = text.lastIndexOf(" held=");
+        if (space >= 0 && held > space) {
+            return text.substring(space + 1, held);
+        }
+        return text;
+    }
+
+    private static boolean isHeld(Object lock) {
+        try {
+            return ((PowerManager.WakeLock) lock).isHeld();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private long[] wakelockEntry(Bucket bucket, String tag) {
+        long[] entry = bucket.wakelocks.get(tag);
+        if (entry == null) {
+            entry = new long[2];
+            bucket.wakelocks.put(tag, entry);
+        }
+        return entry;
+    }
+
+    private void onAcquired(Object lock) {
+        if (stopped || lock == null) {
+            return;
+        }
+        final long now = SystemClock.elapsedRealtime();
+        final String tag = wakelockTag(lock);
+        synchronized (heldLocks) {
+            wakelockEntry(buckets[lastState], tag)[0]++;
+            if (!heldLocks.containsKey(lock) && isHeld(lock)) {
+                heldLocks.put(lock, new HeldLock(tag, now));
+            }
+        }
+    }
+
+    private void onReleased(Object lock) {
+        if (stopped || lock == null) {
+            return;
+        }
+        final long now = SystemClock.elapsedRealtime();
+        synchronized (heldLocks) {
+            final HeldLock held = heldLocks.get(lock);
+            if (held != null && !isHeld(lock)) {
+                wakelockEntry(buckets[lastState], held.tag)[1] += Math.max(0, now - held.accountedRealtime);
+                heldLocks.remove(lock);
+            }
+        }
+    }
+
+    private void accountHeldLocks(long now, Bucket interval) {
+        synchronized (heldLocks) {
+            for (Iterator<Map.Entry<Object, HeldLock>> it = heldLocks.entrySet().iterator(); it.hasNext(); ) {
+                final Map.Entry<Object, HeldLock> entry = it.next();
+                final HeldLock held = entry.getValue();
+                wakelockEntry(interval, held.tag)[1] += Math.max(0, now - held.accountedRealtime);
+                held.accountedRealtime = now;
+                if (!isHeld(entry.getKey())) {
+                    it.remove();
+                }
+            }
+        }
+    }
+
     private JSONObject stateJson() throws Exception {
         final JSONObject out = new JSONObject();
         out.put("start", sessionStart);
         out.put("samples", samples);
         final JSONArray array = new JSONArray();
-        for (Bucket bucket : buckets) {
-            array.put(bucket.toJson());
+        synchronized (heldLocks) {
+            for (Bucket bucket : buckets) {
+                array.put(bucket.toJson());
+            }
         }
         out.put("buckets", array);
         return out;
@@ -561,12 +724,22 @@ public final class EnergyProfiler {
     private void shutdown() {
         stopped = true;
         handler.removeCallbacks(tick);
+        for (XC_MethodHook.Unhook unhook : unhooks) {
+            try {
+                unhook.unhook();
+            } catch (Throwable ignored) {
+            }
+        }
+        unhooks.clear();
         try {
             context.unregisterReceiver(screenReceiver);
         } catch (Throwable ignored) {
         }
         if (context instanceof Application) {
             ((Application) context).unregisterActivityLifecycleCallbacks(lifecycleCallbacks);
+        }
+        if (ownHookStats) {
+            HookStats.stop();
         }
         stateFile(context).delete();
         thread.quitSafely();
@@ -590,6 +763,7 @@ public final class EnergyProfiler {
         }
         out.append(String.format(Locale.US, "tracked %s in %d samples (%s before the last app restart), clock %d ticks/s\n",
                 duration(totalWall), samples, duration(previousWallMs), clockTicks));
+        out.append("wake locks: ").append(wakelockStatus).append('\n');
 
         out.append("\n== summary ==\n");
         out.append("state                    wall        awake     cpu s   cpu %   net rx MB  tx MB   battery mAh  mAh/h   avg mA\n");
@@ -617,6 +791,34 @@ public final class EnergyProfiler {
         appendThreads(out, "all states", overall);
         for (int i = 0; i < buckets.length; i++) {
             appendThreads(out, STATE_NAMES[i], buckets[i].threads);
+        }
+
+        out.append("\n== wake locks ==\n");
+        boolean anyLock = false;
+        for (int i = 0; i < buckets.length; i++) {
+            final ArrayList<Map.Entry<String, long[]>> locks = new ArrayList<>();
+            synchronized (heldLocks) {
+                for (Map.Entry<String, long[]> entry : buckets[i].wakelocks.entrySet()) {
+                    locks.add(new java.util.AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue().clone()));
+                }
+            }
+            if (locks.isEmpty()) {
+                continue;
+            }
+            anyLock = true;
+            locks.sort((a, b) -> Long.compare(b.getValue()[1], a.getValue()[1]));
+            out.append("-- ").append(STATE_NAMES[i]).append('\n');
+            out.append("   acquires    held s  tag\n");
+            for (Map.Entry<String, long[]> entry : locks) {
+                out.append(String.format(Locale.US, "%11d %9.1f  %s\n", entry.getValue()[0], entry.getValue()[1] / 1000.0, entry.getKey()));
+            }
+        }
+        if (!anyLock) {
+            out.append("none recorded\n");
+        }
+
+        if (ownHookStats) {
+            HookStats.appendReport(out);
         }
 
         final File file = new File(AndroidUtilities.getLogsDir(), REPORT_PREFIX

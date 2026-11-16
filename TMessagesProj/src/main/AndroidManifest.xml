@@ -497,6 +497,22 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:mimeType="vnd.android.cursor.item/vnd.${applicationId}.android.profile"/>
             </intent-filter>
+            <!-- exteraless plugins: файл плагина, открытый из чата, файлового
+                 менеджера или «Поделиться». Без этого фильтра система показывает
+                 обычный выбор приложения, а установить плагин негде. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="file"/>
+                <data android:scheme="content"/>
+                <data android:host="*"/>
+                <data android:pathPattern=".*\\.plugin"/>
+                <data android:pathPattern=".*\\.elyx"/>
+                <data android:pathPattern=".*\\.eaf"/>
+                <data android:mimeType="application/*"/>
+                <data android:mimeType="text/*"/>
+            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT" />

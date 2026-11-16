@@ -12,6 +12,17 @@
             android:targetClass="app.exteraless.shortcuts.QuickToggleActivity" />
     </shortcut>
 
+    <shortcut
+        android:shortcutId="quick_safe_mode"
+        android:enabled="true"
+        android:icon="@drawable/shortcut_safe_mode"
+        android:shortcutShortLabel="@string/PluginsSafeMode"
+        android:shortcutLongLabel="@string/PluginsSafeMode">
+        <intent
+            android:action="app.exteraless.action.TOGGLE_SAFE_MODE"
+            android:targetPackage="@string/personal_application_id"
+            android:targetClass="app.exteraless.shortcuts.QuickToggleActivity" />
+    </shortcut>
 
     <share-target android:targetClass="org.telegram.ui.LaunchActivity">
         <data android:mimeType="*/*" />

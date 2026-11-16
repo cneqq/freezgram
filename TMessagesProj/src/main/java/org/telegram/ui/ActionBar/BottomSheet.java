@@ -1231,6 +1231,7 @@ public class BottomSheet extends Dialog implements BaseFragment.AttachedSheet {
 
     public BottomSheet(Context context, boolean needFocus, EdgeToEdge edgeToEdge, Theme.ResourcesProvider resourcesProvider) {
         super(context, R.style.TransparentDialog);
+        org.telegram.ui.Wallet.WalletPluginFreeze.enterIfWallet(this);
         this.resourcesProvider = resourcesProvider;
         if (BuildConfig.DEBUG) {
             LeakDetector.getInstance().add(this);
@@ -2361,6 +2362,7 @@ public class BottomSheet extends Dialog implements BaseFragment.AttachedSheet {
     }
 
     public void dismissInternal() {
+        org.telegram.ui.Wallet.WalletPluginFreeze.leave(this);
         if (attachedFragment != null) {
             attachedFragment.removeSheet(this);
             AndroidUtilities.removeFromParent(container);

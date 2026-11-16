@@ -19,6 +19,7 @@ import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.LaunchActivity;
 
+import app.exteraless.plugins.PluginsWatchdog;
 
 public final class CrashReportDialog {
 
@@ -58,6 +59,15 @@ public final class CrashReportDialog {
 
         final LinearLayout container = new LinearLayout(context);
         container.setOrientation(LinearLayout.VERTICAL);
+        final String notice = PluginsWatchdog.consumeStartupNotice();
+        if (!TextUtils.isEmpty(notice)) {
+            final TextView noticeView = new TextView(context);
+            noticeView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
+            noticeView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
+            noticeView.setText(notice);
+            noticeView.setPadding(AndroidUtilities.dp(24), AndroidUtilities.dp(4), AndroidUtilities.dp(24), AndroidUtilities.dp(12));
+            container.addView(noticeView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        }
         container.addView(scrollView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,
                 (int) (AndroidUtilities.displaySize.y * 0.4f / AndroidUtilities.density)));
 

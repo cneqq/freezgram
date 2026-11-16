@@ -812,11 +812,6 @@ object AppearanceConfig {
     fun avatarSquareness(): Float =
         1f - (avatarCorners().coerceIn(0, AVATAR_CORNERS_MAX).toFloat() / AVATAR_CORNERS_MAX)
 
-    /** Радиус кнопок и вкладок с учётом выбранной формы аватарок, dp. */
-    @JvmStatic
-    fun pillRadius(radiusDp: Float): Float =
-        maxOf(minOf(radiusDp, 6f), radiusDp * (1f - avatarSquareness()))
-
     /**
      * Смещение онлайн-точки от края аватарки.
      * У круга — заданное значение, у квадрата — по диагонали от угла.

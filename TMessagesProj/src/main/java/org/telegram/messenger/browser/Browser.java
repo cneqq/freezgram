@@ -292,8 +292,24 @@ public class Browser {
         openUrl(context, uri, allowCustom, tryTelegraph, false, inCaseLoading, null, false, true, false);
     }
 
+    // exteraless plugins: обёртка с before/after-хендлерами плагинов (from_intent=false).
+    // Все публичные openUrl(...) сходятся сюда; внутренние tg://-ссылки дополнительно
+    // пройдут через диспетч LaunchActivity.handleIntent (там from_intent=true).
     public static void openUrl(final Context context, Uri uri, boolean _allowCustom, boolean tryTelegraph, boolean forceNotInternalForApps, Progress inCaseLoading, String browser, boolean allowIntent, boolean allowInAppBrowser, boolean forceRequest) {
         uri = app.exteraless.links.LinkCleaner.clean(uri);
+        if (uri != null && app.exteraless.plugins.PluginsController.getInstance().isEngineEnabled()
+                && app.exteraless.plugins.intents.IntentsDispatcher.hasHandlers()) {
+            java.util.Map<String, Object> pluginContext = app.exteraless.plugins.intents.IntentsDispatcher.buildUriContext(uri, UserConfig.selectedAccount, false);
+            if (app.exteraless.plugins.intents.IntentsDispatcher.dispatchBefore(pluginContext)) {
+                return;
+            }
+            try {
+                openUrlInternal(context, uri, _allowCustom, tryTelegraph, forceNotInternalForApps, inCaseLoading, browser, allowIntent, allowInAppBrowser, forceRequest);
+            } finally {
+                app.exteraless.plugins.intents.IntentsDispatcher.dispatchAfter(pluginContext);
+            }
+            return;
+        }
         openUrlInternal(context, uri, _allowCustom, tryTelegraph, forceNotInternalForApps, inCaseLoading, browser, allowIntent, allowInAppBrowser, forceRequest);
     }
 

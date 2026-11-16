@@ -21,7 +21,7 @@ public enum MainMenuItem {
     SAVED(11),
     SETTINGS(8),
     BROWSER(101),
-    // 102 was the removed plugins entry; persisted IDs must not be reused.
+    PLUGINS(102),
     QR(17),
     FEED(106),
     /** Пункт наш, а не из exteraGram, поэтому id взят выше их диапазона. */

@@ -9,11 +9,13 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 
+import app.exteraless.plugins.PluginsController;
 import tw.nekomimi.nekogram.NekoConfig;
 
 public class QuickToggleActivity extends Activity {
 
     public static final String ACTION_GHOST_MODE = "app.exteraless.action.TOGGLE_GHOST_MODE";
+    public static final String ACTION_SAFE_MODE = "app.exteraless.action.TOGGLE_SAFE_MODE";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,6 +26,8 @@ public class QuickToggleActivity extends Activity {
             ApplicationLoader.postInitApplication();
             if (ACTION_GHOST_MODE.equals(action)) {
                 message = toggleGhostMode();
+            } else if (ACTION_SAFE_MODE.equals(action)) {
+                message = toggleSafeMode();
             }
         } catch (Throwable e) {
             FileLog.e(e);
@@ -45,4 +49,12 @@ public class QuickToggleActivity extends Activity {
                 : R.string.GhostModeDisabled);
     }
 
+    private CharSequence toggleSafeMode() {
+        final PluginsController controller = PluginsController.getInstance();
+        final boolean enabled = !controller.isSafeMode();
+        controller.restart(enabled);
+        return LocaleController.getString(enabled
+                ? R.string.PluginsSafeModeEnabledNow
+                : R.string.PluginsSafeModeDisabledNow);
+    }
 }

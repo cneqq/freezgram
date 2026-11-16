@@ -46,6 +46,9 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import app.exteraless.plugins.Plugin;
+import app.exteraless.plugins.PluginsController;
+import app.exteraless.plugins.xposed.HookStats;
 
 public final class JankProfiler {
 
@@ -245,12 +248,14 @@ public final class JankProfiler {
         };
         ((Application) ApplicationLoader.applicationContext).registerActivityLifecycleCallbacks(lifecycleCallbacks);
         attachWindow(activity.getWindow());
+        HookStats.start();
         Looper.getMainLooper().setMessageLogging(printer);
         new Thread(this::sample, "JankProfiler").start();
     }
 
     private void finish(Utilities.Callback<File> onReady) {
         Looper.getMainLooper().setMessageLogging(null);
+        HookStats.stop();
         ((Application) ApplicationLoader.applicationContext).unregisterActivityLifecycleCallbacks(lifecycleCallbacks);
         for (Window window : new ArrayList<>(windows)) {
             detachWindow(window);
@@ -639,6 +644,7 @@ public final class JankProfiler {
         out.append("debug logs: ").append(BuildVars.LOGS_ENABLED ? "on" : "off")
                 .append(", liquid glass: ").append(LiteMode.isEnabled(LiteMode.FLAG_LIQUID_GLASS) ? "on" : "off")
                 .append(", chat blur: ").append(LiteMode.isEnabled(LiteMode.FLAG_CHAT_BLUR) ? "on" : "off").append('\n');
+        appendPlugins(out);
 
         final long messages = messageCount;
         final long busy = busyNs;
@@ -676,6 +682,11 @@ public final class JankProfiler {
                     .append(" messages, ").append(entry.getValue().ns / 1_000_000).append(" ms\n");
         }
 
+        try {
+            HookStats.appendReport(out);
+        } catch (Throwable t) {
+            FileLog.e(t);
+        }
 
         appendTop(out, "top self frames (all code)", selfAll);
         appendTop(out, "top self frames (app code)", selfApp);
@@ -707,6 +718,23 @@ public final class JankProfiler {
             FileLog.e(e);
         }
         return reportFile;
+    }
+
+    private void appendPlugins(StringBuilder out) {
+        try {
+            final StringBuilder enabled = new StringBuilder();
+            for (Plugin plugin : PluginsController.getInstance().getPluginsSnapshot()) {
+                if (plugin.isEnabled()) {
+                    if (enabled.length() > 0) {
+                        enabled.append(", ");
+                    }
+                    enabled.append(plugin.getId());
+                }
+            }
+            out.append("enabled plugins: ").append(enabled.length() > 0 ? enabled : "-").append('\n');
+        } catch (Throwable t) {
+            out.append("enabled plugins: ?\n");
+        }
     }
 
     private static void appendFrameLine(StringBuilder out, String name, FrameStats stats) {

@@ -4,7 +4,7 @@ Actions → Personal release APK → Run workflow → no-plugins.
 Используются Actions Secrets `API_ID` и `API_HASH`, а также постоянный ключ
 подписи. Настройки старых запусков telegram_credentials/personal_signing удалены.
 
-Workflow на push собирает ARM64, x86_64 и универсальный APK, проверяет их и публикует в Releases. При ручном запуске можно выбрать один вариант или all-three. Каждый вариант подписывается постоянным ключом. Всегда собирается оптимизированный release APK с R8 и shrinkResources.
+Workflow на push собирает один универсальный APK (ARM64 и x86_64), проверяет его и публикует в Releases. Ручной запуск использует тот же вариант. APK подписывается постоянным ключом. Всегда собирается оптимизированный release APK с R8 и shrinkResources.
 Режим quick удалён: измеренный выигрыш был небольшим, а APK получался больше.
 Постоянные пакет, ключ подписи и возрастающий versionCode сохранены.
 
@@ -91,8 +91,8 @@ Firebase-конфигурация upstream не подходит к произв
 
 ## Результат
 
-На push workflow собирает, проверяет и публикует ARM64, x86_64 и универсальный APK
-в GitHub Releases. Ручной запуск позволяет выбрать один APK или `all-three`.
+На push и при ручном запуске workflow собирает, проверяет и публикует один
+универсальный APK в GitHub Releases.
 Также сохраняются ZIP-артефакты с APK, SHA256SUMS.txt и build-info.json.
 Workflow не пишет в Telegram.
 
@@ -103,8 +103,8 @@ Workflow не пишет в Telegram.
 
 ## Ускорение
 
-Сборки доступны для `arm64-v8a`, `x86_64` и как универсальный APK с обеими архитектурами. Артефакты имеют разные имена; подпись и пакет одинаковы. 32-битные ARM/x86 этой конфигурацией не поддерживаются. Кэшируются downloaded Gradle dependencies, C++ ccache
-При ручном запуске `Personal release APK` параметр `architecture` позволяет выбрать `arm64-v8a`, `x86_64`, `universal` или `all-three`. Push собирает все три варианта.
+Workflow собирает только `universal` APK для `arm64-v8a` и `x86_64`. 32-битные
+ARM/x86 этой конфигурацией не поддерживаются. Кэшируются downloaded Gradle dependencies, C++ ccache
 
 до 2 GB и нативные результаты CMake. Последние восстанавливаются только
 при точном совпадении ключа исходников JNI и файлов конфигурации сборки.

@@ -5,16 +5,6 @@ on:
     branches:
       - no-plugins
   workflow_dispatch:
-    inputs:
-      architecture:
-        description: all-three builds ARM64, x86_64 and universal; other options build one APK
-        type: choice
-        default: all-three
-        options:
-          - all-three
-          - arm64-v8a
-          - x86_64
-          - universal
 
 permissions:
   contents: read
@@ -32,18 +22,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: >-
-          ${{ fromJSON(
-            github.event_name == 'workflow_dispatch' && inputs.architecture == 'all-three'
-            && '[{"abi":"arm64-v8a","label":"arm64"},{"abi":"x86_64","label":"x86_64"},{"abi":"universal","label":"universal"}]'
-            || github.event_name == 'workflow_dispatch' && inputs.architecture == 'x86_64'
-            && '[{"abi":"x86_64","label":"x86_64"}]'
-          || github.event_name == 'workflow_dispatch' && inputs.architecture == 'universal'
-            && '[{"abi":"universal","label":"universal"}]'
-            || github.event_name == 'push'
-            && '[{"abi":"arm64-v8a","label":"arm64"},{"abi":"x86_64","label":"x86_64"},{"abi":"universal","label":"universal"}]'
-            || '[{"abi":"arm64-v8a","label":"arm64"}]'
-          ) }}
+        include:
+          - abi: universal
+            label: universal
     env:
       NATIVE_TARGET: ${{ matrix.abi }}
       APK_ABI_LABEL: ${{ matrix.label }}
@@ -318,13 +299,13 @@ jobs:
           rm -f local.properties TMessagesProj/release.keystore "$HOME/.android/debug.keystore"
 
   publish-release:
-    if: github.repository == 'cneqq/freezgram' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.architecture == 'all-three'))
+    if: github.repository == 'cneqq/freezgram'
     needs: build
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
-      - name: Download all three APK variants
+      - name: Download universal APK
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: freezgram-*-release-${{ github.run_id }}-${{ github.run_attempt }}
@@ -335,16 +316,14 @@ jobs:
         run: |
           set -euo pipefail
           mapfile -t apks < <(find release-artifacts -type f -name '*.apk' | sort)
-          if [[ "${#apks[@]}" -ne 3 ]]; then
-            echo "Expected ARM64, x86_64 and universal APKs; found ${#apks[@]}" >&2
+          if [[ "${#apks[@]}" -ne 1 ]]; then
+            echo "Expected one universal APK; found ${#apks[@]}" >&2
             exit 1
           fi
-          for variant in arm64 x86_64 universal; do
-            if [[ "$(find release-artifacts -type f -name "*-${variant}.apk" | wc -l)" -ne 1 ]]; then
-              echo "Missing or duplicate ${variant} APK" >&2
-              exit 1
-            fi
-          done
+          if [[ "${apks[0]}" != *-universal.apk ]]; then
+            echo "Expected a universal APK, got ${apks[0]}" >&2
+            exit 1
+          fi
           sha256sum "${apks[@]}" > release-artifacts/SHA256SUMS.txt
 
       - name: Publish GitHub Release
@@ -358,4 +337,4 @@ jobs:
           gh release create "personal-${RUN_NUMBER}" \
             release-artifacts/*/*.apk release-artifacts/SHA256SUMS.txt \
             --title "Freezgram build #${RUN_NUMBER}" \
-            --notes "Personal release build from no-plugins. Includes ARM64, x86_64 and universal APKs."
+            --notes "Personal release build from no-plugins. Universal APK supports ARM64 and x86_64 devices."

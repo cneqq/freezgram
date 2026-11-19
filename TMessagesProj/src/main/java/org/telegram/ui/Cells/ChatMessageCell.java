@@ -1702,7 +1702,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable shareGlassBackground;
     public org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable getShareGlassBackground() { return shareGlassBackground; }
     public void setShareGlassBackground(org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable drawable) { shareGlassBackground = drawable; }
-    private int drawSideButton;
     int drawSideButton;
     private boolean sideButtonVisible;
     private int drawSideButton2;

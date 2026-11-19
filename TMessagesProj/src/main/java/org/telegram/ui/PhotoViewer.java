@@ -909,6 +909,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     private GlassSource blurredBackgroundSource;
 
     private interface GlassSourceWithDrawables extends GlassSource, BlurredBackgroundDrawableViewFactory.DrawableOwner {
+        @Override
+        BlurredBackgroundDrawable createDrawable();
     }
     private BlurredBackgroundDrawableViewFactory iBlur3FactoryFrostedLiquidGlass;
     private ReferenceList<BlurredBackgroundDrawable> iBlur3BlurredDrawables = new ReferenceList<>();

@@ -374,11 +374,6 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
         } else if (defaultShadowRadius >= 0) {
             setShadowParams(defaultShadowRadius, defaultShadowDx, defaultShadowDy);
         }
-        if (boundProps.useFullStroke != solid) {
-            boundProps.useFullStroke = solid;
-            boundProps.build();
-            onBoundPropsChanged();
-        }
         rimFromColors = null;
         if (renderNodeImpl != null) {
             renderNodeImpl.onColorsChanged();

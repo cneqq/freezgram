@@ -195,7 +195,7 @@ public class ChatMessageTransitionParams {
     public boolean animateDrawingTimeAlpha;
 
     public float animateChangeProgress = 1f;
-    private ArrayList<BotButton> lastDrawBotButtons = new ArrayList<>();
+    ArrayList<BotButton> lastDrawBotButtons = new ArrayList<>();
     ArrayList<BotButton> transitionBotButtons = new ArrayList<>();
     public boolean animateWidthForButton;
     public int animateFromWidthForButton;

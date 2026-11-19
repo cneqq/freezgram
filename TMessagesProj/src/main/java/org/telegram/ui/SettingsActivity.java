@@ -1904,7 +1904,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 getString(R.string.DebugMenuMakeMemoryDump),
                 BuildVars.DEBUG_PRIVATE_VERSION ? (SharedConfig.fastWallpaperDisabled ? "enable wallpaper shader" : "disable wallpaper shader") : null,
                 getString(SharedConfig.frameMetricsEnabled ? R.string.DebugMenuHideFrameMetrics : R.string.DebugMenuShowFrameMetrics),
-                BuildVars.DEBUG_PRIVATE_VERSION ? (SharedConfig.shadowsInSections ? "disable shadows in settings" : "enable shadows in settings") : null,
+                null,
                 BuildVars.DEBUG_PRIVATE_VERSION ? (SharedConfig.debugViewMetrics ? "disable debug view metrics" : "enable debug view metrics") : null,
         };
 
@@ -2196,10 +2196,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 SharedConfig.toggleDebugVideoQualities();
             } else if (which == 34) {
                 SharedConfig.toggleUseSystemBoldFont();
-                UndoView undoView = getUndoView();
-                if (undoView != null) {
-                    undoView.showWithAction(0, UndoView.ACTION_NEED_RESTART, null, null);
-                }
             } else if (which == 35) {
                 MessagesController.getInstance(currentAccount).loadAppConfig(true);
             } else if (which == 36) {
@@ -2213,9 +2209,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 if (LaunchActivity.instance != null) {
                     LaunchActivity.instance.checkFrameMetrics();
                 }
-            } else if (which == 40) {
-                final SharedPreferences prefs = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE);
-                prefs.edit().putBoolean("shadowsInSections", SharedConfig.shadowsInSections = !SharedConfig.shadowsInSections).apply();
             } else if (which == 41) {
                 final SharedPreferences prefs = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE);
                 prefs.edit().putBoolean("debugViewMetrics", SharedConfig.debugViewMetrics = !SharedConfig.debugViewMetrics).apply();

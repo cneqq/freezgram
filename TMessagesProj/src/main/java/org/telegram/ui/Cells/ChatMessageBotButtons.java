@@ -419,7 +419,8 @@ class ChatMessageBotButtons {
                 }
             }
 
-            if (button.draw(canvas, cell.rect, drawProgress, cell.hasInvoicePreview && cell.hasInvoicePrice, cell.isCompactLayout(), cell.resourcesProvider)) {
+            if (button.draw(canvas, cell.rect, drawProgress, cell.hasInvoicePreview && cell.hasInvoicePrice, cell.isCompactLayout(), cell.resourcesProvider,
+                    (drawCanvas, bounds, radii, cached) -> cell.getDelegate() == null ? null : cell.getDelegate().drawBotButtonGlass(cell, drawCanvas, bounds, radii, cached))) {
                 invalidate = true;
             }
         }

@@ -298,7 +298,8 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
 
-        final int textColor = Theme.isCompactMode(resourcesProvider) ? Theme.getColor(Theme.key_chat_compact_actionText, resourcesProvider) : Color.WHITE;
+        final int textColor = glass ? Theme.getColor(Theme.key_glass_defaultIcon, resourcesProvider)
+                : Theme.isCompactMode(resourcesProvider) ? Theme.getColor(Theme.key_chat_compact_actionText, resourcesProvider) : Color.WHITE;
         if (groupsArrowColor != textColor) {
             groupsArrow.setColorFilter(new PorterDuffColorFilter(groupsArrowColor = textColor, PorterDuff.Mode.SRC_IN));
         }
@@ -321,7 +322,6 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
                 canvas.drawRoundRect(fullBounds, dp(16), dp(16), Theme.getThemePaint(Theme.key_paint_chatActionBackgroundDarken, resourcesProvider));
             }
         }
-        final int textColor = glass ? Theme.getColor(Theme.key_glass_defaultIcon, resourcesProvider) : Color.WHITE;
         if (foregroundColor != textColor) {
             foregroundColor = textColor;
             groupsArrow.setColorFilter(new PorterDuffColorFilter(textColor, PorterDuff.Mode.SRC_IN));

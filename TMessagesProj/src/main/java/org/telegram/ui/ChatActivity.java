@@ -569,8 +569,8 @@ public class ChatActivity extends BaseFragment implements
     private final @Nullable GlassSourceRenderNode iosHeaderGlassSource;
     private final @NonNull BlurredBackgroundDrawableViewFactory iosHeaderGlassFactory;
     private final @NonNull BlurredBackgroundDrawableViewFactory composerGlassFactory;
-    private final @NonNull BlurredBackgroundDrawableViewFactory glassBackgroundDrawableFactory;
-    private final @NonNull BlurredBackgroundDrawableViewFactory glassBackgroundDrawableFactoryFrosted;
+    private @NonNull BlurredBackgroundDrawableViewFactory glassBackgroundDrawableFactory;
+    private @NonNull BlurredBackgroundDrawableViewFactory glassBackgroundDrawableFactoryFrosted;
 
     private final @NonNull GlassSourceWrapped navbarContentSourceWallpaper;
     private @NonNull BlurredBackgroundDrawableViewFactory navbarContentDrawableFactory;

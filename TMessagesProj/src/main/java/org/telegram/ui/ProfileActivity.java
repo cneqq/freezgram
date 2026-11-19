@@ -1523,19 +1523,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     canvas.drawRect(0, y1, getMeasuredWidth(), Math.min(v, mediaTop), gapPaint);
                 }
             }
-            if (canvas.isHardwareAccelerated() && !openAnimationInProgress && !isPulledDown
-                    && iBlur3SourceGlass != null && app.freezgram.SmallElementsGlass.isEnabled()) {
-                float glassProgress = 1f - Utilities.clamp(extraHeight / dp(28), 1f, 0f);
-                if (glassProgress > 0) {
-                    if (compactHeaderGlass == null) {
-                        compactHeaderGlass = iBlur3FactoryLiquidGlass.create(this,
-                                BlurredBackgroundProviderImpl.topPanelChatActivity(resourcesProvider));
-                    }
-                    compactHeaderGlass.setBounds(0, 0, getWidth(), height);
-                    compactHeaderGlass.setAlpha(Math.round(255 * glassProgress));
-                    compactHeaderGlass.draw(canvas);
-                }
-            }
         }
 
         private final Paint gapPaint = new Paint();
@@ -2561,22 +2548,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         ActionBar actionBar = new ActionBar(context, resourcesProvider) {
             @Override
             protected void dispatchDraw(Canvas canvas) {
-                if (canvas.isHardwareAccelerated() && topView != null && fragmentView instanceof ViewGroup
-                        && !openAnimationInProgress && iBlur3SourceGlass != null
-                        && app.freezgram.SmallElementsGlass.isEnabled()) {
-                    float progress = isPulledDown ? 1f : 1f - Utilities.clamp01(extraHeight / dp(28));
-                    if (progress > 0 && ViewPositionWatcher.computeRectInParent(this, (ViewGroup) fragmentView, headerBounds)) {
-                        canvas.save();
-                        canvas.translate(-headerBounds.left, -headerBounds.top);
-                        topView.drawHeaderControl(canvas, getBackButton(), progress);
-                        topView.drawHeaderControl(canvas, otherItem, progress);
-                        canvas.restore();
-                    }
-                }
                 super.dispatchDraw(canvas);
             }
-
-            private final RectF headerBounds = new RectF();
 
             @Override
             public boolean onTouchEvent(MotionEvent event) {
@@ -5495,18 +5468,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
                 float captionAlpha = 1f;
                 if (!openAnimationInProgress) {
-                    if (child == mediaCounterTextView) {
-                        captionAlpha = Utilities.clamp01((mediaHeaderAnimationProgress - .5f) * 2f);
-                    } else if (child == onlineTextView[0] || child == onlineTextView[1]
-                            || child == onlineTextView[2] || child == onlineTextView[3] || child == ratingView) {
+                    if (child == onlineTextView || child == ratingView) {
                         captionAlpha = 1f - Utilities.clamp01(mediaHeaderAnimationProgress * 2f);
-                    }
-                    if (child == onlineTextView[1] || child == onlineTextView[2] || child == onlineTextView[3]) {
-                        View subtitle = onlineTextView[2];
-                        if (subtitle.getVisibility() != View.VISIBLE || subtitle.getAlpha() <= .5f) {
-                            subtitle = onlineTextView[1].getAlpha() > 0f ? onlineTextView[1] : onlineTextView[3];
-                        }
-                        if (child != subtitle) return false;
                     }
                 }
                 if (captionAlpha <= 0f) return false;

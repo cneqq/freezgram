@@ -107,7 +107,7 @@ TokenListPtr appendSlice(TokenList &out, TokenListPtr tail,
       if (node->isSyntax()) {
         const auto &syntax = static_cast<const Syntax &>(*node);
 
-        TokenList children;
+        TokenList children(std::string_view{});
         appendSlice(children, children.head, syntax.children(), pos, start, end,
                     text, offset + (start - from), cursors, depth + 1);
 
@@ -130,6 +130,25 @@ TokenListPtr appendSlice(TokenList &out, TokenListPtr tail,
   cursors[depth].node = node;
   cursors[depth].pos = pos;
   return tail;
+}
+
+void replaceTokenList(TokenList &target, TokenList &replacement) {
+  while (target.head->next != target.head) {
+    target.removeRange(target.head, 1);
+  }
+  if (replacement.head->next == replacement.head) return;
+
+  TokenListPtr first = replacement.head->next;
+  TokenListPtr last = replacement.head->prev;
+  target.head->next = first;
+  target.head->prev = last;
+  first->prev = target.head;
+  last->next = target.head;
+  target.length = replacement.length;
+
+  replacement.head->next = replacement.head;
+  replacement.head->prev = replacement.head;
+  replacement.length = 0;
 }
 } // namespace
 
@@ -206,11 +225,10 @@ void SyntaxHighlighter::highlightParts(State &state,
   for (const auto &part : parts) {
     auto &syntax = static_cast<Syntax &>(*part.node);
 
-    TokenList children;
+    TokenList children(std::string_view{});
     appendSlice(children, children.head, highlighted, 0, part.start,
                 part.start + syntax.length(), text, part.offset, cursors, 0);
-
-    syntax.m_children.swap(children);
+    replaceTokenList(syntax.m_children, children);
   }
 
   parts.clear();
@@ -231,20 +249,19 @@ std::vector<LanguageGroup> SyntaxHighlighter::languageGroups() const {
 
   // A name joins the group of the first one before it with the same grammar
   // and the same display name, which is the language it is an alias of.
-  for (const auto &name : m_tree->order()) {
-    const auto &language = m_tree->language(name);
-    if (language.first.empty()) {
+  for (const auto &[name, displayName] : m_tree->keys()) {
+    if (displayName.empty()) {
       continue;
     }
 
-    auto key = std::make_pair(language.second, language.first);
+    auto key = std::make_pair(reinterpret_cast<size_t>(m_tree->find(name)), displayName);
     auto found = index.find(key);
 
     if (found != index.end()) {
       groups[found->second].aliases.push_back(name);
     } else {
       index.emplace(key, groups.size());
-      groups.push_back(LanguageGroup{name, language.first, {}});
+      groups.push_back(LanguageGroup{name, displayName, {}});
     }
   }
 

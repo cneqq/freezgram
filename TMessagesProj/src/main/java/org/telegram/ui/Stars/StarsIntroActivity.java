@@ -799,6 +799,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
         private final TextView headerTextView;
         private final AnimatedTextView amountTextView;
         private boolean withTon;
+        private boolean stackedBalance;
 
         public StarsBalanceView(Context context, int currentAccount, Theme.ResourcesProvider resourcesProvider) {
             super(context);
@@ -846,6 +847,13 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
 
         public void withTon() {
             this.withTon = true;
+        }
+
+        public void withStackedBalance() {
+            withTon = true;
+            stackedBalance = true;
+            amountTextView.setPadding(0, 0, 0, 0);
+            updateBalance(false);
         }
 
         public void setDialogId(long dialogId) {
@@ -912,6 +920,9 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                 bounce();
             }
             if (loading) {
+                if (stackedBalance) {
+                    headerTextView.setText(getString(R.string.StarsBalance));
+                }
                 if (loadingString == null) {
                     loadingString = new SpannableString("x");
                     loadingString.setSpan(new LoadingSpan(amountTextView, dp(48)), 0, loadingString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -919,7 +930,15 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                 amountTextView.setText(loadingString, animated);
                 lastBalance = -1;
             } else {
-                if (withTon) {
+                if (stackedBalance) {
+                    headerTextView.setText(replaceStarsWithPlain(
+                            "⭐️" + LocaleController.formatNumber(balance, ' '), 0.62f, ref));
+                    CharSequence ton = replaceStarsWithPlain(true, "⭐️" + tonAmount.asFormatString(), 0.62f, refTon);
+                    if (refTon[0] != null) {
+                        refTon[0].setColorKey(Theme.key_telegram_color_text);
+                    }
+                    amountTextView.setText(ton);
+                } else if (withTon) {
                     SpannableStringBuilder ssb = new SpannableStringBuilder();
                     if (!tonAmount.isZero()) {
                         ssb.append(replaceStarsWithPlain(true, "⭐️" + tonAmount.asFormatString(), 0.62f, refTon));

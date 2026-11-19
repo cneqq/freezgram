@@ -12,6 +12,8 @@ import static org.telegram.ui.Stars.StarsController.findAttributes;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
@@ -83,6 +85,8 @@ import org.telegram.ui.Components.UniversalRecyclerView;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.drawable.color.impl.BlurredBackgroundProviderImpl;
 import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceColor;
+import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
+import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.Stars.StarGiftSheet;
 import org.telegram.ui.Stars.StarsController;
@@ -147,6 +151,15 @@ public class ResaleGiftsFragment extends BaseFragment implements FactorAnimator.
         iBlur3SourceColor = new BlurredBackgroundSourceColor();
         iBlur3SourceColor.setColor(getThemedColor(Theme.key_windowBackgroundWhite));
         iBlur3Factory = new BlurredBackgroundDrawableViewFactory(iBlur3SourceColor);
+        final boolean glassEnabled = app.freezgram.SmallElementsGlass.isEnabled();
+        final BlurredBackgroundSourceRenderNode marketBlur = glassEnabled
+                ? new BlurredBackgroundSourceRenderNode(iBlur3SourceColor) : null;
+        final BlurredBackgroundDrawableViewFactory marketGlass = glassEnabled
+                ? new BlurredBackgroundDrawableViewFactory(marketBlur) : null;
+        if (glassEnabled) {
+            marketBlur.setBlur(AndroidUtilities.dpf2(Math.max(12, app.freezgram.LiquidGlassStyle.blurRadiusDp())));
+            marketGlass.setLiquidGlassEffectAllowed(true);
+        }
 
         actionBar.setBackButtonDrawable(backDrawable = new BackDrawable(false));
         backDrawable.setAnimationTime(240);
@@ -161,6 +174,7 @@ public class ResaleGiftsFragment extends BaseFragment implements FactorAnimator.
                 }
             }
         });
+        actionBar.centerTitle();
         actionBar.setTitle(gift_name);
         actionBar.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundWhite));
         actionBar.setItemsColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText), false);
@@ -179,12 +193,31 @@ public class ResaleGiftsFragment extends BaseFragment implements FactorAnimator.
                 lp.topMargin = ActionBar.getCurrentActionBarHeight() + (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0) + dp(47);
 
                 lp = (LayoutParams) listView.getLayoutParams();
-                lp.topMargin = ActionBar.getCurrentActionBarHeight() + (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0);
+                lp.topMargin = glassEnabled ? 0 : ActionBar.getCurrentActionBarHeight() + (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0);
+                if (glassEnabled) {
+                    int topPadding = ((LayoutParams) filterScrollView.getLayoutParams()).topMargin + dp(45);
+                    if (listView.getPaddingTop() != topPadding) {
+                        listView.setPadding(0, topPadding, 0, listView.getPaddingBottom());
+                    }
+                }
 
                 lp = (LayoutParams) emptyView.getLayoutParams();
                 lp.topMargin = ActionBar.getCurrentActionBarHeight() + (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0);
 
                 super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            }
+
+            @Override
+            protected void dispatchDraw(Canvas canvas) {
+                if (marketBlur != null && canvas.isHardwareAccelerated() && getWidth() > 0 && getHeight() > 0) {
+                    int captureHeight = Math.min(getHeight(), actionBar.getHeight() + dp(47 + 48));
+                    Canvas backdrop = marketBlur.beginRecording(getWidth(), captureHeight);
+                    backdrop.drawColor(getThemedColor(Theme.key_windowBackgroundWhite));
+                    backdrop.translate(listView.getX(), listView.getY());
+                    listView.draw(backdrop);
+                    marketBlur.endRecording();
+                }
+                super.dispatchDraw(canvas);
             }
         };
         final int backgroundColor = Theme.blendOver(
@@ -193,9 +226,16 @@ public class ResaleGiftsFragment extends BaseFragment implements FactorAnimator.
         );
         fragmentView.setBackgroundColor(backgroundColor);
         this.fragmentView = fragmentView;
+        if (marketGlass != null) {
+            marketGlass.setSourceRootView(new ViewPositionWatcher(fragmentView), fragmentView);
+        }
 
         StarsIntroActivity.StarsBalanceView balanceView = new StarsIntroActivity.StarsBalanceView(context, currentAccount, resourceProvider);
-        balanceView.withTon();
+        if (glassEnabled) {
+            balanceView.withStackedBalance();
+        } else {
+            balanceView.withTon();
+        }
         ScaleStateListAnimator.apply(balanceView);
         balanceView.setOnClickListener(v -> {
             if (balanceView.lastBalance <= 0) return;
@@ -707,6 +747,16 @@ public class ResaleGiftsFragment extends BaseFragment implements FactorAnimator.
             ie.addView(listView);
             ie.show();
         });
+
+        if (marketGlass != null) {
+            actionBar.setBackground(marketGlass.create(actionBar,
+                    BlurredBackgroundProviderImpl.topPanelChatActivity(resourceProvider)));
+            filterScrollView.setBackgroundColor(Color.TRANSPARENT);
+            for (View button : new View[]{actionBar.getBackButton(), balanceView, sortButton, modelButton, backdropButton, patternButton}) {
+                button.setBackground(marketGlass.create(button, BlurredBackgroundProviderImpl.topPanel(resourceProvider))
+                        .setRadius(dp(24)));
+            }
+        }
 
         fireworksOverlay = new FireworksOverlay(getContext());
         fragmentView.addView(fireworksOverlay, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));

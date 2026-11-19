@@ -790,6 +790,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int membersSectionRow;
     private boolean hasMusic;
     private boolean hasMusicCard;
+    private boolean profileMusicCardStyle;
     private boolean hasBalance;
 
     private int sharedMediaRow;
@@ -1475,9 +1476,44 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 blurBounds.set(0, y1, getMeasuredWidth(), (int) v);
                 contentView.drawBlurRect(canvas, getY(), blurBounds, paint, true);
             }
+            if (canvas.isHardwareAccelerated() && !openAnimationInProgress && !isPulledDown
+                    && iBlur3SourceGlass != null && app.freezgram.SmallElementsGlass.isEnabled()) {
+                float glassProgress = 1f - Utilities.clamp(extraHeight / dp(28), 1f, 0f);
+                if (glassProgress > 0) {
+                    if (compactHeaderGlass == null) {
+                        compactHeaderGlass = iBlur3FactoryLiquidGlass.create(this,
+                                BlurredBackgroundProviderImpl.topPanelChatActivity(resourcesProvider));
+                    }
+                    compactHeaderGlass.setBounds(0, 0, getWidth(), height);
+                    compactHeaderGlass.setAlpha(Math.round(255 * glassProgress));
+                    compactHeaderGlass.draw(canvas);
+                    drawHeaderControl(canvas, actionBar.getBackButton(), glassProgress);
+                    drawHeaderControl(canvas, otherItem, glassProgress);
+                }
+            }
         }
 
         private Rect blurBounds = new Rect();
+        private final RectF headerControlBounds = new RectF();
+        private BlurredBackgroundDrawable compactHeaderGlass;
+        private BlurredBackgroundDrawable headerControlGlass;
+
+        private void drawHeaderControl(Canvas canvas, View control, float progress) {
+            if (control == null || control.getVisibility() != VISIBLE || control.getAlpha() == 0f
+                    || !ViewPositionWatcher.computeRectInParent(control, (ViewGroup) fragmentView, headerControlBounds)) {
+                return;
+            }
+            if (headerControlGlass == null) {
+                headerControlGlass = iBlur3FactoryLiquidGlass.create(this,
+                        BlurredBackgroundProviderImpl.topPanel(resourcesProvider)).setRadius(dp(23));
+            }
+            int radius = Math.min(dp(23), Math.round(headerControlBounds.width() / 2f));
+            int x = Math.round(headerControlBounds.centerX());
+            int y = Math.round(headerControlBounds.centerY());
+            headerControlGlass.setBounds(x - radius, y - radius, x + radius, y + radius);
+            headerControlGlass.setAlpha(Math.round(255 * progress * control.getAlpha()));
+            headerControlGlass.draw(canvas);
+        }
     }
 
     private class OverlaysView extends View implements ProfileGalleryView.Callback {
@@ -6001,9 +6037,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     actionsView.beginApplyingActions();
                     actionsView.addCameraAction();
                     actionsView.addEditInfo();
-                    if (!hasMainTabs || MainTabsHelper.isCallsTabShown(currentAccount)) {
-                        actionsView.addSettings();
-                    }
+                    actionsView.addSettings();
                     actionsView.commitActions();
                 } else {
                     writeButton.setAnimation(cameraDrawable);
@@ -9947,6 +9981,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     @Override
     public void onResume() {
         super.onResume();
+        if (profileMusicCardStyle != app.exteraless.appearance.AppearanceConfig.profileMusicCard()) {
+            updateListAnimated(false);
+        }
         if (userId != 0 || (chatId != 0 && !isTopic)) {
             FreezgramCommunity.refreshExteraRoles();
         }
@@ -10987,6 +11024,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         balanceDividerRow = -1;
         hasMusic = false;
         hasMusicCard = false;
+        profileMusicCardStyle = app.exteraless.appearance.AppearanceConfig.profileMusicCard();
         hasBalance = userId != 0 && userInfo != null && userInfo.wallet_card != null
                 && (imageUpdater == null || myProfile);
 
@@ -11035,7 +11073,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         if (userId != 0) {
             TLRPC.User user = getMessagesController().getUser(userId);
             if (userInfo != null && userInfo.saved_music != null && (imageUpdater == null || myProfile)) {
-                if (app.exteraless.appearance.AppearanceConfig.profileMusicCard()
+                if (profileMusicCardStyle
                         && app.exteraless.nowplaying.NowPlayingController.shouldShowCard(userInfo.saved_music)) {
                     hasMusicCard = true;
                 } else {

@@ -37,7 +37,7 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
     @Override protected void updateRows() {
         super.updateRows();
         addRow("interface");
-        addRow("navigation"); addRow("header"); addRow("composer"); addRow("chatList"); addRow("counters"); addRow();
+        addRow("navigation"); addRow("header"); addRow("composer"); addRow("chatList"); addRow("counters"); addRow("profileMusic"); addRow();
         addRow("chat"); addRow("messages"); addRow("messageDetails"); addRow("gifts"); addRow("surfaces"); addRow();
         addRow("effects"); addRow("glass"); addRow("dividers"); addRow("motion");
         if (motionExpanded) { addRow("motionFreezgram"); addRow("motionStandard"); }
@@ -65,6 +65,17 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
     @Override protected void onItemClick(View view, int position, float x, float y) {
         String key = rowMapReverse.get(position);
         if (key == null) return;
+        if (key.equals("profileMusic")) {
+            showDialog(new org.telegram.ui.ActionBar.AlertDialog.Builder(getParentActivity())
+                    .setTitle(text(R.string.OEProfileMusicDesign))
+                    .setItems(new CharSequence[]{
+                            text(R.string.OEProfileMusicUseCard), text(R.string.OEProfileMusicUseOfficial)
+                    }, (dialog, which) -> {
+                        AppearanceConfig.profileMusicCard.setConfigBool(which == 0);
+                        refreshRows();
+                    }).create());
+            return;
+        }
         if (key.equals("motion")) { motionExpanded = !motionExpanded; refreshRows(); return; }
         if (key.equals("snow")) { snowExpanded = !snowExpanded; refreshRows(); return; }
         if (key.equals("motionFreezgram") || key.equals("motionStandard")) {
@@ -107,6 +118,7 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
             case "composer": return R.string.FreezgramComposerSettings;
             case "chatList": return R.string.FreezgramStyleChatList;
             case "counters": return R.string.FreezgramUnreadCountersGlass;
+            case "profileMusic": return R.string.OEProfileMusicDesign;
             case "messageDetails": return R.string.FreezgramMessageDecorationsGlass;
             case "messages": return R.string.FreezgramMessageSurfaces;
             case "gifts": return R.string.FreezgramGiftGlassSettings;
@@ -127,6 +139,8 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
             case "navigation": return AppearanceConfig.iosNavigationBarStyle() ? "iOS" : text(AppearanceConfig.newNavigationBarStyle() ? R.string.FreezgramStyleMaterial : R.string.FreezgramChatComposerDefault);
             case "header": return AppearanceConfig.iosChatHeader() ? "iOS" : text(AppearanceConfig.newChatHeaderStyle() ? R.string.FreezgramStyleMaterial : R.string.FreezgramChatComposerDefault);
             case "composer": return AppearanceConfig.chatComposerStyle() == 1 ? "iOS" : "Android";
+            case "profileMusic": return text(AppearanceConfig.profileMusicCard()
+                    ? R.string.OEProfileMusicUseCard : R.string.OEProfileMusicUseOfficial);
             case "messages": return text(AppearanceConfig.sameMessageSurfaces() ? R.string.FreezgramStyleLinked : R.string.FreezgramStyleSeparate);
             case "gifts": return text(new int[]{R.string.FreezgramGiftCardOrdinary, R.string.FreezgramGiftCardGlass, R.string.FreezgramGiftCardSoft}[GiftGlassStyle.style()]);
             case "glass": return LiquidGlassStyle.blurRadiusDp() + " dp · " + AppearanceConfig.navigationGlassIntensity() + "%";

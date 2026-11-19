@@ -129,9 +129,9 @@
     <string name="OEAppearanceHideSettingsSections">Скрыть разделы настроек</string>
     <string name="OEBottomNavigationBar">Нижняя панель</string>
     <string name="OEProfileMusicDesign">Музыка в профиле</string>
-    <string name="OEProfileMusicUseOfficial">Как в Telegram</string>
-    <string name="OEProfileMusicUseOfficialInfo">Показывать трек под аватаркой, как в официальном клиенте?</string>
-    <string name="OEProfileMusicUseCard">Карточкой</string>
+    <string name="OEProfileMusicUseOfficial">Рядом с балансом</string>
+    <string name="OEProfileMusicUseOfficialInfo">Показывать трек в шапке профиля рядом с балансом?</string>
+    <string name="OEProfileMusicUseCard">Карточка под шапкой</string>
     <string name="OEProfileMusicUseCardInfo">Показывать трек карточкой под шапкой профиля?</string>
     <string name="OEAppearanceHiding">Скрытие элементов</string>
     <string name="OEAppearanceHidingInfo">Истории, кнопки, вкладки и AI-функции</string>

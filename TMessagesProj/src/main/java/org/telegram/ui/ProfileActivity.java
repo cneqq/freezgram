@@ -1487,8 +1487,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     compactHeaderGlass.setBounds(0, 0, getWidth(), height);
                     compactHeaderGlass.setAlpha(Math.round(255 * glassProgress));
                     compactHeaderGlass.draw(canvas);
-                    drawHeaderControl(canvas, actionBar.getBackButton(), glassProgress);
-                    drawHeaderControl(canvas, otherItem, glassProgress);
                 }
             }
         }
@@ -2046,6 +2044,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
                 @Override
                 public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+                    if (fragmentView != null && actionBar != null && app.freezgram.SmallElementsGlass.isEnabled()) {
+                        fragmentView.invalidate();
+                        actionBar.invalidate();
+                    }
                 }
 
                 @Override
@@ -2576,6 +2578,25 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             resourcesProvider = lastFragment.getResourceProvider();
         }
         ActionBar actionBar = new ActionBar(context, resourcesProvider) {
+            @Override
+            protected void dispatchDraw(Canvas canvas) {
+                if (canvas.isHardwareAccelerated() && topView != null && fragmentView instanceof ViewGroup
+                        && !openAnimationInProgress && iBlur3SourceGlass != null
+                        && app.freezgram.SmallElementsGlass.isEnabled()) {
+                    float progress = isPulledDown ? 1f : 1f - Utilities.clamp01(extraHeight / dp(28));
+                    if (progress > 0 && ViewPositionWatcher.computeRectInParent(this, (ViewGroup) fragmentView, headerBounds)) {
+                        canvas.save();
+                        canvas.translate(-headerBounds.left, -headerBounds.top);
+                        topView.drawHeaderControl(canvas, getBackButton(), progress);
+                        topView.drawHeaderControl(canvas, otherItem, progress);
+                        canvas.restore();
+                    }
+                }
+                super.dispatchDraw(canvas);
+            }
+
+            private final RectF headerBounds = new RectF();
+
             @Override
             public boolean onTouchEvent(MotionEvent event) {
                 avatarContainer.getHitRect(rect);
@@ -3943,6 +3964,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 super.onTabProgress(progress);
                 if (sharedMediaLayout == null) {
                     return;
+                }
+                if (app.freezgram.SmallElementsGlass.isEnabled()) {
+                    fragmentView.invalidate();
+                    actionBar.invalidate();
                 }
 
                 if (myProfile) {
@@ -5534,14 +5559,15 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
             @Override
             protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
+                float captionAlpha = 1f;
                 if (!openAnimationInProgress) {
-                    boolean showMediaCounter = mediaHeaderAnimationProgress >= .5f;
-                    if ((child == mediaCounterTextView && !showMediaCounter)
-                            || (showMediaCounter && (child == onlineTextView[0] || child == onlineTextView[1]
-                            || child == onlineTextView[2] || child == onlineTextView[3] || child == ratingView))) {
-                        return false;
+                    if (child == mediaCounterTextView) {
+                        captionAlpha = Utilities.clamp01((mediaHeaderAnimationProgress - .5f) * 2f);
+                    } else if (child == onlineTextView[0] || child == onlineTextView[1]
+                            || child == onlineTextView[2] || child == onlineTextView[3] || child == ratingView) {
+                        captionAlpha = 1f - Utilities.clamp01(mediaHeaderAnimationProgress * 2f);
                     }
-                    if (!showMediaCounter && (child == onlineTextView[1] || child == onlineTextView[2] || child == onlineTextView[3])) {
+                    if (child == onlineTextView[1] || child == onlineTextView[2] || child == onlineTextView[3]) {
                         View subtitle = onlineTextView[2];
                         if (subtitle.getVisibility() != View.VISIBLE || subtitle.getAlpha() <= .5f) {
                             subtitle = onlineTextView[1].getAlpha() > 0f ? onlineTextView[1] : onlineTextView[3];
@@ -5549,7 +5575,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         if (child != subtitle) return false;
                     }
                 }
-                return super.drawChild(canvas, child, drawingTime);
+                if (captionAlpha <= 0f) return false;
+                if (captionAlpha >= 1f) return super.drawChild(canvas, child, drawingTime);
+                final int saved = canvas.saveLayerAlpha(null, Math.round(255 * captionAlpha), Canvas.ALL_SAVE_FLAG);
+                try {
+                    return super.drawChild(canvas, child, drawingTime);
+                } finally {
+                    canvas.restoreToCount(saved);
+                }
             }
 
             @Override
@@ -6283,10 +6316,24 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         bottomButton2Container.setTranslationY(dp(69));
         contentView.addView(bottomButton2Container, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM | Gravity.FILL_HORIZONTAL));
 
+        final RectF galleryCaptureBounds = new RectF();
         iBlur3Capture = (c, p) -> {
             listViewCapture.capture(c, p);
             if (sharedMediaLayout.iBlur3Capture != null) {
                 sharedMediaLayout.iBlur3Capture.capture(c, p);
+            }
+            if (isPulledDown && app.freezgram.SmallElementsGlass.isEnabled()
+                    && avatarsViewPager != null && avatarsViewPager.getVisibility() == View.VISIBLE
+                    && avatarsViewPager.getWidth() > 0 && avatarsViewPager.getHeight() > 0
+                    && ViewPositionWatcher.computeRectInParent(avatarsViewPager, (ViewGroup) fragmentView, galleryCaptureBounds)
+                    && RectF.intersects(p, galleryCaptureBounds)) {
+                final int saved = c.save();
+                c.clipRect(galleryCaptureBounds);
+                c.translate(galleryCaptureBounds.left, galleryCaptureBounds.top);
+                c.scale(galleryCaptureBounds.width() / avatarsViewPager.getWidth(),
+                        galleryCaptureBounds.height() / avatarsViewPager.getHeight());
+                avatarsViewPager.draw(c);
+                c.restoreToCount(saved);
             }
         };
 
@@ -8111,6 +8158,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         @Override
         public void setValue(ActionBar object, float value) {
             mediaHeaderAnimationProgress = value;
+            if (avatarContainer2 != null) {
+                avatarContainer2.invalidate();
+            }
             if (storyView != null) {
                 storyView.setActionBarActionMode(value);
             }

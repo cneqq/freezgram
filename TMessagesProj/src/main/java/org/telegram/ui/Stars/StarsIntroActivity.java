@@ -800,6 +800,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
         private final AnimatedTextView amountTextView;
         private boolean withTon;
         private boolean stackedBalance;
+        private AnimatedTextView stackedStarsTextView;
 
         public StarsBalanceView(Context context, int currentAccount, Theme.ResourcesProvider resourcesProvider) {
             super(context);
@@ -850,8 +851,16 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
         }
 
         public void withStackedBalance() {
+            if (stackedBalance) return;
             withTon = true;
             stackedBalance = true;
+            stackedStarsTextView = new AnimatedTextView(getContext());
+            stackedStarsTextView.adaptWidth = true;
+            stackedStarsTextView.setTextSize(dp(13));
+            stackedStarsTextView.setTypeface(AndroidUtilities.bold());
+            stackedStarsTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
+            stackedStarsTextView.setGravity(Gravity.RIGHT);
+            addView(stackedStarsTextView, 1, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, 20, Gravity.RIGHT));
             amountTextView.setPadding(0, 0, 0, 0);
             updateBalance(false);
         }
@@ -921,7 +930,8 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
             }
             if (loading) {
                 if (stackedBalance) {
-                    headerTextView.setText(getString(R.string.StarsBalance));
+                    headerTextView.setVisibility(View.VISIBLE);
+                    stackedStarsTextView.setVisibility(View.GONE);
                 }
                 if (loadingString == null) {
                     loadingString = new SpannableString("x");
@@ -931,13 +941,15 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                 lastBalance = -1;
             } else {
                 if (stackedBalance) {
-                    headerTextView.setText(replaceStarsWithPlain(
-                            "⭐️" + LocaleController.formatNumber(balance, ' '), 0.62f, ref));
+                    headerTextView.setVisibility(View.GONE);
+                    stackedStarsTextView.setVisibility(View.VISIBLE);
+                    stackedStarsTextView.setText(replaceStarsWithPlain(
+                            "⭐️" + LocaleController.formatNumber(balance, ' '), 0.62f, ref), animated);
                     CharSequence ton = replaceStarsWithPlain(true, "⭐️" + tonAmount.asFormatString(), 0.62f, refTon);
                     if (refTon[0] != null) {
                         refTon[0].setColorKey(Theme.key_telegram_color_text);
                     }
-                    amountTextView.setText(ton);
+                    amountTextView.setText(ton, animated);
                 } else if (withTon) {
                     SpannableStringBuilder ssb = new SpannableStringBuilder();
                     if (!tonAmount.isZero()) {

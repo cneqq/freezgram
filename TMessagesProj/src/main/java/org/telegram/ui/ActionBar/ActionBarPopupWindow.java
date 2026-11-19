@@ -72,6 +72,39 @@ public class ActionBarPopupWindow extends PopupWindow {
     private boolean pauseNotifications;
     private long outEmptyTime = -1;
     private boolean scaleOut;
+    private float anchorScaleX = 1f;
+    private float anchorScaleY = 1f;
+    private boolean anchorReveal;
+
+    public void revealFrom(View anchor) {
+        final View content = getContentView();
+        if (!isShowing() || isClosingAnimated || content == null) {
+            return;
+        }
+        if (!anchor.isAttachedToWindow() || content.getWidth() == 0 || content.getHeight() == 0) {
+            content.setAlpha(1f);
+            return;
+        }
+        int[] anchorPosition = new int[2];
+        int[] contentPosition = new int[2];
+        anchor.getLocationOnScreen(anchorPosition);
+        content.getLocationOnScreen(contentPosition);
+        content.setPivotX(anchorPosition[0] - contentPosition[0] + anchor.getWidth() / 2f);
+        content.setPivotY(anchorPosition[1] - contentPosition[1] + anchor.getHeight() / 2f);
+        anchorScaleX = Math.min(1f, (float) anchor.getWidth() / content.getWidth());
+        anchorScaleY = Math.min(1f, (float) anchor.getHeight() / content.getHeight());
+        anchorReveal = true;
+        content.setScaleX(anchorScaleX);
+        content.setScaleY(anchorScaleY);
+        windowAnimatorSet = new AnimatorSet();
+        windowAnimatorSet.playTogether(
+                ObjectAnimator.ofFloat(content, View.SCALE_X, 1f),
+                ObjectAnimator.ofFloat(content, View.SCALE_Y, 1f),
+                ObjectAnimator.ofFloat(content, View.ALPHA, 1f));
+        windowAnimatorSet.setDuration(260);
+        windowAnimatorSet.setInterpolator(org.telegram.ui.Components.CubicBezierInterpolator.EASE_OUT_QUINT);
+        windowAnimatorSet.start();
+    }
 
     static {
         Field f = null;
@@ -1111,10 +1144,10 @@ public class ActionBarPopupWindow extends PopupWindow {
             if (outEmptyTime > 0) {
                 windowAnimatorSet.playTogether(ValueAnimator.ofFloat(0, 1f));
                 windowAnimatorSet.setDuration(outEmptyTime);
-            } else if (scaleOut) {
+            } else if (anchorReveal || scaleOut) {
                 windowAnimatorSet.playTogether(
-                        ObjectAnimator.ofFloat(viewGroup, View.SCALE_Y, 0.8f),
-                        ObjectAnimator.ofFloat(viewGroup, View.SCALE_X, 0.8f),
+                        ObjectAnimator.ofFloat(viewGroup, View.SCALE_Y, anchorReveal ? anchorScaleY : 0.8f),
+                        ObjectAnimator.ofFloat(viewGroup, View.SCALE_X, anchorReveal ? anchorScaleX : 0.8f),
                         ObjectAnimator.ofFloat(viewGroup, View.ALPHA, 0.0f));
                 windowAnimatorSet.setDuration(dismissAnimationDuration);
             } else {

@@ -11,12 +11,14 @@ import static org.telegram.ui.Stars.StarsController.findAttributes;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
@@ -242,6 +244,8 @@ public class ResaleGiftsFragment extends BaseFragment implements FactorAnimator.
             presentFragment(new StarsIntroActivity());
         });
         actionBar.addView(balanceView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM | Gravity.RIGHT, 0, 0, 4, 0));
+        balanceView.addOnLayoutChangeListener((view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
+                actionBar.setTitleRightMargin(right - left + dp(8)));
 
         listView = new UniversalRecyclerView(this, this::fillItems, this::onItemClick, this::onItemLongClick) {
             @Override
@@ -267,6 +271,15 @@ public class ResaleGiftsFragment extends BaseFragment implements FactorAnimator.
         listView.setPadding(0, dp(45), 0, dp(56 + 45));
         listView.setClipToPadding(false);
         fragmentView.addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL, 7.33f, 0, 7.33f, -45));
+        if (glassEnabled) {
+            View fade = new View(context);
+            fade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{
+                    Theme.multAlpha(getThemedColor(Theme.key_windowBackgroundWhite), .78f), Color.TRANSPARENT
+            }));
+            fragmentView.addView(fade, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 56, Gravity.TOP));
+            fade.addOnLayoutChangeListener((view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
+                    view.setTranslationY(actionBar.getMeasuredHeight()));
+        }
         fragmentView.addView(actionBar);
 
         emptyView = new LargeEmptyView(context, v -> {
@@ -378,7 +391,7 @@ public class ResaleGiftsFragment extends BaseFragment implements FactorAnimator.
         filtersContainer.addView(sortButton, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_VERTICAL, 0, 0, 6, 0));
         sortButton.setOnClickListener(v -> {
             if (!filtersShown) return;
-            ItemOptions.makeOptions(this, sortButton)
+            final ItemOptions options = ItemOptions.makeOptions(this, sortButton)
                 .add(R.drawable.menu_sort_value, getString(ResaleGiftsList.Sorting.BY_PRICE.buttonStringResId), () -> {
                     list.setSorting(ResaleGiftsList.Sorting.BY_PRICE);
                 })
@@ -405,8 +418,8 @@ public class ResaleGiftsFragment extends BaseFragment implements FactorAnimator.
                 })
                 .setDrawScrim(false)
                 .setOnTopOfScrim()
-                .translate(0, dp(-8))
-                .show();
+                .translate(0, dp(-8));
+            showFilterMenu(options);
         });
 
         modelButton = new Filter(context, resourceProvider);
@@ -519,7 +532,7 @@ public class ResaleGiftsFragment extends BaseFragment implements FactorAnimator.
                 });
             }
             ie.addView(listView);
-            ie.show();
+            showFilterMenu(ie);
         });
 
         backdropButton = new Filter(context, resourceProvider);
@@ -632,7 +645,7 @@ public class ResaleGiftsFragment extends BaseFragment implements FactorAnimator.
                 });
             }
             ie.addView(listView);
-            ie.show();
+            showFilterMenu(ie);
         });
 
         patternButton = new Filter(context, resourceProvider);
@@ -745,7 +758,7 @@ public class ResaleGiftsFragment extends BaseFragment implements FactorAnimator.
                 });
             }
             ie.addView(listView);
-            ie.show();
+            showFilterMenu(ie);
         });
 
         if (marketGlass != null) {
@@ -766,43 +779,45 @@ public class ResaleGiftsFragment extends BaseFragment implements FactorAnimator.
         return fragmentView;
     }
 
+    private void showFilterMenu(ItemOptions options) {
+        if (app.freezgram.SmallElementsGlass.isEnabled()) {
+            options.animateFromAnchor();
+        }
+        options.show();
+    }
+
     private boolean filtersShown = true;
+    private float filtersHiddenProgress;
+    private ValueAnimator filtersAnimator;
+
     private void setFiltersShown(boolean show, boolean animated) {
-        if (filtersShown == show) return;
+        if (filtersShown == show && animated) return;
         filtersShown = show;
+        if (filtersAnimator != null) {
+            filtersAnimator.cancel();
+            filtersAnimator = null;
+        }
+        final float target = show ? 0f : 1f;
         if (animated) {
             filterScrollView.setVisibility(View.VISIBLE);
-            filterScrollView.animate()
-                .translationY(show ? 0 : -dp(45))
-                .alpha(show ? 1.0f : 0.0f)
-                .setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT)
-                .setDuration(420)
-                .setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        if (!show) {
-                            filterScrollView.setVisibility(View.GONE);
-                        }
-                    }
-                })
-                .start();
-            filtersDivider.animate()
-                .translationY(show ? 0 : -dp(45))
-                .setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT)
-                .setDuration(420)
-                .start();
-            listView.animate()
-                .translationY(show ? 0 : -dp(45 - 6))
-                .setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT)
-                .setDuration(420)
-                .start();
+            filtersAnimator = ValueAnimator.ofFloat(filtersHiddenProgress, target);
+            filtersAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
+            filtersAnimator.setDuration(420);
+            filtersAnimator.addUpdateListener(animation -> updateFiltersPosition((float) animation.getAnimatedValue()));
+            filtersAnimator.start();
         } else {
-            filterScrollView.setVisibility(show ? View.VISIBLE : View.GONE);
-            filterScrollView.setTranslationY(show ? 0 : -dp(45));
-            filterScrollView.setAlpha(show ? 1.0f : 0.0f);
-            filtersDivider.setTranslationY(show ? 0 : -dp(45));
-            listView.setTranslationY(show ? 0 : -dp(45 - 6));
+            updateFiltersPosition(target);
         }
+    }
+
+    private void updateFiltersPosition(float hiddenProgress) {
+        filtersHiddenProgress = hiddenProgress;
+        final float shift = -dp(45) * hiddenProgress;
+        filterScrollView.setTranslationY(shift);
+        filterScrollView.setAlpha(1f - hiddenProgress);
+        filterScrollView.setVisibility(hiddenProgress >= 1f ? View.GONE : View.VISIBLE);
+        filtersDivider.setTranslationY(shift);
+        listView.setTranslationY(shift);
     }
 
     private void updateList(boolean first) {

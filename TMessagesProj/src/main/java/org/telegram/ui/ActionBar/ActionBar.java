@@ -639,7 +639,9 @@ public class ActionBar extends FrameLayout implements FactorAnimator.Target, The
     }
 
     public void setTitleRightMargin(int value) {
+        if (titleRightMargin == value) return;
         titleRightMargin = value;
+        requestLayout();
     }
 
     public void setTitle(CharSequence value) {
@@ -1485,9 +1487,9 @@ public class ActionBar extends FrameLayout implements FactorAnimator.Target, The
 
     private int centerTitleRightBound(int width) {
         if (menu == null || menu.getVisibility() == GONE) {
-            return width - dp(16);
+            return width - Math.max(dp(16), titleRightMargin);
         }
-        return width - menu.getVisibleItemsMeasuredWidthForCenterTitle();
+        return width - Math.max(menu.getVisibleItemsMeasuredWidthForCenterTitle(), titleRightMargin);
     }
 
     private boolean useAdaptiveCenterTitle() {

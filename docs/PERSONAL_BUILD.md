@@ -4,7 +4,7 @@ Actions → Personal release APK → Run workflow → no-plugins.
 Используются Actions Secrets `API_ID` и `API_HASH`, а также постоянный ключ
 подписи. Настройки старых запусков telegram_credentials/personal_signing удалены.
 
-Workflow на push собирает один универсальный APK (ARM64 и x86_64), проверяет его и публикует в Releases. Ручной запуск использует тот же вариант. APK подписывается постоянным ключом. Всегда собирается оптимизированный release APK с R8 и shrinkResources.
+Workflow на push собирает один универсальный APK (ARM64 и x86_64), проверяет его и загружает в артефакты GitHub Actions. Ручной запуск использует тот же вариант. APK подписывается постоянным ключом. Всегда собирается оптимизированный release APK с R8 и shrinkResources.
 Режим quick удалён: измеренный выигрыш был небольшим, а APK получался больше.
 Постоянные пакет, ключ подписи и возрастающий versionCode сохранены.
 
@@ -91,8 +91,8 @@ Firebase-конфигурация upstream не подходит к произв
 
 ## Результат
 
-На push и при ручном запуске workflow собирает, проверяет и публикует один
-универсальный APK в GitHub Releases.
+На push и при ручном запуске workflow собирает и проверяет один универсальный APK.
+Для публикации в GitHub Releases используйте APK из завершённой сборки после отдельного согласования.
 Также сохраняются ZIP-артефакты с APK, SHA256SUMS.txt и build-info.json.
 Workflow не пишет в Telegram.
 
@@ -117,4 +117,4 @@ R8 и уменьшение ресурсов всегда включены для
 
 Инструменты: Java 21, Python 3.11, Gradle 9.7.1 с официальным wrapper checksum,
 Android platform 37.0, Build Tools 36.0.0, NDK 27.2.12479018, CMake 3.31.6.
-Actions закреплены SHA; релиз публикует отдельная задача с правом `contents:write`.
+Actions закреплены SHA. Workflow сборки использует доступ `contents:read`.

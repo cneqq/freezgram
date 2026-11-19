@@ -330,6 +330,12 @@ public class ItemOptions {
     }
 
     private boolean scaleOut;
+    private boolean animateFromAnchor;
+
+    public ItemOptions animateFromAnchor() {
+        animateFromAnchor = true;
+        return this;
+    }
     public ItemOptions setScaleOut(boolean scaleOut) {
         this.scaleOut = scaleOut;
         return this;
@@ -1464,7 +1470,8 @@ public class ItemOptions {
         actionBarPopupWindow.setOutsideTouchable(true);
         actionBarPopupWindow.setFocusable(!dontFocus);
         actionBarPopupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        actionBarPopupWindow.setAnimationStyle(R.style.PopupContextAnimation);
+        final boolean anchoredAnimation = animateFromAnchor && scrimView != null;
+        actionBarPopupWindow.setAnimationStyle(anchoredAnimation ? 0 : R.style.PopupContextAnimation);
         if (allowShowingOnTopOfKeyboard) {
             actionBarPopupWindow.setInputMethodMode(ActionBarPopupWindow.INPUT_METHOD_NOT_NEEDED);
             actionBarPopupWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED);
@@ -1610,12 +1617,20 @@ public class ItemOptions {
         }
 
         actionBarPopupWindow.setScaleOut(scaleOut);
+        if (anchoredAnimation) {
+            layout.setAlpha(0f);
+        }
         actionBarPopupWindow.showAtLocation(
             container,
             0,
             (int) (offsetX = (X + this.translateX)),
             (int) (offsetY = (Y + this.translateY))
         );
+        if (anchoredAnimation) {
+            final ActionBarPopupWindow popup = actionBarPopupWindow;
+            final View anchor = scrimView;
+            layout.post(() -> popup.revealFrom(anchor));
+        }
 
         if (longPressSelectionEnabled) {
             installHoverReleaseListener();

@@ -15,8 +15,7 @@ import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
-import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableSource;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSource;
+import org.telegram.utils.glass.source.GlassSource;
 import org.telegram.ui.Stories.recorder.PreviewView;
 
 /** Native incoming/outgoing messages and a channel post, over the current wallpaper. */
@@ -53,8 +52,8 @@ public final class MessageSurfacePreview extends SizeNotifierFrameLayout {
         messages = new LinearLayout(context); messages.setOrientation(LinearLayout.VERTICAL);
         messages.setPadding(0, org.telegram.messenger.AndroidUtilities.dp(12), 0, org.telegram.messenger.AndroidUtilities.dp(12));
         addView(messages, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP));
-        BlurredBackgroundSource wallpaper = new BlurredBackgroundSource() {
-            @Override public BlurredBackgroundDrawable createDrawable() { return new BlurredBackgroundDrawableSource(this); }
+        GlassSource wallpaper = new GlassSource() {
+            @Override public BlurredBackgroundDrawable createDrawable() { return new BlurredBackgroundDrawable(this); }
             @Override public void draw(Canvas canvas, float l, float t, float r, float b) { drawWallpaperForGlass(canvas); }
         };
         MessageSurfaceRenderer renderer = new MessageSurfaceRenderer(this, wallpaper, provider);

@@ -19,7 +19,7 @@ import org.telegram.ui.Cells.ChatActionCell;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
+import org.telegram.utils.glass.source.GlassSourceRenderNode;
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stories.recorder.PreviewView;
@@ -29,7 +29,7 @@ public final class GiftCardPreview extends SizeNotifierFrameLayout implements No
     private final int account;
     private final ChatActionCell cell;
     private final TextView status;
-    private BlurredBackgroundSourceRenderNode source;
+    private GlassSourceRenderNode source;
     private long selectedGiftId;
 
     public GiftCardPreview(Context context, int account, Theme.ResourcesProvider provider) {
@@ -52,7 +52,7 @@ public final class GiftCardPreview extends SizeNotifierFrameLayout implements No
         status.setTextColor(Theme.getColor(Theme.key_chat_serviceText, provider));
         addView(status, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 200, Gravity.CENTER));
         if (Build.VERSION.SDK_INT >= 33) {
-            source = new BlurredBackgroundSourceRenderNode(null);
+            source = new GlassSourceRenderNode(null);
             var factory = new BlurredBackgroundDrawableViewFactory(new ViewPositionWatcher(this), this, SmallElementsGlass.createGiftSource(source));
             factory.setLiquidGlassEffectAllowed(true); cell.setServiceGlassFactory(factory);
         }

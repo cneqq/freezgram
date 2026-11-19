@@ -15,14 +15,14 @@ import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
+import org.telegram.utils.glass.source.GlassSourceRenderNode;
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Stories.recorder.PreviewView;
 
 /** Real FilterTabsView, with the same opt-in material as the existing shared preview. */
 final class FoldersGlassPreview extends SizeNotifierFrameLayout {
     private final FoldersPreviewCell folders;
-    private BlurredBackgroundSourceRenderNode source;
+    private GlassSourceRenderNode source;
     private BlurredBackgroundDrawable glass;
     FoldersGlassPreview(Context context, int account, Theme.ResourcesProvider provider) {
         super(context);
@@ -30,7 +30,7 @@ final class FoldersGlassPreview extends SizeNotifierFrameLayout {
         folders = new FoldersPreviewCell(context, provider);
         addView(folders, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 86, Gravity.TOP, 0, 16, 0, 0));
         if (Build.VERSION.SDK_INT >= 33) {
-            source = new BlurredBackgroundSourceRenderNode(null);
+            source = new GlassSourceRenderNode(null);
             BlurredBackgroundDrawableViewFactory factory = new BlurredBackgroundDrawableViewFactory(new ViewPositionWatcher(this), this, source);
             factory.setLiquidGlassEffectAllowed(true);
             glass = factory.create(folders.getTabsPreviewView(), LiquidGlassStyle.colors(provider, this::effectsEnabled));
@@ -51,7 +51,7 @@ final class FoldersGlassPreview extends SizeNotifierFrameLayout {
             drawWallpaperForGlass(recording); source.endRecording();
             source.setBlur(AndroidUtilities.dpf2(LiquidGlassStyle.blurRadiusDp()), LiquidGlassStyle.enhanceColors() ? org.telegram.messenger.utils.RenderNodeEffects.getSaturationX3RenderEffect() : null);
             LiquidGlassStyle.configure(glass);
-            ((org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode) glass).setLiquidGlassEffectAllowed(effectsEnabled());
+            ((BlurredBackgroundDrawable) glass).setLiquidGlassEffectAllowed(effectsEnabled());
             glass.updateColors();
         }
         super.dispatchDraw(canvas);

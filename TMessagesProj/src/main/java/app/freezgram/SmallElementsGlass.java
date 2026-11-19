@@ -13,10 +13,9 @@ import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
-import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSource;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceBitmap;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
+import org.telegram.utils.glass.source.GlassSource;
+import org.telegram.utils.glass.source.GlassSourceBitmap;
+import org.telegram.utils.glass.source.GlassSourceRenderNode;
 import org.telegram.ui.Components.blur3.utils.Blur3Utils;
 
 /** Shared opt-in for small app surfaces; system notifications are not affected. */
@@ -44,30 +43,30 @@ public final class SmallElementsGlass {
     }
 
     /** Bridge existing bitmap captures into the same AGSL renderer used by the panels. */
-    public static BlurredBackgroundSource createSource(BlurredBackgroundSource source) {
+    public static GlassSource createSource(GlassSource source) {
         return source instanceof SnapshotSource ? source : new SnapshotSource(source);
     }
 
-    public static BlurredBackgroundSource createFrostedSource(BlurredBackgroundSource source) {
+    public static GlassSource createFrostedSource(GlassSource source) {
         return new SnapshotSource(source, false, 18);
     }
 
     /** Gift optics are independent; unwrap an existing bridge to avoid blurring twice. */
-    public static BlurredBackgroundSource createGiftSource(BlurredBackgroundSource source) {
+    public static GlassSource createGiftSource(GlassSource source) {
         return new SnapshotSource(source instanceof SnapshotSource ? ((SnapshotSource) source).input : source, true);
     }
 
-    private static final class SnapshotSource extends BlurredBackgroundSourceRenderNode {
-        private final BlurredBackgroundSource input;
+    private static final class SnapshotSource extends GlassSourceRenderNode {
+        private final GlassSource input;
         private final boolean gift;
         private final int minimumBlur;
         private Bitmap lastBitmap;
-        private BlurredBackgroundSourceRenderNode recording;
+        private GlassSourceRenderNode recording;
         private int lastRevision = Integer.MIN_VALUE;
         private int lastLeft = Integer.MIN_VALUE, lastTop = Integer.MIN_VALUE;
-        SnapshotSource(BlurredBackgroundSource source) { this(source, false); }
-        SnapshotSource(BlurredBackgroundSource source, boolean gift) { this(source, gift, 0); }
-        SnapshotSource(BlurredBackgroundSource source, boolean gift, int minimumBlur) {
+        SnapshotSource(GlassSource source) { this(source, false); }
+        SnapshotSource(GlassSource source, boolean gift) { this(source, gift, 0); }
+        SnapshotSource(GlassSource source, boolean gift, int minimumBlur) {
             super(source);
             input = source;
             this.gift = gift;
@@ -75,7 +74,7 @@ public final class SmallElementsGlass {
         }
         @Override public BlurredBackgroundDrawable createDrawable() {
             // Each shape owns its recording. Reaction bubbles must not resize the main panel's source.
-            return new BlurredBackgroundDrawableRenderNode(new SnapshotSource(input, gift, minimumBlur));
+            return new BlurredBackgroundDrawable(new SnapshotSource(input, gift, minimumBlur));
         }
         @Override public void draw(Canvas canvas, float left, float top, float right, float bottom) {
             if (!canvas.isHardwareAccelerated()) { input.draw(canvas, left, top, right, bottom); return; }
@@ -83,7 +82,7 @@ public final class SmallElementsGlass {
             int originX = (int) Math.floor(left) - padding, originY = (int) Math.floor(top) - padding;
             int width = Math.max(1, (int) Math.ceil(right) - originX + padding);
             int height = Math.max(1, (int) Math.ceil(bottom) - originY + padding);
-            Bitmap bitmap = input instanceof BlurredBackgroundSourceBitmap ? ((BlurredBackgroundSourceBitmap) input).getBitmap() : null;
+            Bitmap bitmap = input instanceof GlassSourceBitmap ? ((GlassSourceBitmap) input).getBitmap() : null;
             int revision = gift ? GiftGlassStyle.revision() : LiquidGlassStyle.revision();
             boolean geometryChanged = recording == null || originX != lastLeft || originY != lastTop
                     || recording.needUpdateDisplayList(width, height);
@@ -91,7 +90,7 @@ public final class SmallElementsGlass {
                 // A shared wallpaper under-source can be recorded into several glass shapes.
                 // Keep previous nodes alive with their original geometry: the canvas retains
                 // references to them, not copies of their contents.
-                if (geometryChanged) recording = new BlurredBackgroundSourceRenderNode(input);
+                if (geometryChanged) recording = new GlassSourceRenderNode(input);
                 lastBitmap = bitmap; lastRevision = revision; lastLeft = originX; lastTop = originY;
                 Canvas capture = recording.beginRecording(width, height);
                 capture.translate(-originX, -originY);
@@ -116,7 +115,7 @@ public final class SmallElementsGlass {
         private final LiveGlassBackdrop liveBackdrop = new LiveGlassBackdrop();
         public NotificationBackdrop() { this(SmallElementsGlass::isEnabled, false); }
         public NotificationBackdrop(java.util.function.BooleanSupplier enabled, boolean hideOwner) { this.enabled = enabled; this.hideOwner = hideOwner; }
-        private final BlurredBackgroundSourceBitmap bitmapSource = new BlurredBackgroundSourceBitmap();
+        private final GlassSourceBitmap bitmapSource = new GlassSourceBitmap();
         private BlurredBackgroundDrawable glass;
         private Bitmap bitmap;
         private View capturedRoot;
@@ -187,7 +186,7 @@ public final class SmallElementsGlass {
             glass.setSourceOffset(ownerLocation[0] - rootLocation[0], ownerLocation[1] - rootLocation[1]);
             glass.setBounds(bounds); glass.setRadius(AndroidUtilities.dp(radiusDp));
             LiquidGlassStyle.configure(glass);
-            ((BlurredBackgroundDrawableRenderNode) glass).setLiquidGlassEffectAllowed(true);
+            ((BlurredBackgroundDrawable) glass).setLiquidGlassEffectAllowed(true);
             glass.updateColors(); glass.draw(canvas);
             return true;
         }

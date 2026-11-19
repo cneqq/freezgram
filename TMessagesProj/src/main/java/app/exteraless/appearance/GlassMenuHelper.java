@@ -17,7 +17,7 @@ import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundProvider;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundProviderBuilder;
 import org.telegram.ui.Components.blur3.drawable.color.impl.BlurredBackgroundProviderImpl;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceBitmap;
+import org.telegram.utils.glass.source.GlassSourceBitmap;
 import org.telegram.ui.Components.blur3.utils.Blur3Utils;
 
 /**
@@ -156,7 +156,7 @@ public abstract class GlassMenuHelper {
     public static void applyToStandalonePopup(ActionBarPopupWindow.ActionBarPopupWindowLayout popup,
                                              Theme.ResourcesProvider provider, View root) {
         if (!app.freezgram.SmallElementsGlass.isEnabled() || !(root instanceof ViewGroup)) return;
-        BlurredBackgroundSourceBitmap bitmap = new BlurredBackgroundSourceBitmap();
+        GlassSourceBitmap bitmap = new GlassSourceBitmap();
         BlurredBackgroundDrawableViewFactory factory = new BlurredBackgroundDrawableViewFactory(bitmap);
         // Attach the position observer to the popup, so it stops when the window closes.
         factory.setSourceRootView(new org.telegram.ui.Components.chat.ViewPositionWatcher(popup), (ViewGroup) root);
@@ -180,7 +180,7 @@ public abstract class GlassMenuHelper {
      * и обычным popup'ом на лету.
      */
     public static void applyToReusedMenu(BlurredBackgroundDrawableViewFactory factory,
-                                         BlurredBackgroundSourceBitmap sourceBitmap,
+                                         GlassSourceBitmap sourceBitmap,
                                          Theme.ResourcesProvider resourcesProvider,
                                          ActionBarPopupWindow.ActionBarPopupWindowLayout popupLayout,
                                          View rootView,
@@ -202,7 +202,7 @@ public abstract class GlassMenuHelper {
     }
 
     /** Снимок экрана под меню для источника блюра. */
-    public static void captureBlur(final BlurredBackgroundSourceBitmap sourceBitmap,
+    public static void captureBlur(final GlassSourceBitmap sourceBitmap,
                                    final BlurredBackgroundDrawableViewFactory factory,
                                    final View view) {
         if (app.freezgram.SmallElementsGlass.isEnabled()) {

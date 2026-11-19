@@ -8,15 +8,14 @@ import android.view.ViewParent;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
-import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSource;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceColor;
+import org.telegram.utils.glass.source.GlassSource;
+import org.telegram.utils.glass.source.GlassSourceColor;
 
 /** Small counters reuse their panel's GPU source. Never capture or redraw the window. */
 public final class CounterGlass {
-    private final BlurredBackgroundSourceColor flatSource = new BlurredBackgroundSourceColor();
-    private BlurredBackgroundSource source;
-    private BlurredBackgroundDrawableRenderNode glass;
+    private final GlassSourceColor flatSource = new GlassSourceColor();
+    private GlassSource source;
+    private BlurredBackgroundDrawable glass;
     private final Rect bounds = new Rect();
     private final int[] ownerLocation = new int[2], panelLocation = new int[2];
 
@@ -26,7 +25,7 @@ public final class CounterGlass {
         // List rows have a uniform background. Tabs can reuse an existing live blurred
         // panel source, including its offset, without recording the list a second time.
         flatSource.setColor(Theme.getColor(Theme.key_windowBackgroundWhite, provider));
-        BlurredBackgroundSource next = flatSource;
+        GlassSource next = flatSource;
         float offsetX = 0, offsetY = 0;
         for (ViewParent parent = owner.getParent(); parent instanceof View panel; parent = panel.getParent()) {
             if (panel.getBackground() instanceof BlurredBackgroundDrawable background) {
@@ -40,7 +39,7 @@ public final class CounterGlass {
         if (next == null) return false;
         if (glass == null || source != next) {
             release(); source = next;
-            glass = new BlurredBackgroundDrawableRenderNode(source);
+            glass = new BlurredBackgroundDrawable(source);
             glass.setColorProvider(LiquidGlassStyle.surfaceColors(provider, SmallElementsGlass::areUnreadCountersEnabled));
             glass.setCallback(owner);
             glass.setLiquidGlassEffectAllowed(true);

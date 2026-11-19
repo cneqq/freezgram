@@ -10,7 +10,6 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
-import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundProvider;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundProviderBuilder;
 
@@ -41,8 +40,8 @@ public final class LiquidGlassStyle {
         BlurredBackgroundDrawable drawable = factory.create(owner,
                 surfaceColors(provider, LiquidGlassStyle::canDrawGlass, false));
         configure(drawable);
-        if (Build.VERSION.SDK_INT >= 33 && drawable instanceof BlurredBackgroundDrawableRenderNode renderNode) {
-            renderNode.setLiquidGlassEffectAllowed(true);
+        if (Build.VERSION.SDK_INT >= 33) {
+            drawable.setLiquidGlassEffectAllowed(true);
         }
         return drawable;
     }

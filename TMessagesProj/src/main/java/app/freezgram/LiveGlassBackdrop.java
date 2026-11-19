@@ -14,14 +14,13 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
-import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSource;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
+import org.telegram.utils.glass.source.GlassSource;
+import org.telegram.utils.glass.source.GlassSourceRenderNode;
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
 
 /** Reuses the screen's existing GPU scene; never draws the root or allocates a bitmap. */
 public final class LiveGlassBackdrop {
-    public static void install(ViewGroup scope, BlurredBackgroundSource source) {
+    public static void install(ViewGroup scope, GlassSource source) {
         scope.setTag(R.id.freezgram_live_glass_source, source == null ? null : new Scene(source));
     }
     /** Bulletins live beside the fragment view in the navigation container. */
@@ -29,10 +28,10 @@ public final class LiveGlassBackdrop {
         overlay.setTag(R.id.freezgram_live_glass_scope, screen instanceof ViewGroup ? new WeakReference<>(screen) : null);
     }
     private static final class Scene {
-        final BlurredBackgroundSource input, blurred;
+        final GlassSource input, blurred;
         final WeakHashMap<View, Boolean> owners = new WeakHashMap<>();
         final int[] ownerLocation = new int[2], scopeLocation = new int[2];
-        Scene(BlurredBackgroundSource input) { this.input = input; blurred = SmallElementsGlass.createSource(input); }
+        Scene(GlassSource input) { this.input = input; blurred = SmallElementsGlass.createSource(input); }
     }
 
     /** Add only visible overlay regions to the screen's existing scroll capture. */
@@ -109,11 +108,11 @@ public final class LiveGlassBackdrop {
             int radiusDp, BooleanSupplier enabled, boolean surface, boolean drawStroke) {
         if (scene == null || !canvas.isHardwareAccelerated() || AndroidUtilities.makingGlobalBlurBitmap || !enabled.getAsBoolean()) return false;
         // An overlay encountered while recording a source must not capture that source recursively.
-        if (scene.input instanceof BlurredBackgroundSourceRenderNode node && node.inRecording()) return false;
+        if (scene.input instanceof GlassSourceRenderNode node && node.inRecording()) return false;
         if (!locate(owner, scope, position, scene)) return false;
         if (glass == null) {
             glass = scene.blurred.createDrawable(); glass.setCallback(owner);
-            ((BlurredBackgroundDrawableRenderNode) glass).setLiquidGlassEffectAllowed(true);
+            ((BlurredBackgroundDrawable) glass).setLiquidGlassEffectAllowed(true);
             glass.setColorProvider(surface ? LiquidGlassStyle.surfaceColors(provider, enabled, drawStroke) : LiquidGlassStyle.colors(provider, enabled));
         }
         glass.setSourceOffset(position.left + (panelBackground == null ? 0 : panelBackground.getSourceOffsetX()),

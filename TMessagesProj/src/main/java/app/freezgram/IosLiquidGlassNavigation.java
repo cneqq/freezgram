@@ -7,7 +7,6 @@ import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
-import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundProvider;
 
 /** Opt-in iOS navigation glass using the client's existing backdrop and AGSL engine. */
@@ -34,8 +33,8 @@ public final class IosLiquidGlassNavigation {
     public static void refresh(BlurredBackgroundDrawable drawable) {
         if (isRequested()) configure(drawable);
         if (Build.VERSION.SDK_INT >= 33 && isRequested()
-                && drawable instanceof BlurredBackgroundDrawableRenderNode) {
-            ((BlurredBackgroundDrawableRenderNode) drawable).setLiquidGlassEffectAllowed(isEnabled());
+                && drawable != null) {
+            ((BlurredBackgroundDrawable) drawable).setLiquidGlassEffectAllowed(isEnabled());
         }
     }
 }

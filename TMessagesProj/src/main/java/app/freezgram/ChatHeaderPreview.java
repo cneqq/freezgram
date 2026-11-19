@@ -20,10 +20,9 @@ import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
-import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableSource;
 import org.telegram.ui.Components.blur3.drawable.color.impl.BlurredBackgroundProviderImpl;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSource;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
+import org.telegram.utils.glass.source.GlassSource;
+import org.telegram.utils.glass.source.GlassSourceRenderNode;
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Stories.recorder.PreviewView;
 
@@ -34,17 +33,17 @@ final class ChatHeaderPreview extends SizeNotifierFrameLayout {
     private final int account;
     private ChatAvatarContainer avatar;
     private ActionBar bar;
-    private BlurredBackgroundSourceRenderNode source;
+    private GlassSourceRenderNode source;
     private final BlurredBackgroundDrawableViewFactory factory;
     ChatHeaderPreview(Context context, BaseFragment owner, int account, Theme.ResourcesProvider provider) {
         super(context);
         this.owner = owner; this.account = account; this.provider = provider;
         setBackgroundImage(PreviewView.getBackgroundDrawable(null, account, UserConfig.getInstance(account).getClientUserId(), Theme.isCurrentThemeDark()), false);
-        BlurredBackgroundSource wallpaper = new BlurredBackgroundSource() {
-            @Override public BlurredBackgroundDrawable createDrawable() { return new BlurredBackgroundDrawableSource(this); }
+        GlassSource wallpaper = new GlassSource() {
+            @Override public BlurredBackgroundDrawable createDrawable() { return new BlurredBackgroundDrawable(this); }
             @Override public void draw(Canvas canvas, float l, float t, float r, float b) { drawWallpaperForGlass(canvas); }
         };
-        if (Build.VERSION.SDK_INT >= 31) source = new BlurredBackgroundSourceRenderNode(wallpaper);
+        if (Build.VERSION.SDK_INT >= 31) source = new GlassSourceRenderNode(wallpaper);
         factory = new BlurredBackgroundDrawableViewFactory(new ViewPositionWatcher(this), this, source != null ? source : wallpaper);
         refresh();
     }

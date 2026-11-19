@@ -8,7 +8,6 @@ import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
-import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundProvider;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundProviderBuilder;
 
@@ -76,8 +75,8 @@ public final class ChatComposerGlass {
     public static void refresh(BlurredBackgroundDrawable drawable) {
         if (drawable == null) return;
         LiquidGlassStyle.configure(drawable);
-        if (Build.VERSION.SDK_INT >= 33 && drawable instanceof BlurredBackgroundDrawableRenderNode) {
-            ((BlurredBackgroundDrawableRenderNode) drawable).setLiquidGlassEffectAllowed(isEnabled());
+        if (Build.VERSION.SDK_INT >= 33 && drawable != null) {
+            ((BlurredBackgroundDrawable) drawable).setLiquidGlassEffectAllowed(isEnabled());
         }
     }
 }

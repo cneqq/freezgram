@@ -166,6 +166,7 @@ public class SnowflakesEffect {
         if (parent == null || canvas == null || !LiteMode.isEnabled(LiteMode.FLAG_CHAT_BACKGROUND)) {
             return;
         }
+        updateColors(); // cheap (cached), follows theme switches: owners never call it
 
         dotsOnly = app.exteraless.appearance.AppearanceConfig.snowStyle() == 1;
         if (batchParticlesBuffer != null) {

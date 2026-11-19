@@ -22,9 +22,8 @@ import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
-import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableSource;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSource;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
+import org.telegram.utils.glass.source.GlassSource;
+import org.telegram.utils.glass.source.GlassSourceRenderNode;
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Components.chat.buttons.ChatActivityBlurredRoundPageDownButton;
 import org.telegram.ui.Components.glass.GlassTabView;
@@ -35,7 +34,7 @@ final class SmallSurfacesPreview extends SizeNotifierFrameLayout {
     private final Theme.ResourcesProvider provider;
     private final FrameLayout foreground;
     private final BlurredBackgroundDrawableViewFactory factory;
-    private BlurredBackgroundSourceRenderNode source;
+    private GlassSourceRenderNode source;
     private ActionBarPopupWindow.ActionBarPopupWindowLayout menu;
     private Drawable ordinaryMenu;
     private BlurredBackgroundDrawable menuGlass, attachmentGlass;
@@ -43,11 +42,11 @@ final class SmallSurfacesPreview extends SizeNotifierFrameLayout {
         super(context);
         this.provider = provider;
         setBackgroundImage(PreviewView.getBackgroundDrawable(null, account, UserConfig.getInstance(account).getClientUserId(), Theme.isCurrentThemeDark()), false);
-        BlurredBackgroundSource wallpaper = new BlurredBackgroundSource() {
-            @Override public BlurredBackgroundDrawable createDrawable() { return new BlurredBackgroundDrawableSource(this); }
+        GlassSource wallpaper = new GlassSource() {
+            @Override public BlurredBackgroundDrawable createDrawable() { return new BlurredBackgroundDrawable(this); }
             @Override public void draw(Canvas canvas, float l, float t, float r, float b) { drawWallpaperForGlass(canvas); }
         };
-        if (Build.VERSION.SDK_INT >= 33) source = new BlurredBackgroundSourceRenderNode(wallpaper);
+        if (Build.VERSION.SDK_INT >= 33) source = new GlassSourceRenderNode(wallpaper);
         factory = new BlurredBackgroundDrawableViewFactory(new ViewPositionWatcher(this), this, source != null ? source : wallpaper);
         foreground = new FrameLayout(context);
         addView(foreground, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
@@ -80,7 +79,7 @@ final class SmallSurfacesPreview extends SizeNotifierFrameLayout {
                 if (AppearanceConfig.attachmentPanelsGlass() && attachmentGlass != null && canvas.isHardwareAccelerated()) {
                     attachmentGlass.setBounds(0, 0, getWidth(), getHeight());
                     LiquidGlassStyle.configure(attachmentGlass);
-                    ((org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode) attachmentGlass).setLiquidGlassEffectAllowed(attachmentsEnabled());
+                    ((BlurredBackgroundDrawable) attachmentGlass).setLiquidGlassEffectAllowed(attachmentsEnabled());
                     attachmentGlass.updateColors(); attachmentGlass.draw(canvas);
                 } else canvas.drawColor(Theme.getColor(Theme.key_windowBackgroundWhite, provider));
                 super.dispatchDraw(canvas);

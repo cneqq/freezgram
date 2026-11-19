@@ -22,7 +22,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
+import org.telegram.utils.glass.source.GlassSourceRenderNode;
 import org.telegram.ui.Components.glass.GlassTabView;
 
 /** Local visual settings with sample background content and the actual navigation tabs. */
@@ -228,7 +228,7 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
     private final class GlassPreview extends FrameLayout {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final RectF panel = new RectF();
-        private BlurredBackgroundSourceRenderNode source;
+        private GlassSourceRenderNode source;
         private BlurredBackgroundDrawable glass, headerGlass, fieldGlass, leftGlass, rightGlass, foldersGlass;
         private app.exteraless.appearance.FoldersPreviewCell foldersPreview;
         private Boolean foldersPreviewEnabled;
@@ -282,7 +282,7 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
             }
             // The actual AGSL renderer; unsupported phones show the same opaque fallback.
             if (Build.VERSION.SDK_INT >= 33) {
-                source = new BlurredBackgroundSourceRenderNode(null);
+                source = new GlassSourceRenderNode(null);
                 glass = createGlass(30, 0);
                 headerGlass = createGlass(23, 0);
                 headerGlass.setColorProvider(LiquidGlassStyle.headerColors(resourceProvider, this::effectsEnabled));
@@ -344,7 +344,7 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
             if (previewMaterialRequested(mode) && drawable != null && canvas.isHardwareAccelerated()) {
                 drawable.setBounds(bounds);
                 LiquidGlassStyle.configure(drawable);
-                var node = (org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode) drawable;
+                var node = (BlurredBackgroundDrawable) drawable;
                 node.setLiquidGlassEffectAllowed(effectsEnabled());
                 drawable.updateColors(); node.invalidateDisplayList(); drawable.draw(canvas);
             } else {
@@ -378,7 +378,7 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
                         foldersGlass.setSourceOffset(foldersPosition.left, foldersPosition.top);
                     }
                     LiquidGlassStyle.configure(foldersGlass);
-                    ((org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode) foldersGlass).setLiquidGlassEffectAllowed(effectsEnabled());
+                    ((BlurredBackgroundDrawable) foldersGlass).setLiquidGlassEffectAllowed(effectsEnabled());
                     foldersGlass.updateColors();
                 }
             }

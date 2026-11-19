@@ -34,7 +34,7 @@ import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.ChatAvatarContainer;
 import org.telegram.ui.Components.ChatSearchTabs;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
+import org.telegram.utils.glass.source.GlassSourceRenderNode;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.MainTabsActivity;
 
@@ -499,7 +499,7 @@ public class FeedActivity extends BaseFragment implements NotificationCenter.Not
 
     private void destroyEmbeddedChat() {
         if (chatContainer != null && chatContainer.chatActivity != null) {
-            if (!hasMainTabs && embeddedChatCreated) {
+            if (embeddedChatCreated) {
                 chatContainer.chatActivity.saveFeedScrollPosition();
             }
             chatContainer.chatActivity.setFeedChannelsChangedCallback(null);
@@ -619,6 +619,9 @@ public class FeedActivity extends BaseFragment implements NotificationCenter.Not
     public void onPause() {
         super.onPause();
         if (chatContainer != null) {
+            if (embeddedChatCreated && chatContainer.chatActivity != null) {
+                chatContainer.chatActivity.saveFeedScrollPosition();
+            }
             updateFeedViewportActive(false);
             chatContainer.onPause();
         }
@@ -720,7 +723,7 @@ public class FeedActivity extends BaseFragment implements NotificationCenter.Not
     }
 
     @Override
-    public BlurredBackgroundSourceRenderNode getGlassSource() {
+    public GlassSourceRenderNode getGlassSource() {
         if (chatContainer == null || chatContainer.chatActivity == null) {
             return null;
         }

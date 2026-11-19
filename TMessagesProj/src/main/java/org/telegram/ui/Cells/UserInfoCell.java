@@ -29,6 +29,7 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_bots;
@@ -72,6 +73,7 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
     private final ButtonBounce groupsBounce = new ButtonBounce(this);
     private final AvatarsDrawable groupsAvatars = new AvatarsDrawable(this, false);
     private final Drawable groupsArrow;
+    private int groupsArrowColor = Color.WHITE;
     private MessagesController.CommonChatsList commonChats;
 
     private float height;
@@ -258,8 +260,8 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.userInfoDidLoad);
-        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.commonChatsLoaded);
+        NotificationCenter.getInstance(currentAccount).addWeakObserver(this, NotificationCenter.userInfoDidLoad);
+        NotificationCenter.getInstance(currentAccount).addWeakObserver(this, NotificationCenter.commonChatsLoaded);
         groupsAvatars.onAttachedToWindow();
     }
 
@@ -295,6 +297,11 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
+
+        final int textColor = Theme.isCompactMode(resourcesProvider) ? Theme.getColor(Theme.key_chat_compact_actionText, resourcesProvider) : Color.WHITE;
+        if (groupsArrowColor != textColor) {
+            groupsArrow.setColorFilter(new PorterDuffColorFilter(groupsArrowColor = textColor, PorterDuff.Mode.SRC_IN));
+        }
 
         canvas.save();
 

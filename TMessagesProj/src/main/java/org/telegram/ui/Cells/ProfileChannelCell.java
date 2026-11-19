@@ -42,6 +42,7 @@ import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 
 public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
 
@@ -309,6 +310,9 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
                         }
                     }
                     cursor.dispose();
+                    if (!messages.isEmpty() && messages.get(0).id != message_id) {
+                        messages.clear();
+                    }
 
                     if (!messages.isEmpty()) {
                         if (!usersToLoad.isEmpty()) {
@@ -367,7 +371,7 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
 
                             if (!res.messages.isEmpty()) {
                                 messageObjects.clear();
-                                Collections.sort(messages, Comparator.comparingInt(msg -> msg.id));
+                                Collections.sort(res.messages, Comparator.comparingInt(msg -> msg.id));
                                 final TLRPC.Message lastMessage = res.messages.get(res.messages.size() - 1);
                                 final long grouped_id = lastMessage.grouped_id;
                                 if (grouped_id != 0) {
@@ -433,6 +437,10 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
         subscribersView.setTextColor(headerColor);
         subscribersView.setBackground(Theme.createRoundRectDrawable(dp(9f), dp(9f), Theme.multAlpha(headerColor, .1f)));
         headerView.setTextColor(headerColor);
+    }
+    @Override
+    public void addColorKeys(HashSet<Integer> colors) {
+        colors.add(Theme.key_windowBackgroundWhiteBlueHeader);
     }
 
 }

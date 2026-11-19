@@ -3,17 +3,17 @@ package app.freezgram;
 import android.graphics.Canvas;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.utils.RenderNodeEffects;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSource;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
+import org.telegram.utils.glass.source.GlassSource;
+import org.telegram.utils.glass.source.GlassSourceRenderNode;
 
 /** One reduced wallpaper texture per frame, shared by all inline controls. */
-public final class DownsampledGlassSource extends BlurredBackgroundSourceRenderNode {
-    private final BlurredBackgroundSource wallpaper;
+public final class DownsampledGlassSource extends GlassSourceRenderNode {
+    private final GlassSource wallpaper;
     private long lastFrame = Long.MIN_VALUE;
     private int lastRevision = Integer.MIN_VALUE, lastWidth, lastHeight;
     private int scale = 1;
 
-    public DownsampledGlassSource(BlurredBackgroundSource wallpaper) {
+    public DownsampledGlassSource(GlassSource wallpaper) {
         super(wallpaper); this.wallpaper = wallpaper;
     }
 

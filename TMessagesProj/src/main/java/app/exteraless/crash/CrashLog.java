@@ -138,10 +138,15 @@ public final class CrashLog {
             if (controller != null) {
                 int total = 0;
                 int enabled = 0;
+                final StringBuilder ids = new StringBuilder();
                 for (Plugin plugin : controller.plugins.values()) {
                     total++;
                     if (plugin.isEnabled()) {
                         enabled++;
+                        if (ids.length() > 0) {
+                            ids.append(',');
+                        }
+                        ids.append(plugin.getId());
                     }
                 }
                 report.append("plugins: ").append(enabled).append(" enabled / ").append(total).append('\n');

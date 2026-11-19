@@ -17,7 +17,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
+import org.telegram.utils.glass.source.GlassSourceRenderNode;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
 import app.exteraless.appearance.AppearanceConfig;
 import app.exteraless.appearance.AvatarCornersSeekBar;
@@ -71,12 +71,12 @@ public final class GlassDividerSettingsActivity extends BaseFragment {
     private static int dp(float n) { return AndroidUtilities.dp(n); }
     private final class Preview extends View {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private BlurredBackgroundSourceRenderNode source;
+        private GlassSourceRenderNode source;
         private BlurredBackgroundDrawable glass;
         Preview(Context context) {
             super(context);
             if (Build.VERSION.SDK_INT >= 33) {
-                source = new BlurredBackgroundSourceRenderNode(null);
+                source = new GlassSourceRenderNode(null);
                 glass = source.createDrawable();
                 glass.setColorProvider(LiquidGlassStyle.surfaceColors(resourceProvider, this::enabled));
                 glass.setRadius(dp(22));
@@ -93,7 +93,7 @@ public final class GlassDividerSettingsActivity extends BaseFragment {
             if (source != null && canvas.isHardwareAccelerated()) {
                 Canvas recording = source.beginRecording(getWidth(), getHeight()); backdrop(recording); source.endRecording();
                 source.setBlur(AndroidUtilities.dpf2(LiquidGlassStyle.blurRadiusDp()));
-                ((org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawableRenderNode) glass).setLiquidGlassEffectAllowed(enabled());
+                ((BlurredBackgroundDrawable) glass).setLiquidGlassEffectAllowed(enabled());
                 LiquidGlassStyle.configure(glass); glass.updateColors();
                 glass.setBounds(dp(12), dp(12), getWidth() - dp(12), getHeight() - dp(12)); glass.draw(canvas);
             } else {

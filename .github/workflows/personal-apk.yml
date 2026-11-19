@@ -3,7 +3,7 @@ name: Personal release APK
 on:
   push:
     branches:
-      - no-plugins
+      - freezgram
   workflow_dispatch:
 
 permissions:

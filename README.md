@@ -7,7 +7,7 @@
 Telegram-клиент для Android с интерфейсом Freezgram, настройками оформления,
 Liquid Glass и поддержкой Python-плагинов.
 
-[Канал](https://t.me/freezgram) · [Исходники](https://github.com/cneqq/freezgram/tree/no-plugins) · [Релизы и APK](https://github.com/cneqq/freezgram/releases/latest) · [Сборки](https://github.com/cneqq/freezgram/actions/workflows/personal-apk.yml)
+[Канал](https://t.me/freezgram) · [Исходники](https://github.com/cneqq/freezgram/tree/freezgram) · [Релизы и APK](https://github.com/cneqq/freezgram/releases/latest) · [Сборки](https://github.com/cneqq/freezgram/actions/workflows/personal-apk.yml)
 
 </div>
 
@@ -37,7 +37,7 @@ Liquid Glass и поддержкой Python-плагинов.
 
 Нажмите [Релизы](https://github.com/cneqq/freezgram/releases/latest) и скачайте
 универсальный APK. Он содержит ARM64 и x86_64 и подходит устройствам на обеих
-архитектурах. Каждый push в рабочую ветку `no-plugins` собирает один APK и сохраняет его в артефактах GitHub Actions.
+архитектурах. Каждый push в рабочую ветку `freezgram` собирает один APK и сохраняет его в артефактах GitHub Actions.
 Сборки предназначены для **Android 7.0+**. Имя пакета — **`com.freezgram.app`**;
 обновление установленного приложения требует того же ключа подписи и более высокого
 кода версии.
@@ -47,7 +47,7 @@ Liquid Glass и поддержкой Python-плагинов.
 Клонируйте проект вместе с подмодулями:
 
 ```bash
-git clone --branch no-plugins --recursive --shallow-submodules https://github.com/cneqq/freezgram.git
+git clone --branch freezgram --recursive --shallow-submodules https://github.com/cneqq/freezgram.git
 cd freezgram
 ```
 

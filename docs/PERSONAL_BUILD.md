@@ -1,6 +1,6 @@
 # Личная сборка APK
 
-Actions → Personal release APK → Run workflow → no-plugins.
+Actions → Personal release APK → Run workflow → freezgram.
 Используются Actions Secrets `API_ID` и `API_HASH`, а также постоянный ключ
 подписи. Настройки старых запусков telegram_credentials/personal_signing удалены.
 

@@ -774,6 +774,7 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
     /* Liquid glass and the glass settings */
 
     private boolean liquidGlassEffectAllowed;
+    private boolean freezgramGlass;
     private int glassSettingsGeneration = GlassEngine.getGlassSettingsGenerationId();
 
     /** The screen wants the liquid glass here: it is drawn while the glass settings have it on (Android 13+). */
@@ -792,8 +793,17 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
         }
     }
 
+    public void setFreezgramGlass(boolean enabled) {
+        if (freezgramGlass != enabled) {
+            freezgramGlass = enabled;
+            implInvalidated = true;
+            invalidateSelf();
+        }
+    }
+
     private boolean isLiquidGlassEffectEnabled() {
-        return liquidGlassEffectAllowed && getGlassSettings().isLiquidGlassEnabled && Build.VERSION.SDK_INT >= 33;
+        return liquidGlassEffectAllowed && Build.VERSION.SDK_INT >= 33
+            && (freezgramGlass ? getGlassSettings().isFreezgramGlassEnabled : getGlassSettings().isLiquidGlassEnabled);
     }
 
     private GlassSource pickSource() {
@@ -1203,13 +1213,15 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
         private final RenderNode renderNodeFill = new RenderNode("BlurredFill");
         private final Paint paintShadow = new Paint(Paint.ANTI_ALIAS_FLAG);
         private LiquidGlassEffect liquidGlassEffect;
+        private boolean drawingFreezgramGlass;
         private boolean invalidated = true;
         private boolean clipToOutline = true;
         private final RectF sourceBounds = new RectF();
 
         /** How much the lens is downsampled: as the source is. */
         private int getLensDownsample() {
-            if (liquidGlassEffect == null || Build.VERSION.SDK_INT < 33 || !(source instanceof GlassFadeBlurredDrawable.GlassFadeDownsampledSource)) {
+            if (liquidGlassEffect == null || drawingFreezgramGlass || Build.VERSION.SDK_INT < 33
+                    || !(source instanceof GlassFadeBlurredDrawable.GlassFadeDownsampledSource)) {
                 return 1;
             }
             final GlassFadeBlurredDrawable.GlassFadeDownsampledSource downsampled = (GlassFadeBlurredDrawable.GlassFadeDownsampledSource) source;
@@ -1249,11 +1261,13 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
 
         @Override
         void setLiquidGlassEnabled(boolean enabled) {
-            if (enabled == (liquidGlassEffect != null) || Build.VERSION.SDK_INT < 33) {
+            if (Build.VERSION.SDK_INT < 33 || (enabled == (liquidGlassEffect != null)
+                    && (!enabled || drawingFreezgramGlass == freezgramGlass))) {
                 return;
             }
             if (enabled) {
-                liquidGlassEffect = new LiquidGlassEffect(renderNodeFill);
+                drawingFreezgramGlass = freezgramGlass;
+                liquidGlassEffect = new LiquidGlassEffect(renderNodeFill, drawingFreezgramGlass);
             } else {
                 liquidGlassEffect = null;
                 renderNodeFill.setRenderEffect(null);

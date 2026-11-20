@@ -52,6 +52,7 @@ public final class MessageSurfaceRenderer {
             if (surface.glass != null) surface.glass.setCallback(null);
             surface.glassProfile = profile;
             surface.glass = source.createDrawable(); surface.glass.setCallback(cell);
+            surface.glass.setFreezgramGlass(true);
             surface.glass.setColorProvider(profile == 3 ? LiquidGlassStyle.surfaceColors(provider, SmallElementsGlass::areMessageDecorationsEnabled) : MessageSurfaceStyle.colors(provider, profile));
         }
         var glass = surface.glass;

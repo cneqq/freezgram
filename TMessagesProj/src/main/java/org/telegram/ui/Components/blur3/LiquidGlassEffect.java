@@ -27,10 +27,11 @@ public class LiquidGlassEffect {
     private float[] effectPoolCenterX;
     private float[] effectPoolCenterY;
 
-    public LiquidGlassEffect(RenderNode node) {
+    public LiquidGlassEffect(RenderNode node, boolean freezgramGlass) {
         this.node = node;
         final String code = AndroidUtilities.readRes(R.raw.liquid_glass_shader);
         shader = plainShader = new RuntimeShader(code);
+        plainShader.setFloatUniform("freezgram_glass", freezgramGlass ? 1f : 0f);
         node.setRenderEffect(effect = RenderEffect.createRuntimeShaderEffect(shader, "img"));
     }
 

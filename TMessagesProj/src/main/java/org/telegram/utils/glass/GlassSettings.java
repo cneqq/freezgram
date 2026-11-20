@@ -6,10 +6,12 @@ public class GlassSettings {
 
     public final boolean isBlurEnabled;
     public final boolean isLiquidGlassEnabled;
+    public final boolean isFreezgramGlassEnabled;
 
-    public GlassSettings(boolean isBlurEnabled, boolean isLiquidGlassEnabled) {
+    public GlassSettings(boolean isBlurEnabled, boolean isLiquidGlassEnabled, boolean isFreezgramGlassEnabled) {
         this.isBlurEnabled = isBlurEnabled;
         this.isLiquidGlassEnabled = isLiquidGlassEnabled;
+        this.isFreezgramGlassEnabled = isFreezgramGlassEnabled;
     }
 
     @Override
@@ -23,11 +25,12 @@ public class GlassSettings {
 
         GlassSettings settings = (GlassSettings) object;
         return isBlurEnabled == settings.isBlurEnabled
-                && isLiquidGlassEnabled == settings.isLiquidGlassEnabled;
+                && isLiquidGlassEnabled == settings.isLiquidGlassEnabled
+                && isFreezgramGlassEnabled == settings.isFreezgramGlassEnabled;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(isBlurEnabled, isLiquidGlassEnabled);
+        return Objects.hash(isBlurEnabled, isLiquidGlassEnabled, isFreezgramGlassEnabled);
     }
 }

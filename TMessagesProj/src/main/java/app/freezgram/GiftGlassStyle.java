@@ -85,6 +85,7 @@ public final class GiftGlassStyle {
         return (100 - AppearanceConfig.giftGlassTransparency()) / 100f;
     }
     public static void configure(BlurredBackgroundDrawable drawable) {
+        drawable.setFreezgramGlass(true);
         drawable.setThickness(AndroidUtilities.dp(12));
         drawable.setIntensity(AppearanceConfig.giftGlassIntensity() / 100f);
     }

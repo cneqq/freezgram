@@ -272,6 +272,7 @@ public class GlassEngine {
     private int onDrawUpdateFlags;
 
     private void onDraw() {
+        checkGlassSettings();
         int flags = 0;
         if (lastGlassSettingsGenerationId != glassSettingsGenerationId) {
             lastGlassSettingsGenerationId = glassSettingsGenerationId;
@@ -604,13 +605,15 @@ public class GlassEngine {
     private static void checkGlassSettings() {
         final boolean isBlurEnabled = LiteMode.isEnabled(LiteMode.FLAG_CHAT_BLUR);
         final boolean isLiquidGlassEnabled = LiteMode.isEnabled(LiteMode.FLAG_LIQUID_GLASS);
+        final boolean isFreezgramGlassEnabled = isBlurEnabled && !LiteMode.isGlassPowerSaverApplied();
 
         final boolean glassSettingsInvalidated = glassSettings == null
             || glassSettings.isBlurEnabled != isBlurEnabled
-            || glassSettings.isLiquidGlassEnabled != isLiquidGlassEnabled;
+            || glassSettings.isLiquidGlassEnabled != isLiquidGlassEnabled
+            || glassSettings.isFreezgramGlassEnabled != isFreezgramGlassEnabled;
 
         if (glassSettingsInvalidated) {
-            glassSettings = new GlassSettings(isBlurEnabled, isLiquidGlassEnabled);
+            glassSettings = new GlassSettings(isBlurEnabled, isLiquidGlassEnabled, isFreezgramGlassEnabled);
             glassSettingsGenerationId++;
         }
     }

@@ -473,7 +473,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         iBlur3FactoryGlass.setSourceRootView(viewPositionWatcher, contentView);
         iBlur3FactoryGlass.setLiquidGlassEffectAllowed(MainTabsUiHelper.isIosNavigationBar()
                 ? app.freezgram.IosLiquidGlassNavigation.isEnabled()
-                : LiteMode.isEnabled(LiteMode.FLAG_LIQUID_GLASS));
+                : true);
 
         tabsViewBackground = iBlur3FactoryGlass.create(tabsView, BlurredBackgroundProviderImpl.mainTabs(resourceProvider));
         tabsViewBackground.setRadius(MainTabsUiHelper.getBackgroundRadius());
@@ -1560,7 +1560,10 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         if (!settings.isBlurEnabled) {
             return null;
         }
-        return settings.isLiquidGlassEnabled && Build.VERSION.SDK_INT >= 33 ? iBlur3SourceTabGlass : iBlur3SourceTabFrosted;
+        final boolean liquid = MainTabsUiHelper.isIosNavigationBar()
+                ? app.freezgram.IosLiquidGlassNavigation.isEnabled()
+                : settings.isLiquidGlassEnabled && Build.VERSION.SDK_INT >= 33;
+        return liquid ? iBlur3SourceTabGlass : iBlur3SourceTabFrosted;
     }
 
     private final RectF fragmentPosition = new RectF();

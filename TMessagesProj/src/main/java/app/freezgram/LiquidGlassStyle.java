@@ -27,6 +27,7 @@ public final class LiquidGlassStyle {
                 + AppearanceConfig.navigationGlassTransparency() + 1) * 2 + (enhanceColors() ? 1 : 0)) * 2 + (AppearanceConfig.glassWallpaperDim() ? 1 : 0)) * 2 + (AppearanceConfig.chatHeaderGlassDim() ? 1 : 0);
     }
     public static void configure(BlurredBackgroundDrawable drawable) {
+        drawable.setFreezgramGlass(true);
         drawable.setThickness(AndroidUtilities.dp(12));
         drawable.setIntensity(AppearanceConfig.navigationGlassIntensity() / 100f);
     }

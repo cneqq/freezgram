@@ -121,6 +121,10 @@ public final class ProfileButtonsGlass {
         menuSource = new GlassSourceCrossfade(headerSource, new SettingsSource(simpleGlass.frostedFactory));
         menuFactory = createFactory(engine, menuSource);
         menuFactory.setLiquidGlassEffectAllowed(true);
+        if (app.freezgram.SmallElementsGlass.isEnabled()) {
+            headerFactory.setDrawableConfigurator(app.freezgram.LiquidGlassStyle::configure);
+            menuFactory.setDrawableConfigurator(app.freezgram.LiquidGlassStyle::configure);
+        }
     }
 
     private BlurredBackgroundDrawableViewFactory createFactory(GlassEngine engine, GlassSource source) {
@@ -204,7 +208,9 @@ public final class ProfileButtonsGlass {
             if (!settings.isBlurEnabled) {
                 return factory.getStaticSource();
             }
-            return settings.isLiquidGlassEnabled && Build.VERSION.SDK_INT >= 33 ? factory.getSource() : factory.getFrostedSource();
+            final boolean liquid = app.freezgram.SmallElementsGlass.isEnabled()
+                    ? settings.isFreezgramGlassEnabled : settings.isLiquidGlassEnabled;
+            return liquid && Build.VERSION.SDK_INT >= 33 ? factory.getSource() : factory.getFrostedSource();
         }
 
         @Override

@@ -6,6 +6,7 @@ uniform float4 radius;
 uniform float thickness;
 uniform float refract_index;
 uniform float refract_intensity;
+uniform float freezgram_glass;
 uniform float4 foreground_color_premultiplied;
 
 half sdfRect(half2 p, half4 r) {
@@ -25,6 +26,9 @@ half4 main(in float2 fragCoord) {
   half2 p = fragCoord - center;
   half sdRaw = sdfRect(p, radius);
   half2 uv = fragCoord;
+  if (freezgram_glass > 0.0 && sdRaw >= 0.0) {
+    return srcOver(half4(foreground_color_premultiplied), img.eval(uv));
+  }
   // past the edge the lens goes on as at the edge: the outline clips it, but a downsampled glass is upscaled over it
   half sd = min(sdRaw, 0.0);
   half sdX = sdfRect(p + half2(1.0, 0.0), radius);
@@ -41,7 +45,9 @@ half4 main(in float2 fragCoord) {
 
   uv += refract_vec.xy * refract_length * refract_intensity;
   // on a small shape the edge samples past the far side: stay within the shape, whatever the grid of a downsampled node
-  uv = clamp(uv, center - size + 0.5, center + size - 0.5);
+  if (freezgram_glass == 0.0) {
+    uv = clamp(uv, center - size + 0.5, center + size - 0.5);
+  }
 
   return srcOver(half4(foreground_color_premultiplied), img.eval(uv));
 }

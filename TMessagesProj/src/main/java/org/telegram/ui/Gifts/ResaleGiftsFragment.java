@@ -191,6 +191,10 @@ public class ResaleGiftsFragment extends BaseFragment implements FactorAnimator.
         this.fragmentView = fragmentView;
 
         final BaseFragmentSimpleGlass glass = getBaseSimpleGlass();
+        if (app.freezgram.SmallElementsGlass.isEnabled()) {
+            glass.factory.setDrawableConfigurator(app.freezgram.LiquidGlassStyle::configure);
+            glass.menuFactory.setDrawableConfigurator(app.freezgram.LiquidGlassStyle::configure);
+        }
 
         listView = new UniversalRecyclerView(this, this::fillItems, this::onItemClick, this::onItemLongClick) {
             @Override

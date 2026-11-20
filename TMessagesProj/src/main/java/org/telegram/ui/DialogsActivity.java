@@ -2791,7 +2791,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         iBlur3SourceColor = glassEngine.createThemedColorSource(() -> getThemedColor(Theme.key_windowBackgroundWhite));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             scrollableViewNoiseSuppressor = new DownscaleScrollableNoiseSuppressor(true, false,
-                    app.exteraless.appearance.MainTabsUiHelper.isIosNavigationBar());
+                    app.exteraless.appearance.MainTabsUiHelper.isIosNavigationBar()
+                            || app.exteraless.appearance.AppearanceConfig.foldersLiquidGlass()
+                            || app.exteraless.appearance.AppearanceConfig.dialogsHeaderGlass());
 
             iBlur3SourceGlass = new GlassSourceRenderNode(iBlur3SourceColor);
             iBlur3SourceGlass.setUnderSource(iBlur3SourceColor);
@@ -5327,21 +5329,24 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             textPaint.setTypeface(AndroidUtilities.bold());
         }
 
+        foldersGlassDrawable = null;
+        foldersGlassSource = null;
         if (filterTabsView != null) {
             BlurredBackgroundDrawableViewFactory foldersFactory = iBlur3FactoryLiquidGlass;
             if (app.exteraless.appearance.AppearanceConfig.foldersLiquidGlass() && Build.VERSION.SDK_INT >= 33 && SharedConfig.chatBlurEnabled()) {
-                GlassSourceRenderNode foldersSource = new GlassSourceRenderNode(iBlur3SourceColor);
-                foldersSource.setUnderSource(iBlur3SourceColor);
-                foldersSource.setScrollableNoiseSuppressor(scrollableViewNoiseSuppressor, DownscaleScrollableNoiseSuppressor.DRAW_HEADER_GLASS);
-                foldersFactory = new BlurredBackgroundDrawableViewFactory(foldersSource);
+                foldersGlassSource = createFreezgramHeaderSource();
+                foldersFactory = new BlurredBackgroundDrawableViewFactory(foldersGlassSource);
                 foldersFactory.setSourceRootView(viewPositionWatcher, contentView);
-                foldersFactory.setLiquidGlassEffectAllowed(!LiteMode.isGlassPowerSaverApplied());
+                foldersFactory.setLiquidGlassEffectAllowed(true);
             }
             BlurredBackgroundDrawable filterTabsViewBackground = foldersFactory.create(filterTabsView,
                     app.exteraless.appearance.AppearanceConfig.foldersLiquidGlass()
                             ? app.freezgram.LiquidGlassStyle.colors(resourceProvider, () -> Build.VERSION.SDK_INT >= 33 && SharedConfig.chatBlurEnabled() && !LiteMode.isGlassPowerSaverApplied())
                             : BlurredBackgroundProviderImpl.topPanel(resourceProvider));
-            foldersGlassDrawable = app.exteraless.appearance.AppearanceConfig.foldersLiquidGlass() ? filterTabsViewBackground : null;
+            if (foldersGlassSource != null) {
+                foldersGlassDrawable = filterTabsViewBackground;
+                app.freezgram.LiquidGlassStyle.configure(foldersGlassDrawable);
+            }
             filterTabsViewBackground.setRadius(dp(18));
             filterTabsViewBackground.setPadding(dp(6.666f));
             filterTabsView.setPadding(0, dp(7), 0, dp(7));
@@ -5353,9 +5358,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (fragmentSearchField != null) {
             fragmentSearchField.setCenteredPlaceholder(true);
             if (app.exteraless.appearance.AppearanceConfig.dialogsHeaderGlass() && Build.VERSION.SDK_INT >= 33) {
-                searchFieldGlassSource = new GlassSourceRenderNode(iBlur3SourceColor);
-                searchFieldGlassSource.setUnderSource(iBlur3SourceColor);
-                searchFieldGlassSource.setScrollableNoiseSuppressor(scrollableViewNoiseSuppressor, DownscaleScrollableNoiseSuppressor.DRAW_HEADER_GLASS);
+                searchFieldGlassSource = createFreezgramHeaderSource();
                 BlurredBackgroundDrawableViewFactory searchFactory = new BlurredBackgroundDrawableViewFactory(searchFieldGlassSource);
                 searchFactory.setSourceRootView(viewPositionWatcher, contentView);
                 searchFactory.setLiquidGlassEffectAllowed(true);
@@ -5644,15 +5647,14 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         dialogsHeaderGlassDrawable = null;
         dialogsHeaderGlassSource = null;
         if (app.exteraless.appearance.AppearanceConfig.dialogsHeaderGlass() && Build.VERSION.SDK_INT >= 33) {
-            dialogsHeaderGlassSource = new GlassSourceRenderNode(iBlur3SourceColor);
-            dialogsHeaderGlassSource.setUnderSource(iBlur3SourceColor);
-            dialogsHeaderGlassSource.setScrollableNoiseSuppressor(scrollableViewNoiseSuppressor, DownscaleScrollableNoiseSuppressor.DRAW_HEADER_GLASS);
+            dialogsHeaderGlassSource = createFreezgramHeaderSource();
             BlurredBackgroundDrawableViewFactory headerFactory = new BlurredBackgroundDrawableViewFactory(dialogsHeaderGlassSource);
             headerFactory.setSourceRootView(viewPositionWatcher, contentView);
             headerFactory.setLiquidGlassEffectAllowed(true);
             dialogsHeaderGlassDrawable = headerFactory.create(actionBar,
                     app.freezgram.LiquidGlassStyle.colors(resourceProvider, this::isDialogsHeaderGlassEnabled));
             dialogsHeaderGlassDrawable.setRadius(dp(20));
+            app.freezgram.LiquidGlassStyle.configure(dialogsHeaderGlassDrawable);
             actionBar.setBlurBackgroundOverride(dialogsHeaderGlassDrawable, this::isDialogsHeaderGlassEnabled);
         }
 
@@ -14534,6 +14536,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     /* Blur */
 
     private GlassSourceRenderNode searchFieldGlassSource;
+    private GlassSourceRenderNode foldersGlassSource;
     private GlassSourceRenderNode dialogsHeaderGlassSource;
     private BlurredBackgroundDrawable dialogsHeaderGlassDrawable;
 
@@ -14545,8 +14548,14 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     private ViewPositionWatcher viewPositionWatcher;
     private BlurredBackgroundDrawable foldersGlassDrawable;
-    private int foldersGlassRevision = Integer.MIN_VALUE;
-    private Boolean foldersGlassEnabled;
+    private int headerGlassRevision = Integer.MIN_VALUE;
+
+    private GlassSourceRenderNode createFreezgramHeaderSource() {
+        final GlassSourceRenderNode source = new GlassSourceRenderNode(iBlur3SourceColor);
+        source.setUnderSource(iBlur3SourceColor);
+        source.setScrollableNoiseSuppressor(scrollableViewNoiseSuppressor, DownscaleScrollableNoiseSuppressor.DRAW_HEADER_GLASS);
+        return source;
+    }
 
     private final @Nullable DownscaleScrollableNoiseSuppressor scrollableViewNoiseSuppressor;
     private final @Nullable GlassSourceRenderNode iBlur3SourceGlassFrosted;
@@ -14607,8 +14616,29 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
             scrollableViewNoiseSuppressor.setupRenderNodes(iBlur3Positions, hasBottomBlur ? 2 : 1);
         }
-        if (scrollableViewNoiseSuppressor.invalidateResultRenderNodes(iBlur3Capture, fragmentView.getMeasuredWidth(), fragmentView.getMeasuredHeight())
-                && parentTabsCaptureChanged != null) {
+        final int revision = app.freezgram.LiquidGlassStyle.revision();
+        if (headerGlassRevision != revision) {
+            headerGlassRevision = revision;
+            scrollableViewNoiseSuppressor.setNavigationGlassBlur(
+                    AndroidUtilities.dpf2(app.freezgram.LiquidGlassStyle.blurRadiusDp()),
+                    app.freezgram.LiquidGlassStyle.enhanceColors());
+            if (foldersGlassDrawable != null) {
+                app.freezgram.LiquidGlassStyle.configure(foldersGlassDrawable);
+                foldersGlassDrawable.updateColors();
+            }
+            if (dialogsHeaderGlassDrawable != null) {
+                app.freezgram.LiquidGlassStyle.configure(dialogsHeaderGlassDrawable);
+                dialogsHeaderGlassDrawable.updateColors();
+            }
+        }
+        final boolean changed = scrollableViewNoiseSuppressor.invalidateResultRenderNodes(iBlur3Capture,
+                fragmentView.getMeasuredWidth(), fragmentView.getMeasuredHeight());
+        if (changed) {
+            if (foldersGlassSource != null) foldersGlassSource.invalidateDisplayListForDrawables();
+            if (dialogsHeaderGlassSource != null) dialogsHeaderGlassSource.invalidateDisplayListForDrawables();
+            if (searchFieldGlassSource != null) searchFieldGlassSource.invalidateDisplayListForDrawables();
+        }
+        if (changed && parentTabsCaptureChanged != null) {
             parentTabsCaptureChanged.run();
         }
     }

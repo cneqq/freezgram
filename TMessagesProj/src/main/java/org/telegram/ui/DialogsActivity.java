@@ -2790,11 +2790,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
         iBlur3SourceColor = glassEngine.createThemedColorSource(() -> getThemedColor(Theme.key_windowBackgroundWhite));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            scrollableViewNoiseSuppressor = new DownscaleScrollableNoiseSuppressor();
+            scrollableViewNoiseSuppressor = new DownscaleScrollableNoiseSuppressor(true, false,
+                    app.exteraless.appearance.MainTabsUiHelper.isIosNavigationBar());
 
             iBlur3SourceGlass = new GlassSourceRenderNode(iBlur3SourceColor);
             iBlur3SourceGlass.setUnderSource(iBlur3SourceColor);
             iBlur3SourceGlass.setScrollableNoiseSuppressor(scrollableViewNoiseSuppressor, DownscaleScrollableNoiseSuppressor.DRAW_GLASS);
+            iBlur3SourceNavigation = new GlassSourceRenderNode(iBlur3SourceColor);
+            iBlur3SourceNavigation.setUnderSource(iBlur3SourceColor);
+            iBlur3SourceNavigation.setScrollableNoiseSuppressor(scrollableViewNoiseSuppressor, DownscaleScrollableNoiseSuppressor.DRAW_RAW_CAPTURE);
 
             iBlur3SourceGlassFrosted = new GlassSourceRenderNode(null);
             iBlur3SourceGlassFrosted.setUnderSource(iBlur3SourceColor);
@@ -2813,6 +2817,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             scrollableViewNoiseSuppressor = null;
             iBlur3SourceGlassFrosted = null;
             iBlur3SourceGlass = null;
+            iBlur3SourceNavigation = null;
             iBlur3FactoryFrostedLiquidGlass = new BlurredBackgroundDrawableViewFactory(iBlur3SourceColor);
             iBlur3FactoryLiquidGlass = new BlurredBackgroundDrawableViewFactory(iBlur3SourceColor);
             iBlur3FactoryBlur = new BlurredBackgroundDrawableViewFactory(iBlur3SourceColor);
@@ -14546,6 +14551,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private final @Nullable DownscaleScrollableNoiseSuppressor scrollableViewNoiseSuppressor;
     private final @Nullable GlassSourceRenderNode iBlur3SourceGlassFrosted;
     private final @Nullable GlassSourceRenderNode iBlur3SourceGlass;
+    private final @Nullable GlassSourceRenderNode iBlur3SourceNavigation;
     private final @NonNull GlassSourceColor iBlur3SourceColor;
     private final @NonNull BlurredBackgroundDrawableViewFactory iBlur3FactoryFrostedLiquidGlass;
     private final @NonNull BlurredBackgroundDrawableViewFactory iBlur3FactoryBlur;
@@ -14601,7 +14607,18 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
             scrollableViewNoiseSuppressor.setupRenderNodes(iBlur3Positions, hasBottomBlur ? 2 : 1);
         }
-        scrollableViewNoiseSuppressor.invalidateResultRenderNodes(iBlur3Capture, fragmentView.getMeasuredWidth(), fragmentView.getMeasuredHeight());
+        if (scrollableViewNoiseSuppressor.invalidateResultRenderNodes(iBlur3Capture, fragmentView.getMeasuredWidth(), fragmentView.getMeasuredHeight())
+                && parentTabsCaptureChanged != null) {
+            parentTabsCaptureChanged.run();
+        }
+    }
+
+    private Runnable parentTabsCaptureChanged;
+
+    @Override
+    public void setParentGlass(@Nullable RectF position, @Nullable Runnable onCaptured) {
+        super.setParentGlass(position, onCaptured);
+        parentTabsCaptureChanged = onCaptured;
     }
 
     private int calculateListViewPaddingBottom() {
@@ -14624,6 +14641,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @Override
     public GlassSourceRenderNode getGlassSource() {
         return iBlur3SourceGlass;
+    }
+
+    @Override
+    public GlassSourceRenderNode getFreezgramNavigationSource() {
+        return iBlur3SourceNavigation;
     }
 
     @Override

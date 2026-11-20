@@ -60,6 +60,7 @@ public class BaseFragmentSimpleGlass {
     /** The source of {@link #factory} for a glass outside this screen's views; null without a capture. */
     private final @Nullable GlassSourceRenderNode glassSource;
     private final @Nullable GlassSourceRenderNode frostedGlassSource;
+    private @Nullable GlassSourceRenderNode navigationSource;
     private @Nullable Runnable onCaptured;
 
     private final @NonNull GlassSource glassSourceForFadeDrawable;
@@ -142,6 +143,19 @@ public class BaseFragmentSimpleGlass {
     @Nullable
     public GlassSourceRenderNode getFrostedGlassSource() {
         return GlassEngine.getCurrentGlassSettings().isBlurEnabled ? frostedGlassSource : null;
+    }
+
+    @Nullable
+    public GlassSourceRenderNode getFreezgramNavigationSource() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || glassCaptureSourceCanvas == null) {
+            return null;
+        }
+        if (navigationSource == null) {
+            navigationSource = new GlassSourceRenderNode(glassBackgroundSourceColor);
+            navigationSource.setUnderSource(glassBackgroundSourceColor);
+            navigationSource.setGlassCaptureSourceCanvas(glassCaptureSourceCanvas, GlassCaptureSourceCanvas.SourceIndex.BLURRED);
+        }
+        return navigationSource;
     }
 
     /** After the capture: what draws {@link #getGlassSource} from outside records it again, it holds the offsets of the capture. */

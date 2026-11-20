@@ -364,8 +364,7 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
             if (source != null && canvas.isHardwareAccelerated()) {
                 Canvas capture = source.beginRecording(getWidth(), getHeight());
                 background(capture); source.endRecording();
-                source.setBlur(AndroidUtilities.dpf2(LiquidGlassStyle.blurRadiusDp()), LiquidGlassStyle.enhanceColors()
-                        ? org.telegram.messenger.utils.RenderNodeEffects.getSaturationX3RenderEffect() : null);
+                LiquidGlassStyle.applyBackdropBlur(source);
             }
             if (foldersPreview != null) {
                 boolean enabled = AppearanceConfig.foldersLiquidGlass();

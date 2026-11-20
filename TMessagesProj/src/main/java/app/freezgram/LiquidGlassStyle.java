@@ -7,11 +7,13 @@ import app.exteraless.appearance.AppearanceConfig;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.utils.RenderNodeEffects;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundProvider;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundProviderBuilder;
+import org.telegram.utils.glass.source.GlassSourceRenderNode;
 
 /** Shared optical parameters, retaining the existing preference keys. */
 public final class LiquidGlassStyle {
@@ -22,6 +24,12 @@ public final class LiquidGlassStyle {
     }
     public static int blurRadiusDp() { return AppearanceConfig.navigationGlassBlur(); }
     public static boolean enhanceColors() { return AppearanceConfig.glassEnhanceColors(); }
+
+    @androidx.annotation.RequiresApi(31)
+    public static void applyBackdropBlur(GlassSourceRenderNode source) {
+        source.setBlur(AndroidUtilities.dpf2(blurRadiusDp()),
+                enhanceColors() ? RenderNodeEffects.getSaturationX3RenderEffect() : null);
+    }
     public static int revision() {
         return ((((blurRadiusDp() * 101 + AppearanceConfig.navigationGlassIntensity()) * 102
                 + AppearanceConfig.navigationGlassTransparency() + 1) * 2 + (enhanceColors() ? 1 : 0)) * 2 + (AppearanceConfig.glassWallpaperDim() ? 1 : 0)) * 2 + (AppearanceConfig.chatHeaderGlassDim() ? 1 : 0);

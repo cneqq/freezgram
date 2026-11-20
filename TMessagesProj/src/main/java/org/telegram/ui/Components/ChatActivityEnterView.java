@@ -17303,7 +17303,7 @@ public class ChatActivityEnterView extends FrameLayout implements
 
                 canvas.scale(eS, eS, bCX, bCY);
 
-                if (blurredBackgroundDrawable != null && !glassSend) {
+                if (blurredBackgroundDrawable != null && !composerGlassButton && !glassSend) {
                     AndroidUtilities.rectTmp.round(AndroidUtilities.rectTmp2);
                     AndroidUtilities.rectTmp2.inset(-dp(7), -dp(7));
                     blurredBackgroundDrawable.setBounds(AndroidUtilities.rectTmp2);
@@ -17438,11 +17438,14 @@ public class ChatActivityEnterView extends FrameLayout implements
         }
 
         private boolean composerGlassButton;
+        private java.util.function.BooleanSupplier hasSplitComposerBackground;
 
-        public void setComposerGlassBackground(BlurredBackgroundDrawable drawable) {
+        public void setComposerGlassBackground(BlurredBackgroundDrawable drawable,
+                                               java.util.function.BooleanSupplier hasSplitComposerBackground) {
             setBlurredBackgroundDrawable(drawable);
             drawable.setPadding(0);
             composerGlassButton = true;
+            this.hasSplitComposerBackground = hasSplitComposerBackground;
             invalidate();
         }
 
@@ -17454,6 +17457,7 @@ public class ChatActivityEnterView extends FrameLayout implements
 
         private boolean drawComposerGlassBackground(Canvas canvas) {
             if (!useComposerGlass() || !canvas.isHardwareAccelerated()) return false;
+            if (hasSplitComposerBackground.getAsBoolean()) return true;
             app.freezgram.ChatComposerGlass.refresh(blurredBackgroundDrawable);
             backgroundRect.round(AndroidUtilities.rectTmp2);
             blurredBackgroundDrawable.setBounds(AndroidUtilities.rectTmp2);

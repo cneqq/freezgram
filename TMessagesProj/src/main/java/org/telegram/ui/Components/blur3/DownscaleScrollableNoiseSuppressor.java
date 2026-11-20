@@ -61,6 +61,7 @@ public class DownscaleScrollableNoiseSuppressor {
     public static final int DRAW_FROSTED_GLASS_NO_SATURATION = -4;
     /** The independently allocated 6dp output, used only by the iOS chat header. */
     public static final int DRAW_HEADER_GLASS = -5;
+    public static final int DRAW_RAW_CAPTURE = -6;
 
     public void draw(Canvas canvas, int index) {
         if (!canvas.isHardwareAccelerated()) {
@@ -109,7 +110,9 @@ public class DownscaleScrollableNoiseSuppressor {
     public boolean hasLostDisplayLists;
     public void drawInline(Canvas canvas, int index) {
         final int a;
-        if (index == DRAW_HEADER_GLASS && navigationGlassEnabled) {
+        if (index == DRAW_RAW_CAPTURE) {
+            a = -1;
+        } else if (index == DRAW_HEADER_GLASS && navigationGlassEnabled) {
             a = 2;
         } else if (!isLiquidGlassEnabled && simpleMode) {
             a = 0;
@@ -131,7 +134,10 @@ public class DownscaleScrollableNoiseSuppressor {
 
             canvas.save();
             canvas.translate(sourcePart.position.left, sourcePart.position.top);
-            final RenderNode rn = getRenderNode(a, b);
+            final RenderNode rn = index == DRAW_RAW_CAPTURE ? sourcePart.renderNode : getRenderNode(a, b);
+            if (index == DRAW_RAW_CAPTURE && k != 1) {
+                canvas.scale(k, k);
+            }
 
             if (!rn.hasDisplayList()) {
                 hasLostDisplayLists = true;

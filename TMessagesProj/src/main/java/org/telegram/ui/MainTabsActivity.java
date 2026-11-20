@@ -198,9 +198,11 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             iBlur3SourceTabGlass = createTabSource(false);
             iBlur3SourceTabFrosted = createTabSource(true);
+            iBlur3SourceTabFreezgram = createTabSource(false, true);
         } else {
             iBlur3SourceTabGlass = null;
             iBlur3SourceTabFrosted = null;
+            iBlur3SourceTabFreezgram = null;
         }
 
         iBlur3SourceColor = new GlassSourceColor();
@@ -220,6 +222,11 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
     /** The pages under the tabs: an intermediate node over one or two of them, their glass or their frosted glass. */
     @RequiresApi(api = Build.VERSION_CODES.S)
     private GlassSourceRenderNode createTabSource(boolean frosted) {
+        return createTabSource(frosted, false);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    private GlassSourceRenderNode createTabSource(boolean frosted, boolean freezgram) {
         final GlassSourceRenderNode source = new GlassSourceRenderNode(null);
         source.setupRenderer(new RenderNodeWithHash.Renderer() {
             @Override
@@ -242,7 +249,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
 
                     if (fragment instanceof TabFragmentDelegate) {
                         TabFragmentDelegate delegate = (TabFragmentDelegate) fragment;
-                        final GlassSourceRenderNode pageSource = frosted ? delegate.getFrostedGlassSource() : delegate.getGlassSource();
+                        final GlassSourceRenderNode pageSource = getTabPageSource(fragment, delegate, frosted, freezgram);
                         if (pageSource != null) {
                             hash.addF(fragmentPosition.left);
                             hash.addF(fragmentPosition.top);
@@ -274,7 +281,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
 
                     if (fragment instanceof TabFragmentDelegate) {
                         TabFragmentDelegate delegate = (TabFragmentDelegate) fragment;
-                        final GlassSourceRenderNode pageSource = frosted ? delegate.getFrostedGlassSource() : delegate.getGlassSource();
+                        final GlassSourceRenderNode pageSource = getTabPageSource(fragment, delegate, frosted, freezgram);
                         if (pageSource != null) {
                             canvas.save();
                             canvas.translate(fragmentPosition.left, fragmentPosition.top);
@@ -286,6 +293,14 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
             }
         });
         return source;
+    }
+
+    private GlassSourceRenderNode getTabPageSource(BaseFragment fragment, TabFragmentDelegate delegate,
+                                                   boolean frosted, boolean freezgram) {
+        if (freezgram) {
+            return fragment.getFreezgramNavigationSource();
+        }
+        return frosted ? delegate.getFrostedGlassSource() : delegate.getGlassSource();
     }
 
     @Override
@@ -466,8 +481,10 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
 
         final ViewPositionWatcher viewPositionWatcher = new ViewPositionWatcher(contentView);
 
+        final GlassSourceRenderNode liquidSource = app.freezgram.IosLiquidGlassNavigation.isRequested()
+                ? iBlur3SourceTabFreezgram : iBlur3SourceTabGlass;
         BlurredBackgroundDrawableViewFactory iBlur3FactoryGlass = new BlurredBackgroundDrawableViewFactory(
-            iBlur3SourceTabGlass != null ? iBlur3SourceTabGlass : iBlur3SourceColor,
+            liquidSource != null ? liquidSource : iBlur3SourceColor,
             iBlur3SourceTabFrosted != null ? iBlur3SourceTabFrosted : iBlur3SourceColor,
             iBlur3SourceColor);
         iBlur3FactoryGlass.setSourceRootView(viewPositionWatcher, contentView);
@@ -1318,7 +1335,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         final float isProfile = 1f - MathUtils.clamp(Math.abs(getPositionProfile() - animatedPosition), 0, 1);
         final float hide = 1f - AndroidUtilities.getNavigationBarThirdButtonsFactor(0, 1f, navigationBarHeight);
         float alpha = (1f - isProfile * hide) * animatorTabsVisible.getFloatValue();
-        if (tabletLayout) {
+        if (tabletLayout || app.freezgram.IosLiquidGlassNavigation.isEnabled()) {
             alpha = 0.0f;
         }
 
@@ -1552,6 +1569,9 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
     private final @NonNull GlassSourceColor iBlur3SourceColor;
     private final @Nullable GlassSourceRenderNode iBlur3SourceTabGlass;
     private final @Nullable GlassSourceRenderNode iBlur3SourceTabFrosted;
+    private final @Nullable GlassSourceRenderNode iBlur3SourceTabFreezgram;
+    private int freezgramTabBlur = -1;
+    private boolean freezgramTabEnhanceColors;
 
     /** The one the tabs draw now; null with the blur off, they are on the color then. */
     @Nullable
@@ -1560,9 +1580,10 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         if (!settings.isBlurEnabled) {
             return null;
         }
-        final boolean liquid = MainTabsUiHelper.isIosNavigationBar()
-                ? app.freezgram.IosLiquidGlassNavigation.isEnabled()
-                : settings.isLiquidGlassEnabled && Build.VERSION.SDK_INT >= 33;
+        if (MainTabsUiHelper.isIosNavigationBar()) {
+            return app.freezgram.IosLiquidGlassNavigation.isEnabled() ? iBlur3SourceTabFreezgram : iBlur3SourceTabFrosted;
+        }
+        final boolean liquid = settings.isLiquidGlassEnabled && Build.VERSION.SDK_INT >= 33;
         return liquid ? iBlur3SourceTabGlass : iBlur3SourceTabFrosted;
     }
 
@@ -1574,6 +1595,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         }
         iBlur3SourceTabGlass.invalidateDisplayListForDrawables();
         iBlur3SourceTabFrosted.invalidateDisplayListForDrawables();
+        iBlur3SourceTabFreezgram.invalidateDisplayListForDrawables();
         blur3_invalidateBlur();
         if (tabsView != null) {
             tabsView.invalidate();
@@ -1590,6 +1612,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && iBlur3SourceTabGlass != null) {
             iBlur3SourceTabGlass.invalidateRenderer();
             iBlur3SourceTabFrosted.invalidateRenderer();
+            iBlur3SourceTabFreezgram.invalidateRenderer();
             blur3_invalidateBlur();
         }
     }
@@ -1631,6 +1654,15 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         blur3_updateFragmentsGlass();
         final GlassSourceRenderNode source = getActiveTabSource();
         if (source != null) {
+            if (source == iBlur3SourceTabFreezgram) {
+                final int blur = app.freezgram.LiquidGlassStyle.blurRadiusDp();
+                final boolean enhanceColors = app.freezgram.LiquidGlassStyle.enhanceColors();
+                if (freezgramTabBlur != blur || freezgramTabEnhanceColors != enhanceColors) {
+                    freezgramTabBlur = blur;
+                    freezgramTabEnhanceColors = enhanceColors;
+                    app.freezgram.LiquidGlassStyle.applyBackdropBlur(source);
+                }
+            }
             source.setSize(width, height);
             source.updateDisplayListIfNeeded();
         }

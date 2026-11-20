@@ -1529,6 +1529,11 @@ public abstract class BaseFragment {
 
     private @Nullable BaseFragmentSimpleGlass simpleGlass;
 
+    @Nullable
+    public org.telegram.utils.glass.source.GlassSourceRenderNode getFreezgramNavigationSource() {
+        return simpleGlass == null ? null : simpleGlass.getFreezgramNavigationSource();
+    }
+
     protected BaseFragmentSimpleGlass getBaseSimpleGlass() {
         if (simpleGlass == null) {
             simpleGlass = new BaseFragmentSimpleGlass(glassEngine, () -> getThemedColor(Theme.key_windowBackgroundGray));

@@ -4103,6 +4103,8 @@ public class ChatActivity extends BaseFragment implements
 
             glassBackgroundDrawableFactory.setGlassEngine(glassEngine);
             glassBackgroundDrawableFactoryFrosted.setGlassEngine(glassEngine);
+            iosHeaderGlassFactory.setGlassEngine(glassEngine);
+            composerGlassFactory.setGlassEngine(glassEngine);
             navbarContentDrawableFactory.setGlassEngine(glassEngine);
             scrimBlur3Factory.setGlassEngine(glassEngine);
         } else {
@@ -8939,7 +8941,8 @@ public class ChatActivity extends BaseFragment implements
         if (app.exteraless.appearance.AppearanceConfig.chatComposerStyle() == 1) {
             ChatActivityEnterView.SendButton send = (ChatActivityEnterView.SendButton) chatActivityEnterView.getSendButtonInternal();
             send.setComposerGlassBackground(composerGlassFactory.create(send,
-                    app.freezgram.LiquidGlassStyle.surfaceColors(themeDelegate, app.freezgram.ChatComposerGlass::isEnabled)));
+                    app.freezgram.LiquidGlassStyle.surfaceColors(themeDelegate, app.freezgram.ChatComposerGlass::isEnabled)),
+                    chatInputViewsContainer::hasSplitComposerBackground);
         }
 
 
@@ -52544,6 +52547,9 @@ public class ChatActivity extends BaseFragment implements
         if (glassBackgroundSourceFrostedRenderNode != null) {
             glassBackgroundSourceFrostedRenderNode.invalidateDisplayListForDrawables();
         }
+        if (iosHeaderGlassSource != null) {
+            iosHeaderGlassSource.invalidateDisplayListForDrawables();
+        }
     }
 
     private void invalidateAllGlassAttachedViews() {
@@ -52952,6 +52958,11 @@ public class ChatActivity extends BaseFragment implements
             scrollableViewNoiseSuppressor.setupRenderNodes(glassPositionsArray);
         }
 
+        if (iosHeaderGlassSource != null && scrollableViewNoiseSuppressor.setNavigationGlassBlur(
+                AndroidUtilities.dpf2(app.freezgram.LiquidGlassStyle.blurRadiusDp()),
+                app.freezgram.LiquidGlassStyle.enhanceColors())) {
+            iosHeaderGlassSource.invalidateDisplayListForDrawables();
+        }
         final boolean hasChanges = scrollableViewNoiseSuppressor.invalidateResultRenderNodes(contentView.mDrawList, contentView.getWidth(), contentView.getHeight());
         if (hasChanges && glassSourceInvalidationCallback != null) {
             glassSourceInvalidationCallback.run();

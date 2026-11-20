@@ -318,15 +318,19 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
         iBlur3SourceColor = new GlassSourceColor();
         iBlur3SourceColor.setColor(getThemedColor(Theme.key_windowBackgroundWhite));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            scrollableViewNoiseSuppressor = new DownscaleScrollableNoiseSuppressor(true, false, app.freezgram.IosLiquidGlassNavigation.isRequested());
+            scrollableViewNoiseSuppressor = new DownscaleScrollableNoiseSuppressor(true, false, app.exteraless.appearance.MainTabsUiHelper.isIosNavigationBar());
             iBlur3SourceGlassFrosted = new GlassSourceRenderNode(null);
             iBlur3SourceGlass = new GlassSourceRenderNode(null);
+            iBlur3SourceNavigation = new GlassSourceRenderNode(iBlur3SourceColor);
+            iBlur3SourceNavigation.setUnderSource(iBlur3SourceColor);
+            iBlur3SourceNavigation.setScrollableNoiseSuppressor(scrollableViewNoiseSuppressor, DownscaleScrollableNoiseSuppressor.DRAW_RAW_CAPTURE);
             iBlur3FactoryLiquidGlass = new BlurredBackgroundDrawableViewFactory(iBlur3SourceGlass);
             iBlur3FactoryLiquidGlass.setLiquidGlassEffectAllowed(true);
         } else {
             scrollableViewNoiseSuppressor = null;
             iBlur3SourceGlassFrosted = null;
             iBlur3SourceGlass = null;
+            iBlur3SourceNavigation = null;
             iBlur3FactoryLiquidGlass = new BlurredBackgroundDrawableViewFactory(iBlur3SourceColor);
         }
     }
@@ -592,9 +596,6 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
                         if (iBlur3SourceGlass.needUpdateDisplayList(width, height) || iBlur3Invalidated) {
                             final Canvas c = iBlur3SourceGlass.beginRecording(width, height);
                             scrollableViewNoiseSuppressor.draw(c, DownscaleScrollableNoiseSuppressor.DRAW_GLASS);
-                            if (app.freezgram.IosLiquidGlassNavigation.isEnabled()) {
-                                scrollableViewNoiseSuppressor.drawNavigationGlass(c, iBlur3PositionMainTabs, AndroidUtilities.dpf2(app.freezgram.IosLiquidGlassNavigation.blurRadiusDp()), app.freezgram.LiquidGlassStyle.enhanceColors());
-                            }
                             iBlur3SourceGlass.endRecording();
                         }
                     }
@@ -4222,6 +4223,7 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
     private final @Nullable DownscaleScrollableNoiseSuppressor scrollableViewNoiseSuppressor;
     private final @Nullable GlassSourceRenderNode iBlur3SourceGlassFrosted;
     private final @Nullable GlassSourceRenderNode iBlur3SourceGlass;
+    private final @Nullable GlassSourceRenderNode iBlur3SourceNavigation;
     private final @NonNull GlassSourceColor iBlur3SourceColor;
     private final @NonNull BlurredBackgroundDrawableViewFactory iBlur3FactoryLiquidGlass;
 
@@ -4253,12 +4255,28 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
         iBlur3PositionMainTabs.inset(0, LiteMode.isEnabled(LiteMode.FLAG_LIQUID_GLASS) ? 0 : -dp(48));
 
         scrollableViewNoiseSuppressor.setupRenderNodes(iBlur3Positions, parentDialogsActivity != null ? 2 : 1);
-        scrollableViewNoiseSuppressor.invalidateResultRenderNodes(iBlur3Capture, fragmentView.getMeasuredWidth(), fragmentView.getMeasuredHeight());
+        if (scrollableViewNoiseSuppressor.invalidateResultRenderNodes(iBlur3Capture, fragmentView.getMeasuredWidth(), fragmentView.getMeasuredHeight())
+                && parentTabsCaptureChanged != null) {
+            parentTabsCaptureChanged.run();
+        }
+    }
+
+    private Runnable parentTabsCaptureChanged;
+
+    @Override
+    public void setParentGlass(@Nullable RectF position, @Nullable Runnable onCaptured) {
+        super.setParentGlass(position, onCaptured);
+        parentTabsCaptureChanged = onCaptured;
     }
 
     @Override
     public GlassSourceRenderNode getGlassSource() {
         return iBlur3SourceGlass;
+    }
+
+    @Override
+    public GlassSourceRenderNode getFreezgramNavigationSource() {
+        return iBlur3SourceNavigation;
     }
 
     @Override

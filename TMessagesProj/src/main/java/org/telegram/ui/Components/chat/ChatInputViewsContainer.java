@@ -324,7 +324,7 @@ public class ChatInputViewsContainer extends FrameLayout implements Theme.Colora
         tmpRect.offset(0, blurTop + (int) bubbleInputTranlationY);
 
         final boolean customComposer = app.freezgram.ChatComposerGlass.isRequested();
-        final boolean split = app.exteraless.appearance.AppearanceConfig.chatComposerStyle() == 1 && composerLeftDrawable != null && useSplitComposer();
+        final boolean split = hasSplitComposerBackground();
         app.freezgram.ChatComposerGlass.surfaceBounds(tmpRect, composerFieldBounds, composerLeftBounds, composerRightBounds, split);
         blurredBackgroundDrawable.setBounds(composerFieldBounds);
         if (composerLeftDrawable != null) {
@@ -358,6 +358,11 @@ public class ChatInputViewsContainer extends FrameLayout implements Theme.Colora
         }
 
         super.dispatchDraw(canvas);
+    }
+
+    public boolean hasSplitComposerBackground() {
+        return drawInputBackground && composerLeftDrawable != null
+                && app.exteraless.appearance.AppearanceConfig.chatComposerStyle() == 1 && useSplitComposer();
     }
 
     @Override

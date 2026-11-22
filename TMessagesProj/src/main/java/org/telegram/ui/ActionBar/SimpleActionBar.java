@@ -143,10 +143,15 @@ public class SimpleActionBar extends FrameLayout implements FactorAnimator.Targe
         if (compactGlassButtons == compact) return;
         compactGlassButtons = compact;
         createButtonsGlass();
+        requestLayout();
     }
 
     private int getGlassButtonRadius() {
         return dp(compactGlassButtons ? 22 : 23);
+    }
+
+    private int getButtonSideInset() {
+        return dp(compactGlassButtons ? 12 : 6);
     }
 
     public void setupGlass(BlurredBackgroundDrawableViewFactory factory, BlurredBackgroundColorProvider colorProvider) {
@@ -399,7 +404,6 @@ public class SimpleActionBar extends FrameLayout implements FactorAnimator.Targe
      * Returns the pill alpha; a pill narrower than a single button shrinks as a circle.
      */
     private float computeMenuPill(RectF rect) {
-        final int p = dp(6);
         final float half = getGlassButtonRadius();
         final float cy = getRowTop() + ActionBar.getCurrentActionBarHeight() / 2f;
         final float s = getSearchFactor();
@@ -423,7 +427,8 @@ public class SimpleActionBar extends FrameLayout implements FactorAnimator.Targe
         // a pill narrower than a button shrinks as a circle; a fading pill shrinks a little
         final float k = Math.min(1f, width / (half * 2)) * lerp(0.8f, 1f, fade);
 
-        float right = getWidth() - p - getDoneButtonSpace(false);
+        final int sideInset = getButtonSideInset();
+        float right = getWidth() - sideInset - getDoneButtonSpace(false);
         float left = right - Math.max(width, half * 2);
         if (compactGlassButtons && width <= dp(56) && right - left > half * 2) {
             final float center = (left + right) / 2f;
@@ -442,7 +447,7 @@ public class SimpleActionBar extends FrameLayout implements FactorAnimator.Targe
         rect.set(
             lerp(left, getSearchPillLeft(), sk),
             lerp(top, cy - half, sk),
-            lerp(right, getWidth() - p, sk),
+            lerp(right, getWidth() - sideInset, sk),
             lerp(bottom, cy + half, sk)
         );
         return lerp(Math.min(1f, width / (half * 2)) * fade, 1f, sk);
@@ -465,7 +470,7 @@ public class SimpleActionBar extends FrameLayout implements FactorAnimator.Targe
     }
 
     private float getSearchPillLeft() {
-        return hasBackButton() ? dp(6 + 46 + 6) : dp(6);
+        return getButtonSideInset() + (hasBackButton() ? dp(46 + 6) : 0);
     }
 
     /** Without a back button the close button appears only in action mode. */
@@ -524,42 +529,44 @@ public class SimpleActionBar extends FrameLayout implements FactorAnimator.Targe
         final boolean hasBack = hasBackButton();
 
         final int buttonTop = rowTop + (rowHeight - dp(46)) / 2;
-        setMargins(backButton, dp(6), buttonTop, 0);
+        final int sideInset = getButtonSideInset();
+        setMargins(backButton, sideInset, buttonTop, 0);
 
         final float menuWidth = menu != null && menu.getVisibility() != GONE ? menu.getTargetPillWidth() : 0;
         final float doneSpace = getDoneButtonSpace(true);
-        int titleSide = Math.max(hasBack ? dp(64) : dp(18), menuWidth > 0 || doneSpace > 0 ? (int) (menuWidth + doneSpace) + dp(6 + 12) : 0);
+        int titleSide = Math.max(hasBack ? sideInset + dp(58) : dp(18),
+                menuWidth > 0 || doneSpace > 0 ? (int) (menuWidth + doneSpace) + sideInset + dp(12) : 0);
         titleSide = Math.max(titleSide, titleMinSideInset);
         titleLayout.setSideInset(titleSide);
         setMargins(titleLayout, 0, rowTop, 0);
         titleLayout.getLayoutParams().height = rowHeight;
 
         if (menu != null) {
-            setMargins(menu, 0, rowTop, dp(10));
+            setMargins(menu, 0, rowTop, sideInset + dp(4));
             menu.getLayoutParams().height = rowHeight;
         }
         if (actionMode != null) {
-            setMargins(actionMode, 0, rowTop, dp(10));
+            setMargins(actionMode, 0, rowTop, sideInset + dp(4));
             actionMode.getLayoutParams().height = rowHeight;
         }
         if (actionModeTitle != null) {
             final float modeWidth = actionMode != null ? actionMode.getTargetPillWidth() : 0;
-            final int right = (int) modeWidth + dp(6 + 12);
+            final int right = (int) modeWidth + sideInset + dp(12);
             if (hasActionModeSubtitle()) {
-                setMargins(actionModeTitle, dp(66), rowTop + rowHeight / 2 - dp(22), right);
+                setMargins(actionModeTitle, sideInset + dp(60), rowTop + rowHeight / 2 - dp(22), right);
                 actionModeTitle.getLayoutParams().height = dp(22);
-                setMargins(actionModeSubtitle, dp(66), rowTop + rowHeight / 2 + dp(1), right);
+                setMargins(actionModeSubtitle, sideInset + dp(60), rowTop + rowHeight / 2 + dp(1), right);
                 actionModeSubtitle.getLayoutParams().height = dp(18);
             } else {
-                setMargins(actionModeTitle, dp(66), rowTop, right);
+                setMargins(actionModeTitle, sideInset + dp(60), rowTop, right);
                 actionModeTitle.getLayoutParams().height = rowHeight;
             }
         }
         if (searchLayout != null) {
-            setMargins(searchLayout, (int) getSearchPillLeft(), buttonTop, dp(6));
+            setMargins(searchLayout, (int) getSearchPillLeft(), buttonTop, sideInset);
         }
         if (doneButton != null) {
-            setMargins(doneButton, 0, buttonTop, dp(6));
+            setMargins(doneButton, 0, buttonTop, sideInset);
         }
 
         super.onMeasure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));

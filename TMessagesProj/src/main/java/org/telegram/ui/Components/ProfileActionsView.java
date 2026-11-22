@@ -138,7 +138,7 @@ public class ProfileActionsView extends View {
         paint.setAlpha(40);
 
         xpadding = dpf2(iosLayout ? 16 : 14);
-        ypadding = dpf2(compactIosActions ? 16 : iosLayout ? 10 : 12);
+        ypadding = dpf2(iosLayout ? 16 : 12);
         top = dpf2(compactIosActions ? 18 : iosLayout ? 6 : 8);
         textPadding = dpf2(4);
 
@@ -159,7 +159,8 @@ public class ProfileActionsView extends View {
 
     private void drawGlass(Canvas canvas, RectF rect, float radius, float alpha) {
         if (glassUsed == glass.size()) {
-            glass.add(glassFactory.create(this, ProfileButtonsGlass.NO_COLORS).setRadius(radius));
+            glass.add(glassFactory.create(this, ProfileButtonsGlass.NO_COLORS)
+                    .setContinuousCorners(iosLayout).setRadius(radius));
         }
         final BlurredBackgroundDrawable drawable = glass.get(glassUsed++);
         drawable.setRadius(radius);
@@ -233,10 +234,7 @@ public class ProfileActionsView extends View {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        setMeasuredDimension(
-                MeasureSpec.getSize(widthMeasureSpec),
-                MeasureSpec.makeMeasureSpec((int) (targetHeight + top + ypadding), MeasureSpec.EXACTLY)
-        );
+        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), Math.round(targetHeight + top + ypadding));
     }
 
     public void updatePosition(float y, float newHeight) {
@@ -249,6 +247,11 @@ public class ProfileActionsView extends View {
         int w = getMeasuredWidth();
         float betweenPadding = xpadding / 2f;
         return (w - betweenPadding * (activeCount - 1) - xpadding * 2f) / activeCount;
+    }
+
+    private float getItemLeft(int index, float width) {
+        float distance = xpadding + index * (width + xpadding / 2f);
+        return iosLayout && org.telegram.messenger.LocaleController.isRTL ? getMeasuredWidth() - distance - width : distance;
     }
 
     @Override
@@ -270,9 +273,8 @@ public class ProfileActionsView extends View {
             return;
         }
 
-        final float betweenPadding = xpadding / 2f;
         final float width = getItemWidth();
-        float left = xpadding;
+        int visibleIndex = 0;
         float r = getRoundRadius();
 
         Action newFirstAction = null, newLastAction = null;
@@ -282,8 +284,8 @@ public class ProfileActionsView extends View {
             if (action.isDeleted) continue;
 
             if (!action.isDeleting) {
+                float left = getItemLeft(visibleIndex++, width);
                 action.rect.set(left, top, left + width, top + height);
-                left += width + betweenPadding;
 
                 if (newFirstAction == null) {
                     newFirstAction = action;
@@ -909,6 +911,9 @@ public class ProfileActionsView extends View {
                 break;
             case KEY_SEARCH:
                 newAction = new Action(ActionButton.SEARCH);
+                if (iosLayout) {
+                    newAction.updateDrawable(0, R.drawable.freezgram_ios_search, R.drawable.freezgram_ios_search);
+                }
                 break;
             case KEY_NOTIFICATION:
                 newAction = new Action();
@@ -959,18 +964,18 @@ public class ProfileActionsView extends View {
         float callAnimateFromY = callView.getTop();
         if (isOpen) {
             int c = actions.size();
-            final float betweenPadding = xpadding / 2f;
             final float width = getItemWidth();
-            float left = xpadding;
+            int visibleIndex = 0;
 
             for (int i = 0; i < c; i++) {
                 Action action = actions.get(i);
                 if (action.isDeleted) continue;
                 if (action.key == KEY_CALL) {
+                    float left = getItemLeft(visibleIndex, width);
                     callAction.rect.set(left, top, left + width, top + targetHeight);
                     break;
                 }
-                left += width + betweenPadding;
+                visibleIndex++;
             }
 
             updateBounds(callAction);
@@ -1048,7 +1053,7 @@ public class ProfileActionsView extends View {
 
         public void setText(CharSequence cs) {
             this.text = new Text(cs, compactIosActions ? 14 : 11,
-                    iosLayout && !compactIosActions ? AndroidUtilities.regular() : AndroidUtilities.bold())
+                    iosLayout && !compactIosActions ? app.freezgram.IosTypography.REGULAR : AndroidUtilities.bold())
                 .multiline(3)
                 .align(Layout.Alignment.ALIGN_CENTER);
         }

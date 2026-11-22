@@ -2771,6 +2771,10 @@ public class ActionBar extends FrameLayout implements FactorAnimator.Target, The
             drawCompactIosHeaderPills(canvas, compactAvatar, hasBackButton, (t + b) / 2);
         }
         if (!compactIos && glassDrawable != null && drawGlassMiddlePill && !glassOnlyBack && drawGlassTitle) {
+            if (glassDrawable.hasContinuousCorners()) {
+                glassDrawable.setContinuousCorners(false);
+                glassDrawable.setRadius(dp(23));
+            }
             if (centerTitleAndGlass && titleTextView[0] != null && titleTextView[0].getVisibility() == View.VISIBLE) {
                 int titleWidth = (int) Math.ceil(titleTextView[0].getTextWidth()) + p * 2 + dp(48);
                 int titleLeft = (getWidth() - titleWidth) / 2 + Math.round(titleTextView[0].getTranslationX());
@@ -2889,7 +2893,9 @@ public class ActionBar extends FrameLayout implements FactorAnimator.Target, The
             final int content = Math.max(minimumContent, avatar.getIosHeaderTextWidth());
             final int width = Math.min(maxWidth, content + 2 * dp(app.freezgram.IosLiquidGlassChatHeader.TITLE_PADDING_DP));
             if (width > 0) {
-                drawCompactIosHeaderPill(canvas, glassDrawable, getWidth() / 2, centerY, width, diameter);
+                glassDrawable.setContinuousCorners(true);
+                setCompactIosHeaderPillBounds(glassDrawable, getWidth() / 2, centerY, width, diameter, dp(16));
+                glassDrawable.draw(canvas);
             }
         }
         final View avatarView = getGlassMenuAvatarView(avatar);

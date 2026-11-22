@@ -130,6 +130,19 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
         return boundProps.hasPadding;
     }
 
+    public BlurredBackgroundDrawable setContinuousCorners(boolean enabled) {
+        if (boundProps.continuousCorners != enabled) {
+            boundProps.continuousCorners = enabled;
+            boundProps.build();
+            onBoundPropsChanged();
+        }
+        return this;
+    }
+
+    public boolean hasContinuousCorners() {
+        return boundProps.continuousCorners;
+    }
+
     public BlurredBackgroundDrawable setRadius(float radius) {
         if (sameRadii(boundProps.radii, radius, radius, radius, radius)
                 && sameRadii(boundProps.shaderRadii, radius, radius, radius, radius)) return this;
@@ -446,7 +459,7 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
 
     private void drawRim(Canvas canvas, float alpha) {
         final Rect r = boundProps.boundsWithPadding;
-        if (boundProps.hasArrow()) {
+        if (boundProps.usesCustomPath()) {
             rimRenderer.drawPath(canvas, boundProps.path, boundProps.shapeKey, r.left, r.top, r.right, r.bottom, getRim(), alpha);
         } else {
             rimRenderer.draw(canvas, r.left, r.top, r.right, r.bottom, boundProps.radii, getRim(), alpha);
@@ -476,6 +489,7 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
 
         final Path path = new Path();
         boolean radiiAreSame = true;
+        boolean continuousCorners;
         final Rect boundsWithPadding = new Rect();
 
         int arrowSide = ARROW_NONE;
@@ -496,6 +510,10 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
             return arrowSide != ARROW_NONE && arrowHeight > 0;
         }
 
+        boolean usesCustomPath() {
+            return continuousCorners || hasArrow();
+        }
+
         void build() {
             radiiAreSame = RadiiUtils.radiiAreSame(radii);
 
@@ -506,6 +524,8 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
             path.rewind();
             if (hasArrow()) {
                 buildArrowPath();
+            } else if (continuousCorners && !body.isEmpty()) {
+                buildContinuousPath();
             } else {
                 path.addRoundRect(
                     boundsWithPadding.left,
@@ -515,6 +535,26 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
                     radii, Path.Direction.CW);
             }
             path.close();
+        }
+
+        private void buildContinuousPath() {
+            final float r = Math.min(radii[0], Math.min(body.width(), body.height()) * .5f);
+            final float shoulder = r * .76f;
+            final float x = body.left;
+            final float y = body.top;
+            final float right = body.right;
+            final float bottom = body.bottom;
+            path.moveTo(x + r, y);
+            path.lineTo(right - r, y);
+            path.cubicTo(right - r + shoulder, y, right, y + r - shoulder, right, y + r);
+            path.lineTo(right, bottom - r);
+            path.cubicTo(right, bottom - r + shoulder, right - r + shoulder, bottom, right - r, bottom);
+            path.lineTo(x + r, bottom);
+            path.cubicTo(x + r - shoulder, bottom, x, bottom - r + shoulder, x, bottom - r);
+            path.lineTo(x, y + r);
+            path.cubicTo(x, y + r - shoulder, x + r - shoulder, y, x + r, y);
+            shapeKey = mix(mix(mix(0xcbf29ce484222325L, -1), boundsWithPadding.width()), boundsWithPadding.height());
+            shapeKey = mix(shapeKey, Float.floatToIntBits(r));
         }
 
         /**
@@ -647,7 +687,7 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
         }
 
         void drawShadows(Canvas canvas, Paint paint, boolean useInAppKeyboardOptimization) {
-            if (useInAppKeyboardOptimization && !hasArrow()) {
+            if (useInAppKeyboardOptimization && !usesCustomPath()) {
                 final float bottom = MathUtils.clamp(boundsWithPadding.top + radii[0] * 2,
                         boundsWithPadding.top, boundsWithPadding.bottom);
 
@@ -662,7 +702,7 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
         }
 
         void draw(Canvas canvas, Paint paint) {
-            if (radiiAreSame && !hasArrow()) {
+            if (radiiAreSame && !usesCustomPath()) {
                 canvas.drawRoundRect(
                     boundsWithPadding.left,
                     boundsWithPadding.top,
@@ -695,6 +735,14 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
 
     @Override
     public void getOutline(@NonNull Outline outline) {
+        if (boundProps.continuousCorners && !boundProps.hasArrow() && !boundProps.body.isEmpty()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                outline.setPath(boundProps.path);
+            } else {
+                outline.setConvexPath(boundProps.path);
+            }
+            return;
+        }
         if (boundProps.hasArrow()) {
             // a path with the fillets is not convex: before Android 11 the outline is the rect alone
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -1044,7 +1092,7 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
             if (Color.alpha(fillColor) == 0 && Color.alpha(shadowColor) == 0) {
                 return;
             }
-            if (boundProps.hasArrow()) {
+            if (boundProps.usesCustomPath()) {
                 // not sliceable: the path with its shadow
                 final float alpha = getAlpha() / 255f;
                 arrowPaint.setColor(Theme.multAlpha(fillColor, alpha));
@@ -1241,7 +1289,7 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
         void setClipToOutline(boolean clipToOutline) {
             this.clipToOutline = clipToOutline;
             // the arrow's path is not an outline every Android clips by: the canvas clips it
-            renderNode.setClipToOutline(clipToOutline && !boundProps.hasArrow());
+            renderNode.setClipToOutline(clipToOutline && !boundProps.usesCustomPath());
         }
 
         @Override
@@ -1286,7 +1334,7 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
                 renderNodeFill.setPosition(0, 0, b.width(), b.height());
                 renderNode.setPosition(0, 0, b.width(), b.height());
                 renderNode.setOutline(outline);
-                renderNode.setClipToOutline(clipToOutline && !boundProps.hasArrow());
+                renderNode.setClipToOutline(clipToOutline && !boundProps.usesCustomPath());
                 invalidated = true;
             }
         }
@@ -1402,7 +1450,7 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
 
             final Rect b = boundProps.boundsWithPadding;
             canvas.save();
-            if (boundProps.hasArrow()) {
+            if (boundProps.usesCustomPath()) {
                 canvas.clipPath(boundProps.path);
             }
             canvas.translate(b.left, b.top);

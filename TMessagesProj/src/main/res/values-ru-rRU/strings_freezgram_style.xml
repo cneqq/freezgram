@@ -15,6 +15,7 @@
     <string name="FreezgramIosMode">Режим iOS</string>
     <string name="FreezgramIosModeInfo">Список чатов, поиск, навигация, профили и отдельные параметры стекла</string>
     <string name="FreezgramIosGlass">Стекло режима iOS</string>
+    <string name="FreezgramIosSettingsAppearance">Оформление</string>
     <string name="FreezgramIosGlassInfo">Эти параметры стекла действуют в режиме iOS.</string>
     <string name="FreezgramIosGlassEdge">Ширина края преломления</string>
     <string name="FreezgramProfileMore">Ещё</string>

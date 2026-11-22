@@ -38,6 +38,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
 import android.graphics.Shader;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.media.MediaCodecInfo;
@@ -104,6 +105,7 @@ import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.SimpleActionBarMenu;
+import org.telegram.ui.ActionBar.SimpleActionBarMenuItem;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -183,6 +185,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
     private static final int IOS_SAVED_MESSAGES = 103;
     private static final int IOS_RECENT_CALLS = 104;
     private static final int IOS_CONTACTS = 105;
+    private static final int IOS_APPEARANCE = 106;
 
     private static final int ANIMATOR_ID_SEARCH_PAGE_VISIBLE = 0;
 
@@ -301,6 +304,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         return true;
     }
 
+    private TextView iosSettingsSearchButton;
+    private SimpleActionBarMenuItem iosSettingsEditItem;
+
     @Override
     public View createView(Context context) {
         final boolean iosLayout = app.exteraless.appearance.AppearanceConfig.iosMode();
@@ -332,7 +338,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             }
         };
 
-        simpleActionBar.setBackButtonImage(R.drawable.ic_ab_back);
+        simpleActionBar.setCompactGlassButtons(iosLayout);
+        simpleActionBar.setBackButtonImage(iosLayout ? R.drawable.freezgram_ios_back : R.drawable.ic_ab_back);
         leftButtonIsBack = true; // the view may be rebuilt (theme, language): checkUi_menuItems swaps it to QR again
         simpleActionBar.setTitle(getString(R.string.Settings));
         simpleActionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
@@ -358,10 +365,15 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         simpleActionBar.setBackground(null);
 
         final SimpleActionBarMenu menu = simpleActionBar.createMenu();
+        iosSettingsEditItem = null;
         if (iosLayout) {
-            menu.addItem(3, R.drawable.msg_edit).setContentDescription(getString(R.string.Edit));
+            iosSettingsEditItem = menu.addItem(3, getString(R.string.Edit));
+            iosSettingsEditItem.getTextView().setTypeface(app.freezgram.IosTypography.MEDIUM);
+            iosSettingsEditItem.getTextView().setSingleLine(true);
+            iosSettingsEditItem.getTextView().setMaxWidth(dp(92));
+            iosSettingsEditItem.getTextView().setEllipsize(TextUtils.TruncateAt.END);
         }
-        searchItem = menu.addItem(0, R.drawable.outline_header_search, resourceProvider).setIsSearchField(true).setActionBarMenuItemSearchListener(new ActionBarMenuItem.ActionBarMenuItemSearchListener() {
+        searchItem = menu.addItem(0, iosLayout ? R.drawable.freezgram_ios_search : R.drawable.outline_header_search, resourceProvider).setIsSearchField(true).setActionBarMenuItemSearchListener(new ActionBarMenuItem.ActionBarMenuItemSearchListener() {
 
             @Override
             public void onSearchCollapse() {
@@ -385,7 +397,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         });
         searchItem.setSearchFieldHint(getString(R.string.Search));
 
-        otherItem = menu.addItem(1, R.drawable.ic_ab_other);
+        otherItem = menu.addItem(1, iosLayout ? R.drawable.baseline_more_horiz_24 : R.drawable.ic_ab_other);
         otherItem.setContentDescription(getString(R.string.AccDescrMoreOptions));
         otherItem.addSubItem(2, R.drawable.msg_leave, getString(R.string.LogOut));
 
@@ -401,7 +413,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         listView.setCaptureSectionsDecoratorAllowed(true);
         listView.adapter.setApplyBackground(false);
         if (iosLayout) {
-            listView.setSections(dp(16), dp(24), false);
+            listView.setSections(dp(16), dp(16), false);
         } else {
             listView.setSections();
         }
@@ -448,7 +460,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 updateAvatarHide();
             }
         };
-        topView.addView(avatarTouchView, LayoutHelper.createFrame(120, 120, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, 23 - 12, 0, 0));
+        topView.addView(avatarTouchView, LayoutHelper.createFrame(iosLayout ? 112 : 120, iosLayout ? 112 : 120,
+                Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, iosLayout ? 5 : 11, 0, 0));
         avatarTouchView.setOnClickListener(v -> {
             if (iosLayout) {
                 openOwnProfile();
@@ -479,7 +492,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         avatarContainer = new FrameLayout(context);
         avatarContainer.setPivotX(0);
         avatarContainer.setPivotY(0);
-        avatarGooey.addView(avatarContainer, LayoutHelper.createFrame(90, 90, Gravity.TOP | Gravity.LEFT));
+        avatarGooey.addView(avatarContainer, LayoutHelper.createFrame(iosLayout ? 100 : 90, iosLayout ? 100 : 90, Gravity.TOP | Gravity.LEFT));
         contentView.addView(avatarGooey, contentView.indexOfChild(listView) + 1, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
         avatarDrawable = new AvatarDrawable();
@@ -525,22 +538,41 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         cameraButton.setPivotX(0);
         cameraButton.setPivotY(0);
         contentView.addView(cameraButton, contentView.indexOfChild(avatarGooey) + 1, LayoutHelper.createFrame(34, 34, Gravity.LEFT | Gravity.TOP));
+        cameraButton.setVisibility(iosLayout ? View.GONE : View.VISIBLE);
 
         titleView = new TextView(context);
-        titleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 22);
-        titleView.setTypeface(AndroidUtilities.bold());
+        titleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, iosLayout ? 24 : 22);
+        titleView.setTypeface(iosLayout ? app.freezgram.IosTypography.SEMIBOLD : AndroidUtilities.bold());
         titleView.setGravity(Gravity.CENTER);
         titleView.setSingleLine();
         titleView.setEllipsize(TextUtils.TruncateAt.END);
-        topView.addView(titleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 16, 138.333f - 12, 16, 0));
+        topView.addView(titleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,
+                Gravity.CENTER_HORIZONTAL | Gravity.TOP, 16, iosLayout ? 116 : 126.333f, 16, 0));
 
         subtitleView = new TextView(context);
-        subtitleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
-        subtitleView.setTypeface(AndroidUtilities.regular());
+        subtitleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, iosLayout ? 14 : 13);
+        subtitleView.setTypeface(iosLayout ? app.freezgram.IosTypography.REGULAR : AndroidUtilities.regular());
         subtitleView.setGravity(Gravity.CENTER);
         subtitleView.setSingleLine();
         subtitleView.setEllipsize(TextUtils.TruncateAt.END);
-        topView.addView(subtitleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, 168 - 12, 0, 0));
+        topView.addView(subtitleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,
+                Gravity.CENTER_HORIZONTAL | Gravity.TOP, iosLayout ? 16 : 0, iosLayout ? 147 : 156, iosLayout ? 16 : 0, 0));
+
+        iosSettingsSearchButton = null;
+        if (iosLayout) {
+            iosSettingsSearchButton = new android.widget.Button(context);
+            iosSettingsSearchButton.setAllCaps(false);
+            iosSettingsSearchButton.setText(getString(R.string.Search));
+            iosSettingsSearchButton.setTypeface(app.freezgram.IosTypography.REGULAR);
+            iosSettingsSearchButton.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+            iosSettingsSearchButton.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+            iosSettingsSearchButton.setPaddingRelative(dp(12), 0, dp(12), 0);
+            iosSettingsSearchButton.setCompoundDrawablePadding(dp(8));
+            iosSettingsSearchButton.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.freezgram_ios_search, 0, 0, 0);
+            iosSettingsSearchButton.setOnClickListener(v -> simpleActionBar.openSearchField(true, true));
+            topView.addView(iosSettingsSearchButton, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 40,
+                    Gravity.TOP, 16, 177, 16, 0));
+        }
 
         versionView = new TextView(context);
         versionView.setTypeface(AndroidUtilities.regular());
@@ -651,6 +683,13 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         titleView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
         subtitleView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText));
         searchItem.updateColor();
+        if (iosSettingsSearchButton != null) {
+            int textColor = getThemedColor(Theme.key_windowBackgroundWhiteGrayText);
+            iosSettingsSearchButton.setTextColor(textColor);
+            iosSettingsSearchButton.setCompoundDrawableTintList(android.content.res.ColorStateList.valueOf(textColor));
+            iosSettingsSearchButton.setBackground(Theme.createSimpleSelectorRoundRectDrawable(dp(13),
+                    getThemedColor(Theme.key_windowBackgroundWhite), getThemedColor(Theme.key_listSelector)));
+        }
 
         final int navigationBarColor = getThemedColor(Theme.key_windowBackgroundWhite);
         if (navigationBar.getBackground() == null || navigationBarColor != lastNavigationBarColor) {
@@ -687,6 +726,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             );
         } else {
             visible = false;
+        }
+        if (iosSettingsEditItem != null) {
+            iosSettingsEditItem.setShown(!visible, false);
         }
         if (actionBarVisible == visible && !force) return;
 
@@ -759,7 +801,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         avatarShownY = shownY;
         avatarHiddenY = hiddenY;
 
-        final float size = dp(90);
+        final float size = avatarContainer.getLayoutParams().width;
         final float scale = AndroidUtilities.lerp(dp(avatarGooey.getHiddenAvatarSizeDp()), size, shown) / size * avatarTouchView.getScaleX();
         final float translationX = avatarGooey.getWidth() / 2f - size * scale / 2f;
         if (centerY == avatarHideCenterY && scale == avatarHideScale && shown == avatarHideShown && alpha == avatarGooey.getAlpha() && translationX == avatarContainer.getTranslationX()) {
@@ -824,7 +866,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             return;
         }
 
-        items.add(UItem.asCustomShadow(topView, 200 - 12));
+        final boolean iosLayout = app.exteraless.appearance.AppearanceConfig.iosMode();
+        items.add(UItem.asCustomShadow(topView, iosLayout ? 230 : 188));
 
         accountNumbers.clear();
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
@@ -891,9 +934,11 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             }
             items.add(UItem.asShadow(null));
         }
-        final boolean iosLayout = app.exteraless.appearance.AppearanceConfig.iosMode();
+        UItem accountSettings = SettingCell.Factory.of(1, IconBackgroundColors.BLUE.top, IconBackgroundColors.BLUE.bottom,
+                R.drawable.settings_account, getString(R.string.SettingsAccount), getString(R.string.SettingsAccountInfo));
         if (iosLayout) {
             items.add(iosShortcut(IOS_MY_PROFILE, R.drawable.settings_account, R.string.MyProfile));
+            items.add(accountSettings);
             items.add(UItem.asShadow(null));
         }
 
@@ -907,7 +952,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         // шестерёнки, акцент фирменного цвета на обе точки градиента.
         items.add(SettingCell.Factory.of(-1, 0xFF168DDE, 0xFF168DDE, R.drawable.freezgram_settings_icon, getString(R.string.OpenExteraPreferences), getString(R.string.OpenExteraInfo)));
         items.add(UItem.asShadow(null));
-        final boolean walletAbove = getConnectionsManager().getCurrentTime() - 1791538462 < 4 * 7 * 24 * 60 * 60;
+        final boolean walletAbove = iosLayout || getConnectionsManager().getCurrentTime() - 1791538462 < 4 * 7 * 24 * 60 * 60;
         if (walletAbove && getMessagesController().config.walletAvailable.get()) {
             final GramWallet wallet = GramWallet.getInstance(currentAccount);
             items.add(SettingCell.Factory.of(25, 0, 0, Theme.isCurrentThemeDark() ? R.drawable.settings_wallet_dark : R.drawable.settings_wallet, TextCell.applyNewSpanTimed(getString(R.string.WalletAttachMoney), 1790679020), null, wallet.getBalance() > 0 ? GramWallet.formatGrams(wallet.getBalance()) : null));
@@ -915,7 +960,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         }
 
         final int standardSettingsStart = items.size();
-        items.add(SettingCell.Factory.of(1, IconBackgroundColors.BLUE.top, IconBackgroundColors.BLUE.bottom, R.drawable.settings_account, getString(R.string.SettingsAccount), getString(R.string.SettingsAccountInfo)));
+        if (!iosLayout) items.add(accountSettings);
         items.add(SettingCell.Factory.of(2, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.settings_chat, getString(R.string.SettingsChat), getString(R.string.SettingsChatInfo)));
         if (NaConfig.INSTANCE.getShowStickersRowToplevel().Bool()) {
             items.add(SettingCell.Factory.of(101, 0xFFF38B31, 0xFFE26314, R.drawable.msg_premium_stickers, getString(R.string.StickersName), getString(R.string.StickersNameInfo2)));
@@ -932,13 +977,17 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             final android.util.SparseArray<UItem> byId = new android.util.SparseArray<>();
             for (UItem item : standard) byId.put(item.id, item);
             standard.clear();
-            items.add(iosShortcut(IOS_SAVED_MESSAGES, R.drawable.msg_saved, R.string.SavedMessages));
-            items.add(iosShortcut(IOS_RECENT_CALLS, R.drawable.msg_calls, R.string.RecentCalls));
-            items.add(iosShortcut(IOS_CONTACTS, R.drawable.msg_contacts, R.string.Contacts));
+            items.add(iosShortcut(IOS_SAVED_MESSAGES, IconBackgroundColors.BLUE, R.drawable.msg_saved, R.string.SavedMessages));
+            items.add(iosShortcut(IOS_RECENT_CALLS, IconBackgroundColors.GREEN, R.drawable.msg_calls, R.string.RecentCalls));
+            items.add(iosShortcut(IOS_CONTACTS, IconBackgroundColors.PURPLE, R.drawable.msg_contacts, R.string.Contacts));
             items.add(byId.get(8));
             items.add(byId.get(7));
             items.add(UItem.asShadow(null));
-            for (int id : new int[]{5, 3, 6, 2, 101, 9, 10, 1}) {
+            for (int id : new int[]{5, 3, 6, 2, IOS_APPEARANCE, 101, 9, 10}) {
+                if (id == IOS_APPEARANCE) {
+                    items.add(iosShortcut(IOS_APPEARANCE, IconBackgroundColors.CYAN, R.drawable.msg_palette, R.string.FreezgramIosSettingsAppearance));
+                    continue;
+                }
                 UItem item = byId.get(id);
                 if (item != null) items.add(item);
             }
@@ -1026,8 +1075,11 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
     }
 
     private UItem iosShortcut(int id, int icon, int title) {
-        return SettingCell.Factory.of(id, IconBackgroundColors.BLUE.top, IconBackgroundColors.BLUE.bottom,
-                icon, getString(title));
+        return iosShortcut(id, IconBackgroundColors.BLUE, icon, title);
+    }
+
+    private UItem iosShortcut(int id, IconBackgroundColors colors, int icon, int title) {
+        return SettingCell.Factory.of(id, colors.top, colors.bottom, icon, getString(title));
     }
 
     private void openOwnProfile() {
@@ -1099,7 +1151,11 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 presentSettingFragment(new UserInfoActivity());
                 break;
             case 2:
-                presentSettingFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC));
+                presentSettingFragment(app.exteraless.appearance.AppearanceConfig.iosMode()
+                        ? new ThemeActivity(ThemeActivity.SettingsPage.CHAT) : new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC));
+                break;
+            case IOS_APPEARANCE:
+                presentSettingFragment(new ThemeActivity(ThemeActivity.SettingsPage.APPEARANCE));
                 break;
             case 3:
                 presentSettingFragment(new PrivacySettingsActivity());
@@ -1487,8 +1543,11 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         private final TextView titleView;
         private final TextView subtitleView;
         private final TextView valueView;
+        private final ImageView detailArrow;
         private final boolean mini;
         private final boolean iosLayout;
+        private boolean iosRow;
+        private int valueMaxWidth = Integer.MAX_VALUE;
         private boolean hasBackground = true;
 
         public SettingCell(Context context, Theme.ResourcesProvider resourcesProvider) {
@@ -1529,7 +1588,16 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
 
             valueView = new TextView(context);
             valueView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+            detailArrow = iosLayout ? new ImageView(context) : null;
+            if (detailArrow != null) {
+                detailArrow.setImageResource(R.drawable.msg_arrowright);
+                detailArrow.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                detailArrow.setScaleX(LocaleController.isRTL ? -1f : 1f);
+                detailArrow.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+                detailArrow.setVisibility(View.GONE);
+            }
             if (LocaleController.isRTL) {
+                if (detailArrow != null) addView(detailArrow, LayoutHelper.createLinear(14, 14, Gravity.CENTER_VERTICAL, 14, 0, 4, 0));
                 addView(valueView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_VERTICAL, 20, 0, 0, 0));
                 addView(textLayout, LayoutHelper.createLinear(0, LayoutHelper.WRAP_CONTENT, 1, Gravity.CENTER_VERTICAL | Gravity.FILL_HORIZONTAL, 20, 0, mini ? 12 : 18, 0));
                 addView(iconLayout, LayoutHelper.createLinear(28, 28, Gravity.CENTER_VERTICAL | Gravity.RIGHT, 0, 0, mini ? 9 : 18, 0));
@@ -1537,6 +1605,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 addView(iconLayout, LayoutHelper.createLinear(28, 28, Gravity.CENTER_VERTICAL | Gravity.LEFT, mini ? 9 : 18, 0, 0, 0));
                 addView(textLayout, LayoutHelper.createLinear(0, LayoutHelper.WRAP_CONTENT, 1, Gravity.CENTER_VERTICAL | Gravity.FILL_HORIZONTAL,  mini ? 12 : 18, 0, 20, 0));
                 addView(valueView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_VERTICAL, 0, 0, 20, 0));
+                if (detailArrow != null) addView(detailArrow, LayoutHelper.createLinear(14, 14, Gravity.CENTER_VERTICAL, 4, 0, 14, 0));
             }
             updateColors();
         }
@@ -1545,17 +1614,40 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         public void updateColors() {
             titleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
             subtitleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText, resourcesProvider));
-            valueView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText, resourcesProvider));
-            iconBackground.setDrawBorder(hasBackground && (resourcesProvider != null ? resourcesProvider.isDark() : Theme.isCurrentThemeDark()));
+            valueView.setTextColor(Theme.getColor(iosRow ? Theme.key_windowBackgroundWhiteGrayText : Theme.key_windowBackgroundWhiteBlueText, resourcesProvider));
+            if (detailArrow != null) {
+                detailArrow.setColorFilter(Theme.getColor(Theme.key_windowBackgroundWhiteGrayIcon, resourcesProvider), PorterDuff.Mode.SRC_IN);
+            }
+            iconBackground.setDrawBorder(!iosRow && hasBackground && (resourcesProvider != null ? resourcesProvider.isDark() : Theme.isCurrentThemeDark()));
         }
         @Override
         public void addColorKeys(HashSet<Integer> colors) {
             colors.add(Theme.key_windowBackgroundWhiteBlackText);
             colors.add(Theme.key_windowBackgroundWhiteGrayText);
             colors.add(Theme.key_windowBackgroundWhiteBlueText);
+            if (detailArrow != null) colors.add(Theme.key_windowBackgroundWhiteGrayIcon);
         }
 
         private boolean twoLines;
+
+        void setIosRowStyle(boolean standardRow) {
+            boolean newStyle = iosLayout && standardRow;
+            if (iosRow == newStyle) return;
+            iosRow = newStyle;
+            titleView.setTypeface(iosRow ? app.freezgram.IosTypography.REGULAR : AndroidUtilities.regular());
+            valueView.setTypeface(iosRow ? app.freezgram.IosTypography.REGULAR : Typeface.DEFAULT);
+            titleView.setSingleLine(iosRow);
+            valueView.setSingleLine(iosRow);
+            titleView.setEllipsize(iosRow ? TextUtils.TruncateAt.END : null);
+            valueView.setEllipsize(iosRow ? TextUtils.TruncateAt.END : null);
+            valueView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, iosRow ? 14 : 16);
+            detailArrow.setVisibility(iosRow ? View.VISIBLE : View.GONE);
+            LinearLayout.LayoutParams valueParams = (LinearLayout.LayoutParams) valueView.getLayoutParams();
+            valueParams.leftMargin = LocaleController.isRTL && !iosRow ? dp(20) : 0;
+            valueParams.rightMargin = !LocaleController.isRTL && !iosRow ? dp(20) : 0;
+            valueView.setLayoutParams(valueParams);
+            iconBackground.setRoundedSquare(iosRow);
+        }
 
         public void set(
             int iconColorTop, int iconColorBottom, int icon,
@@ -1569,9 +1661,15 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             subtitleView.setTranslationX(icon == 0 ? dp(2) : 0);
 
             iconView.setImageResource(icon);
-            applyIconColors(iconView, iconBackground, iconColorTop, iconColorBottom, resourcesProvider);
+            if (iosRow && hasBackground) {
+                iconBackground.setCircle(false);
+                iconBackground.setColor(iconColorTop, iconColorBottom);
+                iconView.clearColorFilter();
+            } else {
+                applyIconColors(iconView, iconBackground, iconColorTop, iconColorBottom, resourcesProvider);
+            }
             if (iosLayout) iconBackground.setCircle(false);
-            final int iconSize = dp(iosLayout ? 30 : iconBackground.isCircle() && !mini ? 36 : 28);
+            final int iconSize = dp(iosRow ? 29 : iosLayout ? 30 : iconBackground.isCircle() && !mini ? 36 : 28);
             final ViewGroup.LayoutParams iconParams = iconLayout.getLayoutParams();
             if (iconParams != null && iconParams.width != iconSize) {
                 iconParams.width = iconSize;
@@ -1579,7 +1677,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 iconLayout.setLayoutParams(iconParams);
             }
             titleView.setText(title);
-            subtitleView.setVisibility((twoLines = !TextUtils.isEmpty(subtitle)) ? View.VISIBLE : View.GONE);
+            subtitleView.setVisibility((twoLines = !iosRow && !TextUtils.isEmpty(subtitle)) ? View.VISIBLE : View.GONE);
             subtitleView.setText(subtitle);
             setValue(value);
             updateColors();
@@ -1615,9 +1713,14 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
 
         @Override
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+            int maxWidth = iosRow ? MeasureSpec.getSize(widthMeasureSpec) / 3 : Integer.MAX_VALUE;
+            if (valueMaxWidth != maxWidth) {
+                valueMaxWidth = maxWidth;
+                valueView.setMaxWidth(maxWidth);
+            }
             super.onMeasure(
                 MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY),
-                MeasureSpec.makeMeasureSpec(dp(mini ? 44 : twoLines ? (iconBackground.isCircle() ? 64 : 60) : (iconBackground.isCircle() ? 52 : 50)), MeasureSpec.EXACTLY)
+                MeasureSpec.makeMeasureSpec(dp(mini ? 44 : iosRow ? 48 : twoLines ? (iconBackground.isCircle() ? 64 : 60) : (iconBackground.isCircle() ? 52 : 50)), MeasureSpec.EXACTLY)
             );
         }
 
@@ -1654,6 +1757,14 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             }
 
             private boolean circle;
+            private boolean roundedSquare;
+
+            void setRoundedSquare(boolean roundedSquare) {
+                if (this.roundedSquare != roundedSquare) {
+                    this.roundedSquare = roundedSquare;
+                    invalidateSelf();
+                }
+            }
             public void setCircle(boolean circle) {
                 if (this.circle != circle) {
                     this.circle = circle;
@@ -1672,7 +1783,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                     canvas.drawCircle(bounds.exactCenterX(), bounds.exactCenterY(), Math.min(bounds.width(), bounds.height()) / 2f, paint);
                     return;
                 }
-                final float r = dp(10);
+                final float r = dp(roundedSquare ? 7 : 10);
                 AndroidUtilities.rectTmp.set(getBounds());
                 matrix.reset();
                 matrix.postTranslate(AndroidUtilities.rectTmp.left, AndroidUtilities.rectTmp.top);
@@ -1715,7 +1826,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             public void bindView(View view, UItem item, boolean divider, UniversalAdapter adapter, UniversalRecyclerView listView) {
                 int iconColorTop    = (int) item.longValue;
                 int iconColorBottom = (int) (item.longValue >>> 32);
-                ((SettingCell) view).set(
+                SettingCell cell = (SettingCell) view;
+                cell.setIosRowStyle(item.id != -1 && item.id != 100 && item.iconResId != 0 && item.object == null);
+                cell.set(
                     iconColorTop, iconColorBottom, item.iconResId,
                     item.text,
                     item.subtext,
@@ -2555,7 +2668,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         final boolean back = simpleActionBar.isSearchFieldVisible();
         if (back != leftButtonIsBack) {
             leftButtonIsBack = back;
-            simpleActionBar.setBackButtonImageAnimated(back ? R.drawable.ic_ab_back : R.drawable.outline_header_qr_24);
+            boolean ios = app.exteraless.appearance.AppearanceConfig.iosMode();
+            simpleActionBar.setBackButtonImageAnimated(back ? (ios ? R.drawable.freezgram_ios_back : R.drawable.ic_ab_back)
+                    : R.drawable.outline_header_qr_24);
             simpleActionBar.setBackButtonContentDescription(getString(back ? R.string.AccDescrGoBack : R.string.QrCode));
         }
     }

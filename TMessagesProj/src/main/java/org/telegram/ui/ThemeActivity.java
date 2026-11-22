@@ -139,6 +139,10 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
     public final static int THEME_TYPE_OTHER = 2;
     public final static int THEME_TYPE_THEMES_BROWSER = 3;
 
+    public enum SettingsPage { ALL, CHAT, APPEARANCE }
+
+    private final SettingsPage settingsPage;
+
     private ListAdapter listAdapter;
     private RecyclerListView listView;
     @SuppressWarnings("FieldCanBeLocal")
@@ -603,8 +607,17 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
     }
 
     public ThemeActivity(int type) {
+        this(type, SettingsPage.ALL);
+    }
+
+    public ThemeActivity(SettingsPage settingsPage) {
+        this(THEME_TYPE_BASIC, settingsPage);
+    }
+
+    private ThemeActivity(int type, SettingsPage settingsPage) {
         super();
         currentType = type;
+        this.settingsPage = settingsPage;
         updateRows(true);
     }
 
@@ -809,58 +822,70 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             createNewThemeRow = rowCount++;
             lastShadowRow = rowCount++;
         } else if (currentType == THEME_TYPE_BASIC) {
-            textSizeHeaderRow = rowCount++;
-            textSizeRow = rowCount++;
-            backgroundRow = rowCount++;
-            changeUserColor = rowCount++;
-            newThemeInfoRow = rowCount++;
-            themeHeaderRow = rowCount++;
+            if (settingsPage != SettingsPage.CHAT) {
+                textSizeHeaderRow = rowCount++;
+                textSizeRow = rowCount++;
+                backgroundRow = rowCount++;
+                changeUserColor = rowCount++;
+                newThemeInfoRow = rowCount++;
+                themeHeaderRow = rowCount++;
 
-            themeListRow2 = rowCount++;
-            themeInfoRow = rowCount++;
+                themeListRow2 = rowCount++;
+                themeInfoRow = rowCount++;
 
-            bubbleRadiusHeaderRow = rowCount++;
-            bubbleRadiusRow = rowCount++;
-            bubbleRadiusInfoRow = rowCount++;
+                bubbleRadiusHeaderRow = rowCount++;
+                bubbleRadiusRow = rowCount++;
+                bubbleRadiusInfoRow = rowCount++;
 
-            chatListHeaderRow = rowCount++;
-            chatListRow = rowCount++;
-            chatListInfoRow = rowCount++;
+                chatListHeaderRow = rowCount++;
+                chatListRow = rowCount++;
+                chatListInfoRow = rowCount++;
 
-            appIconHeaderRow = rowCount++;
-            appIconSelectorRow = rowCount++;
-            appIconShadowRow = rowCount++;
-
-            swipeGestureHeaderRow = rowCount++;
-            swipeGestureRow = rowCount++;
-            swipeGestureInfoRow = rowCount++;
-
-            nightThemeRow = rowCount++;
-            browserRow = rowCount++;
-            liteModeRow = rowCount++;
-            stickersRow = rowCount++;
-            stickersSectionRow = rowCount++;
-
-            mediaSoundHeaderRow = rowCount++;
-            nextMediaTapRow = rowCount++;
-            raiseToListenRow = rowCount++;
-            if (SharedConfig.raiseToListen) {
-                raiseToSpeakRow = rowCount++;
+                appIconHeaderRow = rowCount++;
+                appIconSelectorRow = rowCount++;
+                appIconShadowRow = rowCount++;
             }
-            pauseOnRecordRow = rowCount++;
-            pauseOnMediaRow = rowCount++;
-            bluetoothScoRow = rowCount++;
-            mediaSoundSectionRow = rowCount++;
 
-            otherHeaderRow = rowCount++;
-            directShareRow = rowCount++;
-            TL_account.contentSettings contentSettings = getMessagesController().getContentSettings();
-            if (contentSettings != null && contentSettings.sensitive_can_change) {
-                sensitiveContentRow = rowCount++;
+            if (settingsPage != SettingsPage.APPEARANCE) {
+                swipeGestureHeaderRow = rowCount++;
+                swipeGestureRow = rowCount++;
+                swipeGestureInfoRow = rowCount++;
             }
-            sendByEnterRow = rowCount++;
-            distanceRow = rowCount++;
-            otherSectionRow = rowCount++;
+
+            if (settingsPage != SettingsPage.CHAT) {
+                nightThemeRow = rowCount++;
+                browserRow = rowCount++;
+                if (settingsPage == SettingsPage.APPEARANCE) {
+                    lastShadowRow = rowCount++;
+                }
+            }
+
+            if (settingsPage != SettingsPage.APPEARANCE) {
+                liteModeRow = rowCount++;
+                stickersRow = rowCount++;
+                stickersSectionRow = rowCount++;
+
+                mediaSoundHeaderRow = rowCount++;
+                nextMediaTapRow = rowCount++;
+                raiseToListenRow = rowCount++;
+                if (SharedConfig.raiseToListen) {
+                    raiseToSpeakRow = rowCount++;
+                }
+                pauseOnRecordRow = rowCount++;
+                pauseOnMediaRow = rowCount++;
+                bluetoothScoRow = rowCount++;
+                mediaSoundSectionRow = rowCount++;
+
+                otherHeaderRow = rowCount++;
+                directShareRow = rowCount++;
+                TL_account.contentSettings contentSettings = getMessagesController().getContentSettings();
+                if (contentSettings != null && contentSettings.sensitive_can_change) {
+                    sensitiveContentRow = rowCount++;
+                }
+                sendByEnterRow = rowCount++;
+                distanceRow = rowCount++;
+                otherSectionRow = rowCount++;
+            }
         } else {
             nightDisabledRow = rowCount++;  // TYPE_THEME_TYPE
             nightScheduledRow = rowCount++; // TYPE_THEME_TYPE
@@ -1001,7 +1026,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         getNotificationCenter().addWeakObserver(this, NotificationCenter.themeUploadedToServer);
         getNotificationCenter().addWeakObserver(this, NotificationCenter.themeUploadError);
         getNotificationCenter().addWeakObserver(this, NotificationCenter.webBrowserSettingsUpdate);
-        if (currentType == THEME_TYPE_BASIC) {
+        if (currentType == THEME_TYPE_BASIC && settingsPage != SettingsPage.CHAT) {
             Theme.loadRemoteThemes(currentAccount, true);
             Theme.checkCurrentRemoteTheme(true);
         }
@@ -1103,7 +1128,12 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         setHasOwnBackground(true);
         lastIsDarkTheme = !Theme.isCurrentThemeDay();
 
-        simpleActionBar.setBackButtonImage(R.drawable.ic_ab_back);
+        final boolean iosSettingsPage = settingsPage != SettingsPage.ALL;
+        if (iosSettingsPage) {
+            getBaseSimpleGlass().setUseFreezgramHeaderGlass(true);
+            simpleActionBar.setCompactGlassButtons(true);
+        }
+        simpleActionBar.setBackButtonImage(iosSettingsPage ? R.drawable.freezgram_ios_back : R.drawable.ic_ab_back);
         if (currentType == THEME_TYPE_THEMES_BROWSER) {
             simpleActionBar.setTitle(getString("BrowseThemes", R.string.BrowseThemes));
             SimpleActionBarMenu menu = simpleActionBar.createMenu();
@@ -1116,21 +1146,24 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             sunDrawable.setPlayInDirectionOfCustomEndFrame(true);
             menuItem = menu.addItem(day_night_switch, sunDrawable);
         } else if (currentType == THEME_TYPE_BASIC) {
-            simpleActionBar.setTitle(getString("ChatSettings", R.string.ChatSettings));
-            SimpleActionBarMenu menu = simpleActionBar.createMenu();
-            menuItem = menu.addItem(0, R.drawable.ic_ab_other);
-            menuItem.setContentDescription(getString("AccDescrMoreOptions", R.string.AccDescrMoreOptions));
-            menuItem.addSubItem(share_theme, R.drawable.msg_share, getString("ShareTheme", R.string.ShareTheme));
-            menuItem.addSubItem(edit_theme, R.drawable.msg_edit, getString("EditThemeColors", R.string.EditThemeColors));
-            menuItem.addSubItem(create_theme, R.drawable.msg_palette, getString("CreateNewThemeMenu", R.string.CreateNewThemeMenu));
-            menuItem.addSubItem(reset_settings, R.drawable.msg_reset, getString("ThemeResetToDefaults", R.string.ThemeResetToDefaults));
+            simpleActionBar.setTitle(getString(settingsPage == SettingsPage.APPEARANCE
+                    ? R.string.FreezgramIosSettingsAppearance : R.string.ChatSettings));
+            if (settingsPage != SettingsPage.CHAT) {
+                SimpleActionBarMenu menu = simpleActionBar.createMenu();
+                menuItem = menu.addItem(0, iosSettingsPage ? R.drawable.baseline_more_horiz_24 : R.drawable.ic_ab_other);
+                menuItem.setContentDescription(getString(R.string.AccDescrMoreOptions));
+                menuItem.addSubItem(share_theme, R.drawable.msg_share, getString("ShareTheme", R.string.ShareTheme));
+                menuItem.addSubItem(edit_theme, R.drawable.msg_edit, getString("EditThemeColors", R.string.EditThemeColors));
+                menuItem.addSubItem(create_theme, R.drawable.msg_palette, getString("CreateNewThemeMenu", R.string.CreateNewThemeMenu));
+                menuItem.addSubItem(reset_settings, R.drawable.msg_reset, getString("ThemeResetToDefaults", R.string.ThemeResetToDefaults));
+            }
 
-            if (getMessagesController().getContentSettings() == null) {
+            if (settingsPage != SettingsPage.APPEARANCE && getMessagesController().getContentSettings() == null) {
                 getMessagesController().getContentSettings(settings -> {
                     if (listView != null && listView.isAttachedToWindow() && listAdapter != null) {
-                        if ((sensitiveContentRow >= 0) == (settings != null && settings.sensitive_can_change)) {
+                        if (sensitiveContentRow >= 0 && settings != null && settings.sensitive_can_change) {
                             listAdapter.notifyItemChanged(sensitiveContentRow);
-                        } else {
+                        } else if ((sensitiveContentRow >= 0) != (settings != null && settings.sensitive_can_change)) {
                             updateRows(true);
                         }
                     }

@@ -14,7 +14,8 @@ public final class IosLiquidGlassNavigation {
     private IosLiquidGlassNavigation() {}
 
     public static boolean isRequested() {
-        return MainTabsUiHelper.isIosNavigationBar() && AppearanceConfig.iosLiquidGlassNavigation();
+        return MainTabsUiHelper.isIosNavigationBar()
+                && (AppearanceConfig.iosMode() || AppearanceConfig.iosLiquidGlassNavigation());
     }
 
     public static boolean isEnabled() {

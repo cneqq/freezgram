@@ -5,7 +5,6 @@ import android.graphics.Canvas;
 import android.os.Build;
 import android.view.Gravity;
 import android.view.MotionEvent;
-import app.exteraless.appearance.AppearanceConfig;
 import app.exteraless.appearance.ChatHeaderUiHelper;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
@@ -55,7 +54,7 @@ final class ChatHeaderPreview extends SizeNotifierFrameLayout {
         bar.setOccupyStatusBar(false); bar.setBackButtonImage(R.drawable.ic_ab_back);
         bar.setItemsColor(Theme.getColor(Theme.key_chat_topPanelTitle, provider), false);
         avatar = new ChatAvatarContainer(getContext(), owner, false, provider) {
-            @Override protected boolean isCentered() { return AppearanceConfig.iosChatHeader(); }
+            @Override protected boolean isCentered() { return IosLiquidGlassChatHeader.isRequested(); }
         };
         avatar.setOccupyStatusBar(false);
         ChatHeaderUiHelper.setupGlassAvatarContainer(avatar);
@@ -63,12 +62,13 @@ final class ChatHeaderPreview extends SizeNotifierFrameLayout {
         avatar.setTitle(user == null ? "Freezgram" : UserObject.getUserName(user));
         avatar.setSubtitle(LocaleController.getString(R.string.Online));
         if (user != null) avatar.setUserAvatar(user, true);
-        bar.addView(avatar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT, 52, 0, AppearanceConfig.iosChatHeader() ? 0 : 52, 0));
+        final boolean iosHeader = IosLiquidGlassChatHeader.isRequested();
+        bar.addView(avatar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT, 52, 0, iosHeader ? 0 : 52, 0));
         factory.setLiquidGlassEffectAllowed(IosLiquidGlassChatHeader.isEnabled());
-        bar.setupGlass(factory, AppearanceConfig.iosChatHeader() ? IosLiquidGlassChatHeader.colors(provider) : BlurredBackgroundProviderImpl.topPanelChatActivity(provider));
-        bar.setIosChatHeaderGlass(AppearanceConfig.iosChatHeader());
+        bar.setupGlass(factory, iosHeader ? IosLiquidGlassChatHeader.colors(provider) : BlurredBackgroundProviderImpl.topPanelChatActivity(provider));
+        bar.setIosChatHeaderGlass(iosHeader);
         ChatHeaderUiHelper.applyChatHeaderGlassStyle(bar);
-        if (AppearanceConfig.iosChatHeader()) {
+        if (iosHeader) {
             bar.setChatAvatarContainer(avatar); avatar.setActionBar(bar); bar.setForcedMenuWidth(AndroidUtilities.dp(46));
         } else {
             bar.createMenu().addItem(1, R.drawable.call);

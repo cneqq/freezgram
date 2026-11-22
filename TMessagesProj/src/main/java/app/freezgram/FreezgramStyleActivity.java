@@ -8,6 +8,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.Cells.TextSettingsCell;
+import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextRadioCell;
 import org.telegram.messenger.AndroidUtilities;
 import tw.nekomimi.nekogram.NekoConfig;
@@ -37,6 +38,7 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
     @Override protected void updateRows() {
         super.updateRows();
         addRow("interface");
+        addRow("iosMode");
         addRow("navigation"); addRow("header"); addRow("composer"); addRow("chatList"); addRow("counters"); addRow("profileMusic"); addRow();
         addRow("chat"); addRow("messages"); addRow("messageDetails"); addRow("gifts"); addRow("surfaces"); addRow();
         addRow("effects"); addRow("glass"); addRow("dividers"); addRow("motion");
@@ -65,6 +67,13 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
     @Override protected void onItemClick(View view, int position, float x, float y) {
         String key = rowMapReverse.get(position);
         if (key == null) return;
+        if (key.equals("iosMode")) {
+            boolean enabled = !AppearanceConfig.iosMode();
+            AppearanceConfig.iosMode.setConfigBool(enabled);
+            ((TextCheckCell) view).setChecked(enabled);
+            effectsChanged = true;
+            return;
+        }
         if (key.equals("profileMusic")) {
             showDialog(new org.telegram.ui.ActionBar.AlertDialog.Builder(getParentActivity())
                     .setTitle(text(R.string.OEProfileMusicDesign))
@@ -156,12 +165,17 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
             @Override public int getItemViewType(int position) {
                 String key = rowMapReverse.get(position);
                 if (key == null || key.isEmpty()) return TYPE_SHADOW;
+                if (key.equals("iosMode")) return TYPE_CHECK;
                 if (key.equals("motionFreezgram") || key.equals("motionStandard") || key.equals("snowOff") || key.equals("snowFlakes") || key.equals("snowDots")) return TYPE_RADIO;
                 return key.equals("interface") || key.equals("chat") || key.equals("effects") ? TYPE_HEADER : TYPE_SETTINGS;
             }
             @Override public void onBindViewHolder(RecyclerView.ViewHolder holder, int position, boolean partial) {
                 String key = rowMapReverse.get(position);
                 if (getItemViewType(position) == TYPE_HEADER) ((HeaderCell) holder.itemView).setText(text(label(key)));
+                else if (getItemViewType(position) == TYPE_CHECK) {
+                    ((TextCheckCell) holder.itemView).setTextAndValueAndCheck(text(R.string.FreezgramIosMode),
+                            text(R.string.FreezgramIosModeInfo), AppearanceConfig.iosMode(), true, true);
+                }
                 else if (getItemViewType(position) == TYPE_RADIO) {
                     boolean snowEnabled = NekoConfig.actionBarDecoration.Int() == 1;
                     boolean checked = key.equals("motionFreezgram") ? AppearanceConfig.transitionStyle() == 1

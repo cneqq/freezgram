@@ -377,6 +377,15 @@ object AppearanceConfig {
         )
     }
 
+    @JvmField
+    val iosMode = addConfig("FreezgramIosMode", ConfigItem.configTypeBool, false)
+
+    @JvmStatic
+    fun iosMode(): Boolean {
+        ensureLoaded()
+        return iosMode.Bool()
+    }
+
     /** Широкая нижняя панель как в Telegram iOS. Уступает M3-панели, если включены обе. */
     @JvmField
     val iosNavigationBarStyle =

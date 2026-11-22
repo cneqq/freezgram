@@ -33,7 +33,7 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
     public NavigationGlassSettingsActivity() { this(NAVIGATION); }
     public NavigationGlassSettingsActivity(int mode) { this.mode = mode; }
     public static boolean previewMaterialRequested(int mode) {
-        if (mode == NAVIGATION) return MainTabsUiHelper.isIosNavigationBar() && AppearanceConfig.iosLiquidGlassNavigation();
+        if (mode == NAVIGATION) return IosLiquidGlassNavigation.isRequested();
         if (mode == COMPOSER) return ChatComposerGlass.isRequested();
         return true;
     }
@@ -97,11 +97,12 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
             org.telegram.ui.Cells.TextSettingsCell enabled = new org.telegram.ui.Cells.TextSettingsCell(context, resourceProvider);
             String[] styles = {text(R.string.FreezgramChatComposerDefault), text(R.string.FreezgramStyleMaterial), "iOS"};
             Runnable updateStyle = () -> enabled.setTextAndValue(text(R.string.FreezgramMessageSurfaceStyle),
-                    styles[AppearanceConfig.iosNavigationBarStyle() ? 2 : AppearanceConfig.newNavigationBarStyle() ? 1 : 0], false);
+                    AppearanceConfig.iosMode() ? text(R.string.FreezgramIosMode)
+                            : styles[AppearanceConfig.iosNavigationBarStyle() ? 2 : AppearanceConfig.newNavigationBarStyle() ? 1 : 0], false);
             updateStyle.run(); styleGroup.addView(enabled);
             enabled.setBackground(Theme.getSelectorDrawable(false));
             LinearLayout navigationOptions = StyleEditorUi.section(content, R.string.FreezgramPanelSettings, resourceProvider);
-            navigationOptions.setVisibility(AppearanceConfig.iosNavigationBarStyle() ? View.VISIBLE : View.GONE);
+            navigationOptions.setVisibility(MainTabsUiHelper.isIosNavigationBar() ? View.VISIBLE : View.GONE);
             enabled.setOnClickListener(v -> showDialog(new org.telegram.ui.ActionBar.AlertDialog.Builder(context)
                     .setTitle(text(R.string.FreezgramPanelSettings)).setItems(styles, (dialog, which) -> {
                         AppearanceConfig.iosNavigationBarStyle.setConfigBool(which == 2);
@@ -109,6 +110,7 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
                         updateStyle.run(); navigationOptions.setVisibility(which == 2 ? View.VISIBLE : View.GONE);
                         geometryChanged = true; preview.updateGeometry();
                     }).create()));
+            enabled.setEnabled(!AppearanceConfig.iosMode());
             org.telegram.ui.Cells.TextCheckCell glassSwitch = new org.telegram.ui.Cells.TextCheckCell(context);
             glassSwitch.setTextAndCheck("Liquid Glass", AppearanceConfig.iosLiquidGlassNavigation.Bool(), false);
             glassSwitch.setOnClickListener(v -> {
@@ -117,6 +119,7 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
                 preview.invalidate();
             });
             navigationOptions.addView(glassSwitch);
+            glassSwitch.setVisibility(AppearanceConfig.iosMode() ? View.GONE : View.VISIBLE);
             width = slider(context, navigationOptions, R.string.FreezgramPanelWidth, 100,
                     AppearanceConfig.navigationPanelWidth(), value -> {
                         AppearanceConfig.navigationPanelWidth.setConfigInt(Math.max(80, value));

@@ -14,7 +14,7 @@ public final class IosLiquidGlassChatHeader {
     private IosLiquidGlassChatHeader() {}
 
     public static boolean isRequested() {
-        return AppearanceConfig.iosChatHeader();
+        return AppearanceConfig.iosMode() || AppearanceConfig.iosChatHeader();
     }
 
     public static boolean isEnabled() {

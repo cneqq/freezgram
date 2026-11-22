@@ -32,7 +32,7 @@ public final class MainTabsUiHelper {
     }
 
     public static boolean isMaterial3NavigationBar() {
-        return AppearanceConfig.newNavigationBarStyle() && !MainTabsLayout.isBottomNavigationFloating();
+        return !AppearanceConfig.iosMode() && AppearanceConfig.newNavigationBarStyle() && !MainTabsLayout.isBottomNavigationFloating();
     }
 
     /**
@@ -41,7 +41,7 @@ public final class MainTabsUiHelper {
      * поэтому все размеры считаются через MainTabsHelper. M3 приоритетнее.
      */
     public static boolean isIosNavigationBar() {
-        return AppearanceConfig.iosNavigationBarStyle() && !isMaterial3NavigationBar();
+        return AppearanceConfig.iosMode() || AppearanceConfig.iosNavigationBarStyle() && !isMaterial3NavigationBar();
     }
 
     /** В iOS-стиле обёртка добавляет к системным инсетам ещё 8dp по бокам — вместе с подложкой выходит 16dp. */

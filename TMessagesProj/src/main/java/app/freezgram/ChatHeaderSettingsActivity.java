@@ -34,11 +34,13 @@ public final class ChatHeaderSettingsActivity extends BaseFragment {
         LinearLayout group = StyleEditorUi.section(content, R.string.FreezgramStyleAppearance, resourceProvider);
         TextSettingsCell style = new TextSettingsCell(context, resourceProvider);
         String[] names = {LocaleController.getString(R.string.FreezgramChatComposerDefault), LocaleController.getString(R.string.FreezgramStyleMaterial), "iOS"};
-        Runnable refresh = () -> style.setTextAndValue(LocaleController.getString(R.string.FreezgramMessageSurfaceStyle), names[AppearanceConfig.iosChatHeader() ? 2 : AppearanceConfig.newChatHeaderStyle() ? 1 : 0], false);
+        Runnable refresh = () -> style.setTextAndValue(LocaleController.getString(R.string.FreezgramMessageSurfaceStyle),
+                AppearanceConfig.iosMode() ? LocaleController.getString(R.string.FreezgramIosMode)
+                        : names[AppearanceConfig.iosChatHeader() ? 2 : AppearanceConfig.newChatHeaderStyle() ? 1 : 0], false);
         refresh.run(); group.addView(style);
         style.setBackground(Theme.getSelectorDrawable(false));
         LinearLayout options = StyleEditorUi.section(content, R.string.FreezgramStyleGlass, resourceProvider);
-        options.setVisibility(AppearanceConfig.iosChatHeader() ? View.VISIBLE : View.GONE);
+        options.setVisibility(IosLiquidGlassChatHeader.isRequested() ? View.VISIBLE : View.GONE);
         TextCheckCell dark = new TextCheckCell(context, resourceProvider);
         dark.setTextAndCheck(LocaleController.getString(R.string.FreezgramChatHeaderGlassDim), AppearanceConfig.chatHeaderGlassDim(), false);
         dark.setBackground(Theme.getSelectorDrawable(false));
@@ -52,6 +54,7 @@ public final class ChatHeaderSettingsActivity extends BaseFragment {
             AppearanceConfig.newChatHeaderStyle.setConfigBool(which == 1);
             changed = true; refresh.run(); options.setVisibility(which == 2 ? View.VISIBLE : View.GONE); preview.refresh();
         }).create()));
+        style.setEnabled(!AppearanceConfig.iosMode());
         TextCheckCell actionButtons = new TextCheckCell(context, resourceProvider);
         actionButtons.setTextAndCheck(LocaleController.getString(R.string.FreezgramChatActionButtonsGlass),
                 AppearanceConfig.chatActionButtonsGlass(), false);

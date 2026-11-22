@@ -20,7 +20,7 @@ public final class ChatHeaderUiHelper {
     }
 
     public static boolean isMaterial3ChatHeaderStyle() {
-        return AppearanceConfig.newChatHeaderStyle() && !AppearanceConfig.iosChatHeader();
+        return AppearanceConfig.newChatHeaderStyle() && !app.freezgram.IosLiquidGlassChatHeader.isRequested();
     }
 
     /** Назад ? 4 : (m3 ? 57 : 52). */

@@ -368,6 +368,16 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
                     openProfile(true);
                 }
             });
+            if (isCentered() && app.exteraless.appearance.AppearanceConfig.iosMode()) {
+                avatarImageView.setOnLongClickListener(v -> {
+                    if (avatarOptionsMenuItem == null || !avatarOptionsMenuItem.hasSubMenu()) return false;
+                    final ActionBar actionBar = parentFragment != null ? parentFragment.getActionBar() : null;
+                    if (actionBar != null && actionBar.actionBarMenuOnItemClick != null
+                            && !actionBar.actionBarMenuOnItemClick.canOpenMenu()) return false;
+                    avatarOptionsMenuItem.toggleSubMenu();
+                    return true;
+                });
+            }
         }
 
         titleTextView = new SimpleTextConnectedView(context, titleTextLargerCopyView);
@@ -979,7 +989,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
         final float avatarSizeDiff = avatarSizeInDp - 42f;
         final int actionBarHeight = ActionBar.getCurrentActionBarHeight();
         final int viewTop = (actionBarHeight - avatarImageView.getMeasuredHeight() - avatarInsetPx * 2) / 2 + (occupyStatusBar ? AndroidUtilities.statusBarHeight : 0);
-        final int iosTextOffset = isCentered() && app.exteraless.appearance.AppearanceConfig.iosChatHeader() ? dp(1) : 0;
+        final int iosTextOffset = isCentered() && app.freezgram.IosLiquidGlassChatHeader.isRequested() ? dp(1) : 0;
         final int subtitleTop = viewTop - iosTextOffset + dp(material3 ? (glassMode ? 26.66f : 27f) : (glassMode ? 23.66f : 24f));
 
         int avatarLeft = avatarInsetPx + leftPadding;

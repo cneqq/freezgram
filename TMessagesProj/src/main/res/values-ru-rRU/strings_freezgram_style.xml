@@ -12,6 +12,8 @@
     <string name="FreezgramPreviewPostText">Пример публикации канала с комментариями. Здесь можно настроить её фон.</string>
     <string name="FreezgramStyleEntryInfo">Интерфейс, чат и эффекты</string>
     <string name="FreezgramStyleInterface">Интерфейс</string>
+    <string name="FreezgramIosMode">Режим iOS</string>
+    <string name="FreezgramIosModeInfo">Порядок вкладок и расположение кнопок в шапке чата</string>
     <string name="FreezgramStyleChat">Чат</string>
     <string name="FreezgramStyleEffects">Эффекты</string>
     <string name="FreezgramStyleChatHeader">Шапка чата</string>

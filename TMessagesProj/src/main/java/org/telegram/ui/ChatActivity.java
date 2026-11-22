@@ -4723,9 +4723,12 @@ public class ChatActivity extends BaseFragment implements
             protected boolean onAvatarClick() {
                 if (isTitleCentered()) {
                     if (headerItem != null) {
-                        if (attachItem != null && chatActivityEnterView.hasText() && TextUtils.isEmpty(chatActivityEnterView.getSlowModeTimer()) && (currentChat == null || ChatObject.canSendPlain(currentChat))) {
+                        if (attachItem != null && chatActivityEnterView != null && chatActivityEnterView.hasText() && TextUtils.isEmpty(chatActivityEnterView.getSlowModeTimer()) && (currentChat == null || ChatObject.canSendPlain(currentChat))) {
                             attachItem.createView().performClick();
                             return true;
+                        }
+                        if (app.exteraless.appearance.AppearanceConfig.iosMode()) {
+                            return false;
                         }
                         headerItem.performClick();
                         return true;
@@ -52002,7 +52005,7 @@ public class ChatActivity extends BaseFragment implements
     }
 
     private boolean canShowCenteredTitle(ChatActivity parentFragment) {
-        if (!app.exteraless.appearance.AppearanceConfig.iosChatHeader()) {
+        if (!app.freezgram.IosLiquidGlassChatHeader.isRequested()) {
             return false;
         }
         if (parentFragment == null) {

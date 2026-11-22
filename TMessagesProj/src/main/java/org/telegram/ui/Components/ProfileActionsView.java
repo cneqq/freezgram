@@ -612,6 +612,10 @@ public class ProfileActionsView extends View {
         }
     }
 
+    public boolean hasIosMoreButton() {
+        return iosLayout && mode == MODE_USER && allAvailableActions.contains(KEY_MORE);
+    }
+
     public void setNotifications(boolean enabled) {
         final boolean animated = isNotificationsEnabled != enabled;
         isNotificationsEnabled = enabled;

@@ -50,17 +50,25 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
 
     private final TextView headerView;
     private final AnimatedTextView subscribersView;
+    private final boolean captionAboveCard;
 
     public final DialogCell dialogCell;
 
     public ProfileChannelCell(BaseFragment fragment) {
+        this(fragment, false);
+    }
+
+    public ProfileChannelCell(BaseFragment fragment, boolean captionAboveCard) {
         super(contextOf(fragment));
+        this.captionAboveCard = captionAboveCard;
         final Context context = getContext();
         this.resourcesProvider = fragment.getResourceProvider();
 
         LinearLayout headerLayout = new LinearLayout(context);
         headerLayout.setOrientation(LinearLayout.HORIZONTAL);
-        addView(headerLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.FILL_HORIZONTAL | Gravity.TOP, 16.66f, 11.6f, 16.66f, 0));
+        final float headerInset = captionAboveCard ? 32 : 16.66f;
+        addView(headerLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,
+                Gravity.FILL_HORIZONTAL | Gravity.TOP, headerInset, 11.6f, headerInset, 0));
 
         headerView = new TextView(context);
         headerView.setTypeface(AndroidUtilities.bold());
@@ -75,7 +83,18 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
         subscribersView.setTextSize(dp(11));
         subscribersView.setPadding(dp(4.33f), 0, dp(4.33f), 0);
         subscribersView.setGravity(Gravity.LEFT);
-        headerLayout.addView(subscribersView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 17, Gravity.LEFT | Gravity.TOP, 4, 1, 4, 0));
+        if (captionAboveCard) {
+            headerView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
+            headerView.setTypeface(AndroidUtilities.regular());
+            subscribersView.setTypeface(AndroidUtilities.regular());
+            subscribersView.setTextSize(dp(13));
+            subscribersView.setGravity(LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT);
+            subscribersView.setPadding(0, 0, 0, 0);
+            headerLayout.addView(subscribersView, LayoutHelper.createLinear(0, 20, 1f));
+            setTag(org.telegram.ui.Components.RecyclerListView.TAG_NOT_SECTION);
+        } else {
+            headerLayout.addView(subscribersView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 17, Gravity.LEFT | Gravity.TOP, 4, 1, 4, 0));
+        }
 
         dialogCell = new DialogCell(null, context, false, true, UserConfig.selectedAccount, resourcesProvider);
         dialogCell.setBackgroundColor(0);
@@ -129,7 +148,9 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
         });
         dialogCell.avatarStart = 15;
         dialogCell.messagePaddingStart = 83;
-        addView(dialogCell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.FILL_HORIZONTAL | Gravity.BOTTOM));
+        final int cardInset = captionAboveCard ? 16 : 0;
+        addView(dialogCell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,
+                Gravity.FILL_HORIZONTAL | Gravity.BOTTOM, cardInset, 0, cardInset, 0));
 
         updateColors();
 
@@ -433,10 +454,16 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
 
     @Override
     public void updateColors() {
-        final int headerColor = processColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueHeader, resourcesProvider));
+        final int headerColor = processColor(Theme.getColor(captionAboveCard
+                ? Theme.key_windowBackgroundWhiteGrayText2 : Theme.key_windowBackgroundWhiteBlueHeader, resourcesProvider));
         subscribersView.setTextColor(headerColor);
-        subscribersView.setBackground(Theme.createRoundRectDrawable(dp(9f), dp(9f), Theme.multAlpha(headerColor, .1f)));
+        subscribersView.setBackground(captionAboveCard ? null
+                : Theme.createRoundRectDrawable(dp(9f), dp(9f), Theme.multAlpha(headerColor, .1f)));
         headerView.setTextColor(headerColor);
+        if (captionAboveCard) {
+            dialogCell.setBackground(Theme.createRoundRectDrawable(dp(24),
+                    Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider)));
+        }
     }
     @Override
     public void addColorKeys(HashSet<Integer> colors) {

@@ -234,6 +234,7 @@ public class ActionBarMenuItem extends FrameLayout {
 
     private float transitionOffset;
     private View showSubMenuFrom;
+    private View subMenuRow;
     private final Theme.ResourcesProvider resourcesProvider;
     public int searchItemPaddingStart;
 
@@ -1066,7 +1067,7 @@ public class ActionBarMenuItem extends FrameLayout {
     }
 
     public void toggleSubMenu(View topView, View fromView, boolean fromStickersAlert) {
-        if (topView == null && toggleSubMenuInOverlay()) {
+        if (topView == null && subMenuRow == null && toggleSubMenuInOverlay()) {
             return;
         }
         if (popupWindow == null || !popupWindow.isShowing()) {
@@ -1166,6 +1167,7 @@ public class ActionBarMenuItem extends FrameLayout {
             return false;
         });
         popupWindow.setOnDismissListener(() -> {
+            subMenuRow = null;
             onDismiss();
             if (subMenuDelegate != null) {
                 subMenuDelegate.onHideSubMenu();
@@ -1201,6 +1203,16 @@ public class ActionBarMenuItem extends FrameLayout {
 
     public void toggleSubMenu() {
         toggleSubMenu(null, null);
+    }
+
+    public void toggleSubMenuAtRow(View row) {
+        if (isSubMenuShowing()) {
+            closeSubMenu();
+            return;
+        }
+        subMenuRow = row;
+        toggleSubMenu(null, null);
+        if (!isSubMenuShowing()) subMenuRow = null;
     }
 
     public void setOnMenuDismiss(Utilities.Callback<Boolean> onMenuDismiss) {
@@ -2265,6 +2277,13 @@ public class ActionBarMenuItem extends FrameLayout {
     }
 
     private void updateOrShowPopup(boolean show, boolean update) {
+        if (subMenuRow != null) {
+            final int x = subMenuRow.getWidth() - popupWindow.getContentView().getMeasuredWidth() - dp(16);
+            final int y = -subMenuRow.getHeight() + dp(8);
+            if (show) popupWindow.showAsDropDown(subMenuRow, x, y);
+            if (update) popupWindow.update(subMenuRow, x, y, -1, -1);
+            return;
+        }
         int offsetY;
 
         if (anchor != null) {

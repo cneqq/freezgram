@@ -82,6 +82,7 @@ public class AboutLinkCell extends FrameLayout implements Theme.Colorable {
     private SpannableStringBuilder stringBuilder;
     private CharSequence accessibilityText;
     private TextView valueTextView;
+    private boolean valueAboveText;
     private TextView showMoreTextView;
     private FrameLayout showMoreTextBackgroundView;
     private FrameLayout bottomShadow;
@@ -307,6 +308,22 @@ public class AboutLinkCell extends FrameLayout implements Theme.Colorable {
     }
 
     final float SPACE = dp(3f);
+    public void setValueAboveText(boolean above) {
+        if (valueAboveText == above) return;
+        valueAboveText = above;
+        final FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) valueTextView.getLayoutParams();
+        params.gravity = (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | (above ? Gravity.TOP : Gravity.BOTTOM);
+        params.topMargin = above ? dp(10) : 0;
+        params.bottomMargin = above ? 0 : dp(10);
+        valueTextView.setLayoutParams(params);
+        checkTextLayout(lastMaxWidth, true);
+        requestLayout();
+    }
+
+    private int getTextTop() {
+        return dp(valueAboveText && valueTextView.getVisibility() == VISIBLE ? 31 : 8);
+    }
+
     private void drawText(Canvas canvas) {
         canvas.save();
         canvas.clipRect(dp(18 - 8), dp(8), getWidth() - dp(18), getHeight());
@@ -314,7 +331,7 @@ public class AboutLinkCell extends FrameLayout implements Theme.Colorable {
         if (links != null && links.draw(canvas)) {
             invalidate();
         }
-        canvas.translate(0, textY = dp(8));
+        canvas.translate(0, textY = getTextTop());
 
         try {
             Theme.profile_aboutTextPaint.linkColor = processColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider));
@@ -780,7 +797,7 @@ public class AboutLinkCell extends FrameLayout implements Theme.Colorable {
             if (shouldExpand && firstThreeLinesLayout != null) {
                 setShowMoreMarginBottom(
                     fromHeight()
-                    - dp(8)
+                    - getTextTop()
                     -firstThreeLinesLayout.getLineBottom(firstThreeLinesLayout.getLineCount() - 1)
                     -showMoreTextBackgroundView.getPaddingBottom()
                     -showMoreTextView.getPaddingBottom()

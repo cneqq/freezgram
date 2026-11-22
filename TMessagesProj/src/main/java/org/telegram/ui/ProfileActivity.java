@@ -3976,8 +3976,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 return true;
             });
 
-            actionsView = new ProfileActionsView(context, dp(74),
+            actionsView = usesIosOwnProfile() ? null : new ProfileActionsView(context, dp(74),
                     app.exteraless.appearance.AppearanceConfig.iosMode(), myProfile);
+        }
+        if (actionsView != null) {
             setActionsMode();
             updateNotifications(false);
             if (actionsView.iosLayout && actionsView.mode == ProfileActionsView.MODE_USER) {
@@ -4078,7 +4080,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         break;
                     case ProfileActionsView.KEY_MORE:
                         if (otherItem != null && otherItem.hasSubMenu()) {
-                            otherItem.toggleSubMenu();
+                            otherItem.toggleSubMenuAtRow(actionsView);
                         }
                         break;
                     case ProfileActionsView.KEY_SEARCH: {
@@ -5920,7 +5922,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         writeButton = new RLottieImageView(context);
 
-        if (actionsView != null) {
+        if (actionsView != null || usesIosOwnProfile()) {
             writeButton.setVisibility(View.GONE);
         }
         writeButtonSetBackground();
@@ -6500,10 +6502,19 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int getActionsExtraHeight() {
         return getActionsExtraHeight(true);
     }
+
+    private boolean usesIosUserProfile() {
+        return userId != 0 && app.exteraless.appearance.AppearanceConfig.iosMode();
+    }
+
+    private boolean usesIosOwnProfile() {
+        return myProfile && usesIosUserProfile();
+    }
+
     private int getActionsExtraHeight(boolean withPills) {
         if (userId != 0 && imageUpdater != null && !myProfile)
             return 0;
-        return dp(74 + (withPills && (hasMusic || hasBalance) ? 25 : 0));
+        return dp((usesIosOwnProfile() ? 0 : 74) + (withPills && (hasMusic || hasBalance) ? 25 : 0));
     }
 
     private int getHeaderExtraHeight() {
@@ -8462,12 +8473,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         // the Save button of the reordering takes the right of the header
         final boolean profile = !mediaHeaderVisible && !(sharedMediaLayout != null && sharedMediaLayout.isReordering());
         final boolean photo = isPulledDown;
+        final boolean moreInProfileRow = usesIosUserProfile() && actionsView != null
+                && actionsView.hasIosMoreButton() && getHeaderSimpleFactor() < .5f;
         setHeaderItemShown(callItem, profile && !photo && callItemVisible, animated);
         setHeaderItemShown(videoCallItem, profile && !photo && videoCallItemVisible, animated);
-        setHeaderItemShown(editItem, profile && !photo && editItemVisible, animated);
+        setHeaderItemShown(editItem, profile && !photo && editItemVisible && !moreInProfileRow, animated);
         // the media's ⋮ takes the place of the profile's ⋮ (both the last in the pill): the same button, nothing to animate
         final boolean optionsSwap = sharedMediaLayout != null && sharedMediaLayout.hasSimpleOptions() && !sharedMediaLayout.isReordering();
-        setHeaderItemShown(otherItem, profile, animated && !optionsSwap);
+        setHeaderItemShown(otherItem, profile && !moreInProfileRow, animated && !optionsSwap);
         if (sharedMediaLayout != null) {
             sharedMediaLayout.setSimpleMenuItemsAllowed(mediaHeaderVisible, animated, animated && !optionsSwap);
         }
@@ -11613,10 +11626,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (!isBot && (hasPhone || !hasInfo) && !hideNumber && !(NekoConfig.hidePhone.Bool() && UserObject.isUserSelf(user))) {
                     phoneRow = rowCount++;
                 }
+                final boolean iosOrder = usesIosUserProfile();
+                if (iosOrder && user != null && username != null) {
+                    usernameRow = rowCount++;
+                }
                 if (userInfo != null && !TextUtils.isEmpty(userInfo.about)) {
                     userInfoRow = rowCount++;
                 }
-                if (user != null && username != null) {
+                if (!iosOrder && user != null && username != null) {
                     usernameRow = rowCount++;
                 }
                 if (NaConfig.INSTANCE.getIdDcType().Int() != 0) {
@@ -12199,7 +12216,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             actionsView.updatePosition(listView.getMeasuredWidth(), dp(74));
         } else {
             actionsView.clipHeight = -1;
-            float bottom = extraHeight + newTop - dp(hasMusic || hasBalance ? 25 : 0);
+            float bottom = extraHeight + newTop - dp(!usesIosUserProfile() && (hasMusic || hasBalance) ? 25 : 0);
             float height = Math.min(dp(74), bottom - newTop);
             actionsView.updatePosition(bottom - height, height);
         }
@@ -12220,6 +12237,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             return;
         }
         final int newTop = ActionBar.getCurrentActionBarHeight() + (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0);
+        if (usesIosUserProfile()) {
+            final int rowHeight = hasMusic || hasBalance ? dp(25) : 0;
+            final float bottom = newTop + extraHeight - getActionsExtraHeight(false);
+            final float height = Math.max(0, Math.min(rowHeight, bottom - newTop));
+            musicView.setAlpha(openAnimationInProgress ? avatarAnimationProgress : 1f);
+            musicView.updatePosition(bottom - height, height);
+            return;
+        }
 //        musicView.isOpeningLayout = openAnimationInProgress;
 
         if (openAnimationInProgress && playProfileAnimation == 2 && avatarContainer != null) {
@@ -12993,9 +13018,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
                 if (!hasMainTabs && (actionsView == null || !actionsView.supportsEditInfo())) {
                     otherItem.addSubItem(edit_info, R.drawable.msg_edit, LocaleController.getString(R.string.EditInfo));
-                    if (imageUpdater != null) {
-                        otherItem.addSubItem(add_photo, R.drawable.msg_addphoto, LocaleController.getString(R.string.AddPhoto));
-                    }
+                }
+                if (imageUpdater != null && (usesIosOwnProfile() || !hasMainTabs && (actionsView == null || !actionsView.supportsEditInfo()))) {
+                    otherItem.addSubItem(add_photo, R.drawable.msg_addphoto, LocaleController.getString(R.string.AddPhoto));
                 }
                 editColorItem = otherItem.addSubItem(edit_color, R.drawable.menu_profile_colors, LocaleController.getString(R.string.ProfileColorEdit));
                 updateEditColorIcon();
@@ -14304,7 +14329,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     ThemeBind.backgroundColor(view, Theme.key_windowBackgroundWhite, ProfileActivity.this.resourcesProvider);
                     break;
                 case VIEW_TYPE_CHANNEL:
-                    view = new ProfileChannelCell(ProfileActivity.this) {
+                    view = new ProfileChannelCell(ProfileActivity.this, usesIosUserProfile()) {
                         @Override
                         public int processColor(int color) {
                             return dontApplyPeerColor(color, false);
@@ -14530,7 +14555,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             value = "";
                             usernames = new ArrayList<>();
                         }
-                        detailCell.setTextAndValue(text, alsoUsernamesString(username, usernames, value), infoEndRowEmpty == -1 && (isTopic || bizHoursRow != -1 || bizLocationRow != -1) && birthdayRow < 0);
+                        final boolean captionFirst = usesIosUserProfile();
+                        detailCell.setTextAndValue(text, alsoUsernamesString(username, usernames, captionFirst ? "" : value),
+                                captionFirst && userInfoRow != -1 || infoEndRowEmpty == -1
+                                        && (isTopic || bizHoursRow != -1 || bizLocationRow != -1) && birthdayRow < 0);
                     } else if (position == idDcRow) {
                         containsIdDate = true;
                         long id = getId(true);
@@ -14635,11 +14663,13 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         detailCell.setImageClickListener(null);
                     }
                     detailCell.setTag(position);
+                    detailCell.setLeadingCaption(position == usernameRow && usesIosUserProfile() ? getString(R.string.Username) : null);
                     detailCell.textView.setLoading(loadingSpan);
                     detailCell.valueTextView.setLoading(loadingSpan);
                     break;
                 case VIEW_TYPE_ABOUT_LINK:
                     AboutLinkCell aboutLinkCell = (AboutLinkCell) holder.itemView;
+                    aboutLinkCell.setValueAboveText(position == userInfoRow && usesIosUserProfile());
                     if (position == userInfoRow) {
                         // TLRPC.User user = userInfo.user != null ? userInfo.user : getMessagesController().getUser(userInfo.id);
                         // boolean addlinks = isBot || (user != null && user.premium && userInfo.about != null);

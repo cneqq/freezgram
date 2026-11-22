@@ -47,6 +47,11 @@ public class TextDetailCell extends FrameLayout implements Theme.Colorable {
     public final LinkSpanDrawable.LinksTextView rightValueTextView;
     private final TextView showMoreTextView = null;
     private final ImageView imageView;
+    private TextView leadingCaption;
+    private boolean hasLeadingCaption;
+    private int contentTopMargin;
+    private int valueTopMargin;
+    private final int horizontalPadding;
     private boolean needDivider;
     private boolean contentDescriptionValueFirst;
     private boolean multiline;
@@ -67,6 +72,7 @@ public class TextDetailCell extends FrameLayout implements Theme.Colorable {
 
     public TextDetailCell(Context context, int horizPadding, Theme.ResourcesProvider resourcesProvider, boolean textMultiline, boolean valueMultiline) {
         super(context);
+        horizontalPadding = horizPadding;
         this.resourcesProvider = resourcesProvider;
         this.multiline = textMultiline || valueMultiline;
 
@@ -191,8 +197,36 @@ public class TextDetailCell extends FrameLayout implements Theme.Colorable {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(
             MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY),
-            multiline ? heightMeasureSpec : MeasureSpec.makeMeasureSpec(dp(60) + (needDivider ? 1 : 0), MeasureSpec.EXACTLY)
+            multiline ? heightMeasureSpec : MeasureSpec.makeMeasureSpec(dp(hasLeadingCaption ? 83 : 60) + (needDivider ? 1 : 0), MeasureSpec.EXACTLY)
         );
+    }
+
+    public void setLeadingCaption(CharSequence caption) {
+        final boolean shown = !TextUtils.isEmpty(caption);
+        if (leadingCaption == null && !shown) return;
+        if (leadingCaption == null) {
+            contentTopMargin = ((LayoutParams) textView.getLayoutParams()).topMargin;
+            valueTopMargin = ((LayoutParams) valueTextView.getLayoutParams()).topMargin;
+            leadingCaption = new TextView(getContext());
+            leadingCaption.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
+            leadingCaption.setMaxLines(1);
+            leadingCaption.setEllipsize(TextUtils.TruncateAt.END);
+            leadingCaption.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+            addView(leadingCaption, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT,
+                    Gravity.TOP | Gravity.START, horizontalPadding, 11, horizontalPadding, 0));
+        }
+        leadingCaption.setText(caption);
+        leadingCaption.setVisibility(shown ? VISIBLE : GONE);
+        if (hasLeadingCaption != shown) {
+            hasLeadingCaption = shown;
+            ((LayoutParams) textView.getLayoutParams()).topMargin = contentTopMargin + (shown ? dp(23) : 0);
+            ((LayoutParams) valueTextView.getLayoutParams()).topMargin = valueTopMargin + (shown ? dp(23) : 0);
+            final LayoutParams image = (LayoutParams) imageView.getLayoutParams();
+            image.gravity = Gravity.END | (shown ? Gravity.TOP : Gravity.CENTER_VERTICAL);
+            image.topMargin = shown ? dp(8) : 0;
+            updateColors();
+            requestLayout();
+        }
     }
 
     public void setTextAndValue(CharSequence text, CharSequence value, boolean divider) {
@@ -289,7 +323,9 @@ public class TextDetailCell extends FrameLayout implements Theme.Colorable {
         super.onInitializeAccessibilityNodeInfo(info);
         final CharSequence text = textView.getText();
         final CharSequence valueText = valueTextView.getText();
-        if (!TextUtils.isEmpty(text) && !TextUtils.isEmpty(valueText)) {
+        if (hasLeadingCaption && !TextUtils.isEmpty(text)) {
+            info.setText(leadingCaption.getText() + ": " + text + (TextUtils.isEmpty(valueText) ? "" : ". " + valueText));
+        } else if (!TextUtils.isEmpty(text) && !TextUtils.isEmpty(valueText)) {
             info.setText((contentDescriptionValueFirst ? valueText : text) + ": " + (contentDescriptionValueFirst ? text : valueText));
         }
     }
@@ -297,11 +333,16 @@ public class TextDetailCell extends FrameLayout implements Theme.Colorable {
     @Override
     public void updateColors() {
         textView.setLinkTextColor(processColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider)));
-        textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
+        textView.setTextColor(hasLeadingCaption
+                ? processColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider))
+                : Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
         textView.invalidate();
         valueTextView.setLinkTextColor(processColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider)));
         valueTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2, resourcesProvider));
         rightValueTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2, resourcesProvider));
+        if (leadingCaption != null) {
+            leadingCaption.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2, resourcesProvider));
+        }
         valueTextView.invalidate();
     }
 

@@ -3975,8 +3975,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 return true;
             });
 
-            actionsView = new ProfileActionsView(context, dp(74));
-            actionsView.iosLayout = app.exteraless.appearance.AppearanceConfig.iosMode();
+            actionsView = new ProfileActionsView(context, dp(74),
+                    app.exteraless.appearance.AppearanceConfig.iosMode(), myProfile);
             setActionsMode();
             updateNotifications(false);
 
@@ -4305,7 +4305,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             }
         };
         listView.setLegacySections(false);
-        listView.setSections();
+        if (app.exteraless.appearance.AppearanceConfig.iosMode()) {
+            listView.setSections(dp(16), dp(24), false);
+        } else {
+            listView.setSections();
+        }
         listView.applyPaddingToSections = false;
         // the rows above the list's top go under the header's blur, with their cards
         listView.setSectionsOverscanTop(AndroidUtilities.statusBarHeight + ActionBar.getCurrentActionBarHeight());

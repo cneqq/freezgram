@@ -108,7 +108,8 @@ public class ProfileActionsView extends View {
     public static final int KEY_SETTINGS = 17;
     public static final int KEY_MORE = 18;
 
-    public boolean iosLayout;
+    public final boolean iosLayout;
+    private final boolean compactIosActions;
 
     private boolean isApplying;
     private boolean isNotificationsEnabled;
@@ -127,15 +128,17 @@ public class ProfileActionsView extends View {
 
     public boolean myProfile;
 
-    public ProfileActionsView(Context context, int targetHeight) {
+    public ProfileActionsView(Context context, int targetHeight, boolean iosLayout, boolean ownProfile) {
         super(context);
+        this.iosLayout = iosLayout;
+        compactIosActions = iosLayout && ownProfile;
 
         paint.setColor(Color.BLACK);
         paint.setAlpha(40);
 
-        xpadding = dpf2(14);
-        ypadding = dpf2(12);
-        top = dpf2(8);
+        xpadding = dpf2(iosLayout ? 16 : 14);
+        ypadding = dpf2(compactIosActions ? 16 : iosLayout ? 10 : 12);
+        top = dpf2(compactIosActions ? 18 : iosLayout ? 6 : 8);
         textPadding = dpf2(4);
 
         this.targetHeight = (int) (targetHeight - ypadding - top);
@@ -353,6 +356,19 @@ public class ProfileActionsView extends View {
         final float cx = action.rect.centerX();
         final float cy = action.rect.centerY();
 
+        if (compactIosActions) {
+            final int iconSize = dp(20);
+            final int gap = dp(6);
+            action.text.setMaxWidth(Math.max(dp(8), action.rect.width() - iconSize - gap - dp(12)));
+            action.textScale = action.text.getLineCount() > 1 ? 0.85f : 1f;
+            final float textWidth = action.text.getWidth() * action.textScale;
+            final float rowStart = cx - (iconSize + gap + textWidth) / 2f;
+            final int iconLeft = Math.round(rowStart + (org.telegram.messenger.LocaleController.isRTL ? textWidth + gap : 0f));
+            final int iconTop = Math.round(cy - iconSize / 2f);
+            action.setBounds(iconLeft, iconTop, iconLeft + iconSize, iconTop + iconSize);
+            return;
+        }
+
         final int drawableSize = dp(24);
         final float drawableR = drawableSize * 0.5f;
 
@@ -395,10 +411,22 @@ public class ProfileActionsView extends View {
 
         updateBounds(action);
 
-        final float textY = action.bounds.bottom + action.bounds.top - action.text.getHeight() * action.textScale / 2.0f - dp(4.66f);
+        final float textCenterX;
+        final float textY;
+        if (compactIosActions) {
+            final float textWidth = action.text.getWidth() * action.textScale;
+            textCenterX = org.telegram.messenger.LocaleController.isRTL
+                    ? action.bounds.left - dp(6) - textWidth / 2f
+                    : action.bounds.right + dp(6) + textWidth / 2f;
+            textY = cy - action.text.getHeight() / 2f;
+        } else {
+            textCenterX = cx;
+            textY = action.bounds.bottom + action.bounds.top - action.text.getHeight() * action.textScale / 2.0f - dp(4.66f);
+        }
         canvas.save();
-        canvas.scale(action.textScale, action.textScale, cx, textY + action.text.getHeight() * action.textScale / 2.0f);
-        action.text.draw(canvas, cx - action.text.getWidth() / 2f, textY, textColor, alpha);
+        final float textPivotY = compactIosActions ? cy : textY + action.text.getHeight() * action.textScale / 2f;
+        canvas.scale(action.textScale, action.textScale, textCenterX, textPivotY);
+        action.text.draw(canvas, textCenterX - action.text.getWidth() / 2f, textY, textColor, alpha);
         canvas.restore();
 
         if (action.iconTranslationY != 0) {
@@ -474,7 +502,7 @@ public class ProfileActionsView extends View {
     }
 
     public float getRoundRadius() {
-        return dp(16);
+        return dp(compactIosActions ? 11 : 16);
     }
 
     private Action hit = null;
@@ -1007,7 +1035,7 @@ public class ProfileActionsView extends View {
         }
 
         public void setText(CharSequence cs) {
-            this.text = new Text(cs, 11, AndroidUtilities.bold())
+            this.text = new Text(cs, compactIosActions ? 14 : 11, AndroidUtilities.bold())
                 .multiline(3)
                 .align(Layout.Alignment.ALIGN_CENTER);
         }
@@ -1212,7 +1240,7 @@ public class ProfileActionsView extends View {
         EDIT_USERNAME(R.string.ProfileActionsEditUsername, R.drawable.filled_profile_edit_24, R.drawable.outline_profile_edit_24),
         EDIT_INFO(R.string.ProfileActionsEditInfo, R.drawable.filled_profile_edit_24, R.drawable.outline_profile_edit_24),
         SETTINGS(R.string.Settings, R.drawable.filled_profile_settings, R.drawable.outline_profile_settings),
-        MORE(R.string.AccDescrMoreOptions, R.drawable.ic_ab_other, R.drawable.ic_ab_other),;
+        MORE(R.string.AccDescrMoreOptions, R.drawable.baseline_more_horiz_24, R.drawable.baseline_more_horiz_24),;
 
         final @StringRes int title;
         final @DrawableRes int filledIcon;

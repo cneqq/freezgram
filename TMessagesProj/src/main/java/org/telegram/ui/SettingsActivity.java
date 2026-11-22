@@ -400,7 +400,11 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         listView = new UniversalRecyclerView(this, this::fillItems, this::onClick, this::onLongClick);
         listView.setCaptureSectionsDecoratorAllowed(true);
         listView.adapter.setApplyBackground(false);
-        listView.setSections();
+        if (iosLayout) {
+            listView.setSections(dp(16), dp(24), false);
+        } else {
+            listView.setSections();
+        }
         listView.setSectionsDrawBackground(true);
         BaseFragmentSimpleGlass.setListViewParams(listView, 0, 0, dp(12), additionNavigationBarHeight + miniPlayerPadding);
         listView.setClipToPadding(false);
@@ -1484,6 +1488,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         private final TextView subtitleView;
         private final TextView valueView;
         private final boolean mini;
+        private final boolean iosLayout;
         private boolean hasBackground = true;
 
         public SettingCell(Context context, Theme.ResourcesProvider resourcesProvider) {
@@ -1499,6 +1504,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
 
             this.resourcesProvider = resourcesProvider;
             this.mini = mini;
+            this.iosLayout = !mini && app.exteraless.appearance.AppearanceConfig.iosMode();
             setOrientation(HORIZONTAL);
 
             iconLayout = new FrameLayout(context);
@@ -1564,7 +1570,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
 
             iconView.setImageResource(icon);
             applyIconColors(iconView, iconBackground, iconColorTop, iconColorBottom, resourcesProvider);
-            final int iconSize = dp(iconBackground.isCircle() && !mini ? 36 : 28);
+            if (iosLayout) iconBackground.setCircle(false);
+            final int iconSize = dp(iosLayout ? 30 : iconBackground.isCircle() && !mini ? 36 : 28);
             final ViewGroup.LayoutParams iconParams = iconLayout.getLayoutParams();
             if (iconParams != null && iconParams.width != iconSize) {
                 iconParams.width = iconSize;

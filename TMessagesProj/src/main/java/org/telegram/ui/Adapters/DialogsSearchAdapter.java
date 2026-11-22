@@ -224,6 +224,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         private boolean drawChecked;
         private boolean forceDarkTheme;
         private boolean showPremiumBlock;
+        private boolean iosSearchLayout;
         private Theme.ResourcesProvider resourcesProvider;
 
         public CategoryAdapterRecycler(Context context, int account, boolean drawChecked, boolean showPremiumBlock, Theme.ResourcesProvider resourcesProvider) {
@@ -238,13 +239,20 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             notifyDataSetChanged();
         }
 
+        void useIosSearchLayout() {
+            iosSearchLayout = true;
+        }
+
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             HintDialogCell cell = new HintDialogCell(mContext, drawChecked, resourcesProvider);
+            if (iosSearchLayout) {
+                cell.useIosSearchStyle();
+            }
             if (showPremiumBlock) {
                 cell.showPremiumBlocked();
             }
-            cell.setLayoutParams(new RecyclerView.LayoutParams(dp(80), dp(86)));
+            cell.setLayoutParams(new RecyclerView.LayoutParams(dp(iosSearchLayout ? 72 : 80), dp(86)));
             return new RecyclerListView.Holder(cell);
         }
 
@@ -1624,13 +1632,16 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
 
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        boolean iosSearchLayout = dialogsActivity != null && dialogsActivity.usesIosListLayout();
         View view;
         switch (viewType) {
             case VIEW_TYPE_PROFILE_CELL:
                 view = new ProfileSearchCell(mContext).showPremiumBlock(dialogsType == DialogsActivity.DIALOGS_TYPE_FORWARD);
                 break;
             case VIEW_TYPE_GRAY_SECTION:
-                view = new GraySectionCell(mContext);
+                GraySectionCell section = new GraySectionCell(mContext, iosSearchLayout ? resourcesProvider : null);
+                if (iosSearchLayout) section.useIosSearchStyle();
+                view = section;
                 break;
             case VIEW_TYPE_DIALOG_CELL:
             case VIEW_TYPE_PUBLIC_POST:
@@ -1675,8 +1686,14 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 };
                 layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
                 horizontalListView.setLayoutManager(layoutManager);
-                //horizontalListView.setDisallowInterceptTouchEvents(true);
-                horizontalListView.setAdapter(new CategoryAdapterRecycler(mContext, currentAccount, false, dialogsType == DialogsActivity.DIALOGS_TYPE_FORWARD, resourcesProvider));
+                CategoryAdapterRecycler peersAdapter = new CategoryAdapterRecycler(mContext, currentAccount, false,
+                        dialogsType == DialogsActivity.DIALOGS_TYPE_FORWARD, resourcesProvider);
+                if (iosSearchLayout) {
+                    peersAdapter.useIosSearchLayout();
+                    horizontalListView.setPadding(dp(12), 0, dp(12), 0);
+                    horizontalListView.setClipToPadding(false);
+                }
+                horizontalListView.setAdapter(peersAdapter);
                 horizontalListView.setOnItemClickListener((view1, position) -> {
                     if (view1 instanceof HintDialogCell && ((HintDialogCell) view1).isBlocked()) {
                         if (delegate != null) {
@@ -1715,7 +1732,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 view = new TextCell(mContext, 16, false);
                 break;
         }
-        if (dialogsActivity != null && dialogsActivity.usesIosListLayout()) {
+        if (iosSearchLayout) {
             if (view instanceof DialogCell dialogCell) {
                 dialogCell.useIosLayout();
             } else if (view instanceof ProfileSearchCell profileCell) {

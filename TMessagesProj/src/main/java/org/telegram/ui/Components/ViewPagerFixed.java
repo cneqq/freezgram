@@ -329,6 +329,7 @@ public class ViewPagerFixed extends FrameLayout {
     }
 
     public static final int SELECTOR_TYPE_BUBBLE_STYLE = -2;
+    public static final int SELECTOR_TYPE_IOS_SEARCH = -3;
 
     public TabsView createTabsView(boolean hasStableIds, int selectorType) {
         tabsView = new TabsView(getContext(), hasStableIds, selectorType, resourcesProvider) {
@@ -338,7 +339,7 @@ public class ViewPagerFixed extends FrameLayout {
                 onTabPageSelected(progress <= 0.5f ? currentPosition : nextPosition, currentPosition < nextPosition);
             }
         };
-        tabsView.tabMarginDp = tabMarginDp();
+        tabsView.tabMarginDp = selectorType == SELECTOR_TYPE_IOS_SEARCH ? 15 : tabMarginDp();
         tabsView.setDelegate(new TabsView.TabsViewDelegate() {
             @Override
             public void onPageSelected(int page, boolean forward) {
@@ -1614,6 +1615,10 @@ public class ViewPagerFixed extends FrameLayout {
         private boolean isInHiddenMode;
         private float hideProgress;
 
+        private boolean usesPillSelector() {
+            return selectorType == SELECTOR_TYPE_BUBBLE_STYLE || selectorType == SELECTOR_TYPE_IOS_SEARCH;
+        }
+
         private long indicatorAnimationDuration = 250;
         private Interpolator indicatorAnimationInterpolator = CubicBezierInterpolator.DEFAULT;
         private CubicBezierInterpolator interpolator = CubicBezierInterpolator.EASE_OUT_QUINT;
@@ -1668,16 +1673,17 @@ public class ViewPagerFixed extends FrameLayout {
             this.selectorType = tabsSelectorType;
             textCounterPaint.setTextSize(dp(13));
             textCounterPaint.setTypeface(AndroidUtilities.bold());
-            textPaint.setTextSize(dp(tabsSelectorType == 9 || tabsSelectorType == 10 || tabsSelectorType == SELECTOR_TYPE_BUBBLE_STYLE ? 14 : 15));
-            textPaint.setTypeface(AndroidUtilities.bold());
+            textPaint.setTextSize(dp(tabsSelectorType == 9 || tabsSelectorType == 10 || usesPillSelector() ? 14 : 15));
+            textPaint.setTypeface(tabsSelectorType == SELECTOR_TYPE_IOS_SEARCH
+                    ? app.freezgram.IosTypography.MEDIUM : AndroidUtilities.bold());
             deletePaint.setStyle(Paint.Style.STROKE);
             deletePaint.setStrokeCap(Paint.Cap.ROUND);
             deletePaint.setStrokeWidth(dp(1.5f));
 
             selectorDrawable = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, null);
             selectorDrawable.setColor(Theme.getColor(tabLineColorKey, resourcesProvider));
-            if (tabsSelectorType == SELECTOR_TYPE_BUBBLE_STYLE) {
-                float rad = AndroidUtilities.dpf2(13);
+            if (usesPillSelector()) {
+                float rad = AndroidUtilities.dpf2(tabsSelectorType == SELECTOR_TYPE_IOS_SEARCH ? 16 : 13);
                 selectorDrawable.setCornerRadii(new float[]{rad, rad, rad, rad, rad, rad, rad, rad});
             } else {
                 float rad = AndroidUtilities.dpf2(3);
@@ -1726,9 +1732,9 @@ public class ViewPagerFixed extends FrameLayout {
                 ((DefaultItemAnimator) listView.getItemAnimator()).setDelayAnimations(false);
             }
 
-            if (tabsSelectorType == SELECTOR_TYPE_BUBBLE_STYLE) {
+            if (usesPillSelector()) {
                 listView.setSelectorType(9);
-                listView.setSelectorRadius(6);
+                listView.setSelectorRadius(tabsSelectorType == SELECTOR_TYPE_IOS_SEARCH ? 16 : 6);
             } else {
                 listView.setSelectorType(tabsSelectorType == 10 ? 9 : tabsSelectorType);
                 if (tabsSelectorType == 3) {
@@ -2124,15 +2130,17 @@ public class ViewPagerFixed extends FrameLayout {
                             indicatorX = (int) AndroidUtilities.lerp(lastDrawnIndicatorX, indicatorX, indicatorProgress2);
                             indicatorWidth = (int) AndroidUtilities.lerp(lastDrawnIndicatorW, indicatorWidth, indicatorProgress2);
                         }
-                        if (selectorType == SELECTOR_TYPE_BUBBLE_STYLE) {
+                        if (usesPillSelector()) {
                             final float TAB_INTERNAL_PADDING = 12.5f;
                             final float add = additionalTabWidth / 2f;
-                            final int y = height / 2 - dp(14);
+                            boolean ios = selectorType == SELECTOR_TYPE_IOS_SEARCH;
+                            int pillHeight = dp(ios ? 32 : 28);
+                            final int y = (height - pillHeight) / 2;
                             selectorDrawable.setBounds(
                                 (int) (indicatorX - dp(TAB_INTERNAL_PADDING) - add), y,
                                 (int) (indicatorX + indicatorWidth + dp(TAB_INTERNAL_PADDING) + add),
-                                y + dp(28));
-                            selectorDrawable.setAlpha(31);
+                                y + pillHeight);
+                            selectorDrawable.setAlpha(ios ? 46 : 31);
                             selectorDrawable.draw(canvas);
                         } else {
                             selectorDrawable.setBounds(indicatorX, (int) (height - AndroidUtilities.dpr(4) + hideProgress * AndroidUtilities.dpr(4)), indicatorX + indicatorWidth, (int) (height + hideProgress * AndroidUtilities.dpr(4)));

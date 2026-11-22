@@ -190,13 +190,15 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
     public void useIosLayout() {
         useForceThreeLines = true;
-        heightThreeLines = 78;
+        heightThreeLines = 82;
         avatarStart = 14;
-        messagePaddingStart = 76;
-        iosNamePaint = new TextPaint(Theme.dialogs_namePaint[1]);
+        messagePaddingStart = 80;
+        iosNamePaint = new TextPaint();
+        iosNamePaint.set(Theme.dialogs_namePaint[1]);
         iosNamePaint.setTypeface(app.freezgram.IosTypography.SEMIBOLD);
         iosNamePaint.setTextSize(dp(17));
-        iosMessagePaint = new TextPaint(Theme.dialogs_messagePaint[1]);
+        iosMessagePaint = new TextPaint();
+        iosMessagePaint.set(Theme.dialogs_messagePaint[1]);
         iosMessagePaint.setTypeface(app.freezgram.IosTypography.REGULAR);
         iosMessagePaint.setTextSize(dp(15));
     }
@@ -2628,7 +2630,8 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         int avatarTop;
         int thumbLeft;
         if (useForceThreeLines || SharedConfig.useThreeLinesLayout) {
-            avatarTop = dp(11);
+            final int avatarDiameter = iosNamePaint != null ? 58 : 56;
+            avatarTop = dp(iosNamePaint != null ? 12 : 11);
             messageNameTop = dp(32);
             timeTop = dp(13);
             errorTop = dp(42.33f);
@@ -2639,14 +2642,14 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
             if (LocaleController.isRTL) {
                 buttonLeft = typingLeft = messageLeft = messageNameLeft = dp(16);
-                avatarLeft = getMeasuredWidth() - dp(56 + avatarStart);
+                avatarLeft = getMeasuredWidth() - dp(avatarDiameter + avatarStart);
                 thumbLeft = avatarLeft - dp(13 + 18);
             } else {
                 buttonLeft = typingLeft = messageLeft = messageNameLeft = dp(messagePaddingStart + 6);
                 avatarLeft = dp(avatarStart);
-                thumbLeft = avatarLeft + dp(56 + 13);
+                thumbLeft = avatarLeft + dp(avatarDiameter + 13);
             }
-            storyParams.originalAvatarRect.set(avatarLeft, avatarTop, avatarLeft + dp(56), avatarTop + dp(56));
+            storyParams.originalAvatarRect.set(avatarLeft, avatarTop, avatarLeft + dp(avatarDiameter), avatarTop + dp(avatarDiameter));
             for (int i = 0; i < thumbImage.length; ++i) {
                 thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + dp(31) + (twoLinesForName ? dp(20) : 0) - (!(useForceThreeLines || SharedConfig.useThreeLinesLayout) && tags != null && !tags.isEmpty() ? dp(9) : 0), dp(18), dp(18));
             }
@@ -3995,7 +3998,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             }
             drawMonoforumAvatar = !isFolderCell() && chat != null && chat.monoforum;
 
-            final int avatarSize = dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 56 : 52);
+            final int avatarSize = dp(iosNamePaint != null ? 58 : useForceThreeLines || SharedConfig.useThreeLinesLayout ? 56 : 52);
             final int avatarRadius;
             if (drawMonoforumAvatar) {
                 avatarRadius = 1;

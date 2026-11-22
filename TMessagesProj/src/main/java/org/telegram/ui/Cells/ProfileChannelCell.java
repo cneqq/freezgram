@@ -64,11 +64,22 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
         final Context context = getContext();
         this.resourcesProvider = fragment.getResourceProvider();
 
+        LinearLayout cardGroup = null;
+        if (captionAboveCard) {
+            cardGroup = new LinearLayout(context);
+            cardGroup.setOrientation(LinearLayout.VERTICAL);
+            addView(cardGroup, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP));
+        }
         LinearLayout headerLayout = new LinearLayout(context);
         headerLayout.setOrientation(LinearLayout.HORIZONTAL);
-        final float headerInset = captionAboveCard ? 32 : 16.66f;
-        addView(headerLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,
-                Gravity.FILL_HORIZONTAL | Gravity.TOP, headerInset, 11.6f, headerInset, 0));
+        if (captionAboveCard) {
+            headerLayout.setGravity(Gravity.CENTER_VERTICAL);
+            headerLayout.setLayoutDirection(LocaleController.isRTL ? LAYOUT_DIRECTION_RTL : LAYOUT_DIRECTION_LTR);
+            cardGroup.addView(headerLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 28, 12, 28, 6));
+        } else {
+            addView(headerLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,
+                    Gravity.FILL_HORIZONTAL | Gravity.TOP, 16.66f, 11.6f, 16.66f, 0));
+        }
 
         headerView = new TextView(context);
         headerView.setTypeface(AndroidUtilities.bold());
@@ -85,8 +96,10 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
         subscribersView.setGravity(Gravity.LEFT);
         if (captionAboveCard) {
             headerView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
-            headerView.setTypeface(AndroidUtilities.regular());
-            subscribersView.setTypeface(AndroidUtilities.regular());
+            headerView.setTypeface(app.freezgram.IosTypography.MEDIUM);
+            headerView.setSingleLine(true);
+            headerView.setEllipsize(TextUtils.TruncateAt.END);
+            subscribersView.setTypeface(app.freezgram.IosTypography.REGULAR);
             subscribersView.setTextSize(dp(13));
             subscribersView.setGravity(LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT);
             subscribersView.setPadding(0, 0, 0, 0);
@@ -148,9 +161,12 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
         });
         dialogCell.avatarStart = 15;
         dialogCell.messagePaddingStart = 83;
-        final int cardInset = captionAboveCard ? 16 : 0;
-        addView(dialogCell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,
-                Gravity.FILL_HORIZONTAL | Gravity.BOTTOM, cardInset, 0, cardInset, 0));
+        if (captionAboveCard) {
+            cardGroup.addView(dialogCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 16, 0, 16, 0));
+        } else {
+            addView(dialogCell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,
+                    Gravity.FILL_HORIZONTAL | Gravity.BOTTOM));
+        }
 
         updateColors();
 
@@ -259,7 +275,8 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(dp(102), MeasureSpec.EXACTLY));
+        super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY),
+                captionAboveCard ? heightMeasureSpec : MeasureSpec.makeMeasureSpec(dp(102), MeasureSpec.EXACTLY));
     }
 
 

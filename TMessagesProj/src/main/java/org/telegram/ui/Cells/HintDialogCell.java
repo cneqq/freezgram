@@ -67,6 +67,15 @@ public class HintDialogCell extends FrameLayout implements Theme.Colorable {
     CheckBox2 checkBox;
     private final boolean drawCheckbox;
 
+    public void useIosSearchStyle() {
+        nameTextView.setTypeface(app.freezgram.IosTypography.MEDIUM);
+        nameTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
+        nameTextView.setIncludeFontPadding(false);
+        FrameLayout.LayoutParams nameLayout = (FrameLayout.LayoutParams) nameTextView.getLayoutParams();
+        nameLayout.topMargin = AndroidUtilities.dp(67);
+        nameTextView.setLayoutParams(nameLayout);
+    }
+
     private boolean showPremiumBlocked;
     private final AnimatedFloat premiumBlockedT = new AnimatedFloat(this, 0, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
     private boolean premiumBlocked;

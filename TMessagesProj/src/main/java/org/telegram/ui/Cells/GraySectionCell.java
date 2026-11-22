@@ -40,6 +40,7 @@ public class GraySectionCell extends FrameLayout implements Theme.Colorable {
     private FrameLayout.LayoutParams rightTextViewLayoutParams;
     private final Theme.ResourcesProvider resourcesProvider;
     private int layerHeight = 32;
+    private boolean iosSearchSection;
 
     public GraySectionCell(Context context) {
         this(context, null);
@@ -79,6 +80,20 @@ public class GraySectionCell extends FrameLayout implements Theme.Colorable {
     }
 
     private boolean noBackground;
+
+    public void useIosSearchStyle() {
+        iosSearchSection = true;
+        noBackground = true;
+        ThemeBind.clear(this);
+        textView.setTypeface(app.freezgram.IosTypography.SEMIBOLD);
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
+        rightTextView.setTypeface(app.freezgram.IosTypography.MEDIUM);
+        ThemeBind.textColor(textView, Theme.key_windowBackgroundWhiteBlackText, resourcesProvider);
+        ThemeBind.textColor(rightTextView, Theme.key_windowBackgroundWhiteBlueText, resourcesProvider);
+        setLayerHeight(38);
+        updateColors();
+    }
+
     public void setNoBackground(boolean no) {
         this.noBackground = no;
         updateColors();
@@ -86,8 +101,8 @@ public class GraySectionCell extends FrameLayout implements Theme.Colorable {
 
     public void updateColors() {
         setBackgroundColor(noBackground ? 0 : getThemedColor(Theme.key_graySection));
-        textView.setTextColor(getThemedColor(Theme.key_graySectionText));
-        rightTextView.setTextColor(getThemedColor(Theme.key_graySectionText));
+        textView.setTextColor(getThemedColor(iosSearchSection ? Theme.key_windowBackgroundWhiteBlackText : Theme.key_graySectionText));
+        rightTextView.setTextColor(getThemedColor(iosSearchSection ? Theme.key_windowBackgroundWhiteBlueText : Theme.key_graySectionText));
     }
 
     @Override

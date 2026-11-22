@@ -1284,6 +1284,13 @@ public class FilterTabsView extends FrameLayout {
     }
 
     BlurredBackgroundDrawable blurredBackgroundDrawable;
+    private boolean iosLayout;
+
+    public void useIosLayout() {
+        iosLayout = true;
+        textPaint.setTypeface(app.freezgram.IosTypography.MEDIUM);
+        textCounterPaint.setTypeface(app.freezgram.IosTypography.SEMIBOLD);
+    }
 
     public void setBlurredBackground(BlurredBackgroundDrawable drawable) {
         setBackground(blurredBackgroundDrawable = drawable);
@@ -1658,12 +1665,13 @@ public class FilterTabsView extends FrameLayout {
 
             final float add = additionalTabWidth / 2f;
 
-            final int y = height / 2 - dp(14);
+            int pillHeight = dp(iosLayout ? 32 : 28);
+            final int y = (height - pillHeight) / 2;
             float internalPadding = FolderIconHelper.getTabInternalPadding();
-            float rad = AndroidUtilities.dpf2(com.exteragram.messenger.ExteraConfig.getPillRadius(14));
+            float rad = iosLayout ? dpf2(16) : dpf2(com.exteragram.messenger.ExteraConfig.getPillRadius(14));
             selectorDrawable.setCornerRadius(rad);
-            selectorDrawable.setBounds((int) (indicatorX - dp(internalPadding) - add), y, (int) (indicatorX + indicatorWidth + dp(internalPadding) + add), y + dp(28));
-            selectorDrawable.setAlpha(31);
+            selectorDrawable.setBounds((int) (indicatorX - dp(internalPadding) - add), y, (int) (indicatorX + indicatorWidth + dp(internalPadding) + add), y + pillHeight);
+            selectorDrawable.setAlpha(iosLayout ? 46 : 31);
             selectorDrawable.draw(canvas);
             canvas.restore();
         }

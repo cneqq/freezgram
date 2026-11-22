@@ -3702,6 +3702,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     }
                 }
             };
+            if (iosLayout) filterTabsView.useIosLayout();
             filterTabsView.setVisibility(View.GONE);
             canShowFilterTabsView = false;
             animatorFilterTabsVisible.setValue(false, false);
@@ -4225,6 +4226,19 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         });
 
         ContentView contentView = new ContentView(context);
+        if (viewPositionWatcher != null) viewPositionWatcher.shutdown();
+        viewPositionWatcher = new ViewPositionWatcher(contentView);
+        iosListGlassSurfaces.clear();
+        iosListGlassSource = iosLayout && Build.VERSION.SDK_INT >= 33 ? createFreezgramHeaderSource() : null;
+        BlurredBackgroundDrawableViewFactory iosListGlass = iosLayout ? new BlurredBackgroundDrawableViewFactory(
+                iosListGlassSource != null ? iosListGlassSource : iBlur3SourceColor) : null;
+        if (iosListGlass != null) {
+            iosListGlass.setLiquidGlassEffectAllowed(iosListGlassSource != null);
+            iosListGlass.setSourceRootView(viewPositionWatcher, contentView);
+            addIosListGlassButton(iosListGlass, iosComposeItem);
+            addIosListGlassButton(iosListGlass, iosStoryItem);
+            if (folderId == 0) addIosListGlassButton(iosListGlass, searchItem);
+        }
         fragmentView = contentView;
 
         final PointF tmpPoint = new PointF();
@@ -4918,7 +4932,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         searchTabsAndFiltersLayout = new SearchTabsAndFiltersLayout(getContext());
         contentView.addView(searchTabsAndFiltersLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, SEARCH_TABS_HEIGHT, Gravity.TOP, 4, 0, 4, 0));
 
-        BlurredBackgroundDrawable searchTabsViewBackground = iBlur3FactoryLiquidGlass.create(searchTabsAndFiltersLayout, BlurredBackgroundProviderImpl.topPanel(resourceProvider));
+        BlurredBackgroundDrawable searchTabsViewBackground = iosListGlass != null
+                ? createIosListGlassSurface(iosListGlass, searchTabsAndFiltersLayout)
+                : iBlur3FactoryLiquidGlass.create(searchTabsAndFiltersLayout, BlurredBackgroundProviderImpl.topPanel(resourceProvider));
         searchTabsViewBackground.setRadius(dp(18));
         searchTabsViewBackground.setPadding(dp(6.666f));
         searchTabsAndFiltersLayout.setPadding(0, dp(7), 0, dp(7));
@@ -5353,14 +5369,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         foldersGlassSource = null;
         if (filterTabsView != null) {
             BlurredBackgroundDrawableViewFactory foldersFactory = iBlur3FactoryLiquidGlass;
-            if (app.exteraless.appearance.AppearanceConfig.foldersLiquidGlass() && Build.VERSION.SDK_INT >= 33 && SharedConfig.chatBlurEnabled()) {
+            if (!iosLayout && AppearanceConfig.foldersLiquidGlass() && Build.VERSION.SDK_INT >= 33 && SharedConfig.chatBlurEnabled()) {
                 foldersGlassSource = createFreezgramHeaderSource();
                 foldersFactory = new BlurredBackgroundDrawableViewFactory(foldersGlassSource);
                 foldersFactory.setSourceRootView(viewPositionWatcher, contentView);
                 foldersFactory.setLiquidGlassEffectAllowed(true);
             }
-            BlurredBackgroundDrawable filterTabsViewBackground = foldersFactory.create(filterTabsView,
-                    app.exteraless.appearance.AppearanceConfig.foldersLiquidGlass()
+            BlurredBackgroundDrawable filterTabsViewBackground = iosListGlass != null
+                    ? createIosListGlassSurface(iosListGlass, filterTabsView)
+                    : foldersFactory.create(filterTabsView, AppearanceConfig.foldersLiquidGlass()
                             ? app.freezgram.LiquidGlassStyle.colors(resourceProvider, () -> Build.VERSION.SDK_INT >= 33 && SharedConfig.chatBlurEnabled() && !LiteMode.isGlassPowerSaverApplied())
                             : BlurredBackgroundProviderImpl.topPanel(resourceProvider));
             if (foldersGlassSource != null) {
@@ -5377,7 +5394,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         searchFieldGlassSource = null;
         if (fragmentSearchField != null) {
             if (!iosLayout) fragmentSearchField.setCenteredPlaceholder(true);
-            if ((iosLayout || AppearanceConfig.dialogsHeaderGlass()) && Build.VERSION.SDK_INT >= 33) {
+            if (iosListGlass != null) {
+                fragmentSearchField.setSharedGlass(() -> true);
+                fragmentSearchField.setupBlurredBackground(createIosListGlassSurface(iosListGlass, fragmentSearchField));
+            } else if (AppearanceConfig.dialogsHeaderGlass() && Build.VERSION.SDK_INT >= 33) {
                 searchFieldGlassSource = createFreezgramHeaderSource();
                 BlurredBackgroundDrawableViewFactory searchFactory = new BlurredBackgroundDrawableViewFactory(searchFieldGlassSource);
                 searchFactory.setSourceRootView(viewPositionWatcher, contentView);
@@ -5667,7 +5687,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         actionBar.setBlurBackgroundOverride(null, null);
         dialogsHeaderGlassDrawable = null;
         dialogsHeaderGlassSource = null;
-        if ((iosLayout || AppearanceConfig.dialogsHeaderGlass()) && Build.VERSION.SDK_INT >= 33) {
+        if (!iosLayout && AppearanceConfig.dialogsHeaderGlass() && Build.VERSION.SDK_INT >= 33) {
             dialogsHeaderGlassSource = createFreezgramHeaderSource();
             BlurredBackgroundDrawableViewFactory headerFactory = new BlurredBackgroundDrawableViewFactory(dialogsHeaderGlassSource);
             headerFactory.setSourceRootView(viewPositionWatcher, contentView);
@@ -7850,7 +7870,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
         if (show) {
             boolean onlyDialogsAdapter;
-            if (searchFiltersWasShowed || forceNotOnlyDialogs) {
+            if (usesIosListLayout() || searchFiltersWasShowed || forceNotOnlyDialogs) {
                 onlyDialogsAdapter = false;
             } else {
                 onlyDialogsAdapter = onlyDialogsAdapter();
@@ -7863,7 +7883,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 searchFiltersWasShowed = true;
             }
             if (searchTabsView == null && searchViewPager != null && !onlyDialogsAdapter && communityId == 0) {
-                searchTabsView = searchViewPager.createTabsView(false, ViewPagerFixed.SELECTOR_TYPE_BUBBLE_STYLE);
+                searchTabsView = searchViewPager.createTabsView(false, usesIosListLayout()
+                        ? ViewPagerFixed.SELECTOR_TYPE_IOS_SEARCH : ViewPagerFixed.SELECTOR_TYPE_BUBBLE_STYLE);
                 searchTabsAndFiltersLayout.addView(searchTabsView, 0, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL));
             } else if (searchTabsAndFiltersLayout != null && onlyDialogsAdapter && communityId == 0) {
                 AndroidUtilities.removeFromParent(searchTabsView);
@@ -7892,7 +7913,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (!show && dialogStoriesCell != null && dialogStoriesCellVisible) {
             dialogStoriesCell.setVisibility(View.VISIBLE);
         }
-        final boolean budget = SharedConfig.getDevicePerformanceClass() == SharedConfig.PERFORMANCE_CLASS_LOW || !LiteMode.isEnabled(LiteMode.FLAG_CHAT_SCALE);
+        final boolean useScale = !usesIosListLayout() && SharedConfig.getDevicePerformanceClass() != SharedConfig.PERFORMANCE_CLASS_LOW
+                && LiteMode.isEnabled(LiteMode.FLAG_CHAT_SCALE);
         if (animated) {
             if (show) {
                 if (searchViewPager != null) {
@@ -7917,7 +7939,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             searchAnimator = new AnimatorSet();
             ArrayList<Animator> animators = new ArrayList<>();
             animators.add(ObjectAnimator.ofFloat(viewPages[0], View.ALPHA, show ? 0.0f : 1.0f));
-            if (!budget) {
+            if (useScale) {
                 animators.add(ObjectAnimator.ofFloat(viewPages[0], View.SCALE_X, show ? 0.95f : 1.0f));
                 animators.add(ObjectAnimator.ofFloat(viewPages[0], View.SCALE_Y, show ? 0.95f : 1.0f));
             } else {
@@ -7934,7 +7956,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     float translationY = dp(DialogStoriesCell.HEIGHT_IN_DP) + scrollYOffset + dp(SEARCH_FIELD_HEIGHT);
                     animators.add(ObjectAnimator.ofFloat(searchViewPager, SEARCH_TRANSLATION_Y, show ? translationY : 0, show ? 0 : translationY));
                 }
-                if (!budget) {
+                if (useScale) {
                     animators.add(ObjectAnimator.ofFloat(searchViewPager, View.SCALE_X, show ? 1.0f : 1.05f));
                     animators.add(ObjectAnimator.ofFloat(searchViewPager, View.SCALE_Y, show ? 1.0f : 1.05f));
                 } else {
@@ -8033,7 +8055,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 viewPages[0].listView.show();
             }
             viewPages[0].setAlpha(show ? 0.0f : 1.0f);
-            if (!budget) {
+            if (useScale) {
                 viewPages[0].setScaleX(show ? 0.95f : 1.0f);
                 viewPages[0].setScaleY(show ? 0.95f : 1.0f);
             } else {
@@ -8042,7 +8064,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
             if (searchViewPager != null) {
                 searchViewPager.setAlpha(show ? 1.0f : 0.0f);
-                if (!budget) {
+                if (useScale) {
                     searchViewPager.setScaleX(show ? 1.0f : 1.1f);
                     searchViewPager.setScaleY(show ? 1.0f : 1.1f);
                 } else {
@@ -14568,9 +14590,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private GlassSourceRenderNode foldersGlassSource;
     private GlassSourceRenderNode dialogsHeaderGlassSource;
     private BlurredBackgroundDrawable dialogsHeaderGlassDrawable;
+    private GlassSourceRenderNode iosListGlassSource;
+    private final ArrayList<BlurredBackgroundDrawable> iosListGlassSurfaces = new ArrayList<>();
 
     private boolean isDialogsHeaderGlassEnabled() {
-        return dialogsHeaderGlassDrawable != null && (usesIosListLayout() || AppearanceConfig.dialogsHeaderGlass())
+        return dialogsHeaderGlassDrawable != null && AppearanceConfig.dialogsHeaderGlass()
                 && app.freezgram.LiquidGlassStyle.canDrawGlass()
                 && !inPreviewMode && searchAnimationProgress == 0;
     }
@@ -14584,6 +14608,23 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         source.setUnderSource(iBlur3SourceColor);
         source.setScrollableNoiseSuppressor(scrollableViewNoiseSuppressor, DownscaleScrollableNoiseSuppressor.DRAW_HEADER_GLASS);
         return source;
+    }
+
+    private BlurredBackgroundDrawable createIosListGlassSurface(BlurredBackgroundDrawableViewFactory factory, View view) {
+        BlurredBackgroundDrawable surface = factory.create(view,
+                app.freezgram.LiquidGlassStyle.surfaceColors(resourceProvider, app.freezgram.LiquidGlassStyle::canDrawGlass));
+        app.freezgram.LiquidGlassStyle.configure(surface);
+        iosListGlassSurfaces.add(surface);
+        return surface;
+    }
+
+    private void addIosListGlassButton(BlurredBackgroundDrawableViewFactory factory, ActionBarMenuItem menuItem) {
+        if (menuItem == null) return;
+        View background = new View(menuItem.getContext());
+        menuItem.addView(background, 0, LayoutHelper.createFrame(38, 38, Gravity.CENTER));
+        BlurredBackgroundDrawable surface = createIosListGlassSurface(factory, background);
+        surface.setRadius(dp(19));
+        background.setBackground(surface);
     }
 
     private final @Nullable DownscaleScrollableNoiseSuppressor scrollableViewNoiseSuppressor;
@@ -14659,6 +14700,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 app.freezgram.LiquidGlassStyle.configure(dialogsHeaderGlassDrawable);
                 dialogsHeaderGlassDrawable.updateColors();
             }
+            for (BlurredBackgroundDrawable surface : iosListGlassSurfaces) {
+                app.freezgram.LiquidGlassStyle.configure(surface);
+                surface.updateColors();
+            }
         }
         final boolean changed = scrollableViewNoiseSuppressor.invalidateResultRenderNodes(iBlur3Capture,
                 fragmentView.getMeasuredWidth(), fragmentView.getMeasuredHeight());
@@ -14666,6 +14711,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (foldersGlassSource != null) foldersGlassSource.invalidateDisplayListForDrawables();
             if (dialogsHeaderGlassSource != null) dialogsHeaderGlassSource.invalidateDisplayListForDrawables();
             if (searchFieldGlassSource != null) searchFieldGlassSource.invalidateDisplayListForDrawables();
+            if (iosListGlassSource != null) iosListGlassSource.invalidateDisplayListForDrawables();
         }
         if (changed && parentTabsCaptureChanged != null) {
             parentTabsCaptureChanged.run();
@@ -14960,6 +15006,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         try {
             super.onThemeColorsChanged();
             actionBarDefaultPaint.setColor(getThemedColor(Theme.key_windowBackgroundWhite));
+            for (BlurredBackgroundDrawable surface : iosListGlassSurfaces) {
+                surface.updateColors();
+            }
             cellDelegateThemeColors();
             updateExtraThemeColors();
         } catch (Exception e) {

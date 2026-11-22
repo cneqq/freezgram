@@ -2322,9 +2322,11 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
     }
 
     private void startLayoutAnimation(final boolean open, final boolean first, final boolean preview) {
+        final boolean fastChatOpen = open && !preview && newFragment instanceof org.telegram.ui.ChatActivity
+                && app.exteraless.appearance.AppearanceConfig.iosMode();
         if (first && !preview && !predictiveBackInProgress) {
             AnimatorSet shared = app.freezgram.SettingsMotion.transition(open ? containerView : containerViewBack, open,
-                    () -> onAnimationEndCheck(false), this::dispatchSharedTransitionProgress);
+                    fastChatOpen, () -> onAnimationEndCheck(false), this::dispatchSharedTransitionProgress);
             if (shared != null) {
                 currentAnimation = shared;
                 return;
@@ -2350,7 +2352,8 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
             FloatValueHolder valueHolder = new FloatValueHolder(0);
             currentSpringAnimation = new SpringAnimation(valueHolder)
                     .setSpring(new SpringForce(SPRING_MULTIPLIER)
-                            .setStiffness(preview ? open ? SPRING_STIFFNESS_PREVIEW : SPRING_STIFFNESS_PREVIEW_OUT : SPRING_STIFFNESS)
+                            .setStiffness(preview ? open ? SPRING_STIFFNESS_PREVIEW : SPRING_STIFFNESS_PREVIEW_OUT
+                                    : fastChatOpen ? SPRING_STIFFNESS_CHAT_OPEN_IOS : SPRING_STIFFNESS)
                             .setDampingRatio(preview ? 0.6f : 1f));
             currentSpringAnimation.addUpdateListener((animation, value, velocity) -> {
                 animationProgress = value / SPRING_MULTIPLIER;
@@ -4283,6 +4286,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
     private static final boolean USE_SPRING_ANIMATION = NaConfig.INSTANCE.getBackAnimationStyle().Int() == BACK_ANIMATION_SPRING;
     private static final boolean USE_ACTIONBAR_CROSSFADE = USE_SPRING_ANIMATION && NaConfig.INSTANCE.getSpringAnimationCrossfade().Bool();
     private static final float SPRING_STIFFNESS = 900f;
+    private static final float SPRING_STIFFNESS_CHAT_OPEN_IOS = 1800f;
     private static final float SPRING_STIFFNESS_PREVIEW = 650f;
     private static final float SPRING_STIFFNESS_PREVIEW_OUT = 800f;
     private static final float SPRING_STIFFNESS_PREVIEW_EXPAND = 750f;

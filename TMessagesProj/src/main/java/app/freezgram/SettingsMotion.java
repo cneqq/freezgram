@@ -22,7 +22,8 @@ public final class SettingsMotion {
         return name.startsWith("app.exteraless.settings.") || name.startsWith("app.freezgram.");
     }
 
-    public static AnimatorSet transition(View container, boolean opening, Runnable completion, Consumer<Float> progress) {
+    public static AnimatorSet transition(View container, boolean opening, boolean fastChatOpen,
+                                         Runnable completion, Consumer<Float> progress) {
         if (AppearanceConfig.transitionStyle() != 1 || !SharedConfig.animationsEnabled()
                 || Build.VERSION.SDK_INT >= 26 && !ValueAnimator.areAnimatorsEnabled() || container == null) return null;
         float travel = AndroidUtilities.dp(28);
@@ -37,7 +38,7 @@ public final class SettingsMotion {
         });
         AnimatorSet animation = new AnimatorSet();
         animation.playTogether(frames);
-        animation.setDuration(opening ? 320 : 280);
+        animation.setDuration(fastChatOpen ? 210 : opening ? 320 : 280);
         animation.setInterpolator(CubicBezierInterpolator.EASE_BOTH);
         animation.addListener(new AnimatorListenerAdapter() {
             private boolean finished;

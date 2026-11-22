@@ -267,6 +267,12 @@ public class BaseFragmentSimpleGlass {
         setupHeader(contentView, actionBar, resourceProvider);
     }
 
+    private boolean useFreezgramHeaderGlass;
+
+    public void setUseFreezgramHeaderGlass(boolean useFreezgramHeaderGlass) {
+        this.useFreezgramHeaderGlass = useFreezgramHeaderGlass;
+    }
+
     /** Moves the header (an {@link ActionBar} or a {@link SimpleActionBar}) above the content and puts it on glass. */
     private void setupHeader(FrameLayout contentView, @Nullable View header, Theme.ResourcesProvider resourceProvider) {
         if (header == null) {
@@ -277,7 +283,17 @@ public class BaseFragmentSimpleGlass {
         if (header instanceof SimpleActionBar) {
             final SimpleActionBar simpleActionBar = (SimpleActionBar) header;
             simpleActionBar.setExtraHeight(dp(6));
-            simpleActionBar.setupGlass(factory, BlurredBackgroundProviderImpl.simpleActionBar(resourceProvider));
+            final GlassSourceRenderNode backdrop = useFreezgramHeaderGlass && Build.VERSION.SDK_INT >= 33
+                    ? getFreezgramNavigationSource() : null;
+            if (backdrop != null) {
+                final BlurredBackgroundDrawableViewFactory headerFactory = factory.withSource(
+                        app.freezgram.SmallElementsGlass.createSource(backdrop));
+                headerFactory.setDrawableConfigurator(app.freezgram.LiquidGlassStyle::configure);
+                simpleActionBar.setupGlass(headerFactory, app.freezgram.LiquidGlassStyle.surfaceColors(
+                        resourceProvider, app.freezgram.LiquidGlassStyle::canDrawGlass, false));
+            } else {
+                simpleActionBar.setupGlass(factory, BlurredBackgroundProviderImpl.simpleActionBar(resourceProvider));
+            }
             simpleActionBar.setMenuGlass(menuFactory, menuGlassSource);
         } else if (header instanceof ActionBar) {
             final ActionBar actionBar = (ActionBar) header;

@@ -13,7 +13,7 @@
     <string name="FreezgramStyleEntryInfo">Interface, chat and effects</string>
     <string name="FreezgramStyleInterface">Interface</string>
     <string name="FreezgramIosMode">iOS mode</string>
-    <string name="FreezgramIosModeInfo">Tab order and chat header layout</string>
+    <string name="FreezgramIosModeInfo">Tab order, chat header, profiles and settings</string>
     <string name="FreezgramStyleChat">Chat</string>
     <string name="FreezgramStyleEffects">Effects</string>
     <string name="FreezgramStyleChatHeader">Chat header</string>

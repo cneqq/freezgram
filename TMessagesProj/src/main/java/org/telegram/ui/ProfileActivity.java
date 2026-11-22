@@ -3976,6 +3976,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             });
 
             actionsView = new ProfileActionsView(context, dp(74));
+            actionsView.iosLayout = app.exteraless.appearance.AppearanceConfig.iosMode();
             setActionsMode();
             updateNotifications(false);
 
@@ -4070,6 +4071,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         break;
                     case ProfileActionsView.KEY_SETTINGS:
                         presentFragment(new SettingsActivity());
+                        break;
+                    case ProfileActionsView.KEY_MORE:
+                        if (otherItem != null && otherItem.hasSubMenu()) {
+                            otherItem.toggleSubMenu();
+                        }
                         break;
                 }
             });
@@ -5910,7 +5916,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (actionsView != null) {
                     actionsView.beginApplyingActions();
                     actionsView.addCameraAction();
-                    actionsView.addEditInfo();
+                    if (!actionsView.iosLayout) actionsView.addEditInfo();
                     actionsView.addSettings();
                     actionsView.commitActions();
                 } else {
@@ -6298,6 +6304,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         @Override
         public int getBackgroundColor() {
+            if (app.exteraless.appearance.AppearanceConfig.iosMode()
+                    && app.freezgram.LiquidGlassStyle.canDrawGlass()) {
+                return Theme.multAlpha(getThemedColor(Theme.key_windowBackgroundWhite),
+                        app.freezgram.LiquidGlassStyle.overlayAlpha(Theme.isCurrentThemeDark()));
+            }
             // the profile's color of the buttons is their source's, see buttonsGlass
             return Theme.multAlpha(headerMenuGlassColors.getBackgroundColor(), getHeaderSimpleFactor());
         }
@@ -8450,7 +8461,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
     private void setupHeaderGlass() {
         final BaseFragmentSimpleGlass glass = getBaseSimpleGlass();
-        buttonsGlass = new ProfileButtonsGlass(glassEngine, glass);
+        buttonsGlass = new ProfileButtonsGlass(glassEngine, glass,
+                app.exteraless.appearance.AppearanceConfig.iosMode());
         if (topView != null) {
             buttonsGlass.setButtonColor(topView.btnColor, topView.hasColorById);
         }
@@ -12934,7 +12946,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             if (UserObject.isUserSelf(user)) {
                 if (myProfile) {
                     if (actionsView != null) {
-                        editItemVisible = !actionsView.supportsEditInfo();
+                        editItemVisible = actionsView.iosLayout || !actionsView.supportsEditInfo();
                     } else {
                         editItemVisible = true;
                     }
@@ -13230,6 +13242,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             actionsView.set(ProfileActionsView.KEY_STREAM, streamAction);
 
             actionsView.set(ProfileActionsView.KEY_GIFT, giftAction);
+            actionsView.set(ProfileActionsView.KEY_MORE, actionsView.iosLayout && otherItem.hasSubMenu());
             callItemVisible = videoCallItemVisible = false;
             if (!discussAction) {
                 if (isTopic) {

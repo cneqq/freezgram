@@ -81,6 +81,8 @@ public final class ProfileButtonsGlass {
     private final Object captureCanvas;
     @Nullable
     private final GlassSource photoSource;
+    @Nullable
+    private final GlassSource freezgramBackdrop;
 
     private final Source actionsSource;
     private final Source headerSource;
@@ -101,7 +103,8 @@ public final class ProfileButtonsGlass {
     private float photoProgress;
     private float simpleProgress;
 
-    public ProfileButtonsGlass(@NonNull GlassEngine engine, @NonNull BaseFragmentSimpleGlass simpleGlass) {
+    public ProfileButtonsGlass(@NonNull GlassEngine engine, @NonNull BaseFragmentSimpleGlass simpleGlass,
+                               boolean iosLayout) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             simpleGlass.setCaptureIgnoresBlurSetting(true);
             captureCanvas = simpleGlass.getCaptureSourceCanvas();
@@ -110,6 +113,9 @@ public final class ProfileButtonsGlass {
             captureCanvas = null;
             photoSource = null;
         }
+        final GlassSource capture = iosLayout && Build.VERSION.SDK_INT >= 33
+                ? simpleGlass.getFreezgramNavigationSource() : null;
+        freezgramBackdrop = capture != null ? app.freezgram.SmallElementsGlass.createSource(capture) : null;
 
         actionsSource = new Source(null);
         headerSource = new Source(new SettingsSource(simpleGlass.factory));
@@ -121,7 +127,11 @@ public final class ProfileButtonsGlass {
         menuSource = new GlassSourceCrossfade(headerSource, new SettingsSource(simpleGlass.frostedFactory));
         menuFactory = createFactory(engine, menuSource);
         menuFactory.setLiquidGlassEffectAllowed(true);
-        if (app.freezgram.SmallElementsGlass.isEnabled()) {
+        if (freezgramBackdrop != null) {
+            actionsFactory.setLiquidGlassEffectAllowed(true);
+            actionsFactory.setDrawableConfigurator(app.freezgram.LiquidGlassStyle::configure);
+        }
+        if (freezgramBackdrop != null || app.freezgram.SmallElementsGlass.isEnabled()) {
             headerFactory.setDrawableConfigurator(app.freezgram.LiquidGlassStyle::configure);
             menuFactory.setDrawableConfigurator(app.freezgram.LiquidGlassStyle::configure);
         }
@@ -267,6 +277,16 @@ public final class ProfileButtonsGlass {
 
         @Override
         public void draw(@NonNull Canvas canvas, float left, float top, float right, float bottom) {
+            if (freezgramBackdrop != null && app.freezgram.LiquidGlassStyle.canDrawGlass()
+                    && canvas.isHardwareAccelerated()) {
+                freezgramBackdrop.draw(canvas, left, top, right, bottom);
+                final float tintAlpha = app.freezgram.LiquidGlassStyle.overlayAlpha(Theme.isCurrentThemeDark());
+                if (this == actionsSource && tintAlpha > 0f) {
+                    dimPaint.setColor(Theme.multAlpha(buttonColor, tintAlpha));
+                    canvas.drawRect(left, top, right, bottom, dimPaint);
+                }
+                return;
+            }
             final float simple = simpleSource != null ? simpleProgress : 0f;
             if (simple < 1f) {
                 // the photo ignores the blur setting: the button color over the photo is a blot (white in the light theme)
@@ -310,6 +330,7 @@ public final class ProfileButtonsGlass {
 
         @Override
         public boolean isDownsampledSourceSupported() {
+            if (freezgramBackdrop != null && app.freezgram.LiquidGlassStyle.canDrawGlass()) return false;
             final GlassFadeBlurredDrawable.GlassFadeDownsampledSource photo = photoDownsampled(), simple = simpleDownsampled();
             return !(this == headerSource && !GlassEngine.getCurrentGlassSettings().isBlurEnabled) && photo != null && photo.isDownsampledSourceSupported() && photo.getDownsample() > 1
                 && (simpleSource == null || simple != null && simple.isDownsampledSourceSupported());

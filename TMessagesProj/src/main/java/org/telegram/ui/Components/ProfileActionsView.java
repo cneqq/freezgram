@@ -106,6 +106,9 @@ public class ProfileActionsView extends View {
     public static final int KEY_EDIT_USERNAME = 15;
     public static final int KEY_EDIT_INFO = 16;
     public static final int KEY_SETTINGS = 17;
+    public static final int KEY_MORE = 18;
+
+    public boolean iosLayout;
 
     private boolean isApplying;
     private boolean isNotificationsEnabled;
@@ -674,6 +677,15 @@ public class ProfileActionsView extends View {
 
         switch (mode) {
             case MODE_USER:
+                if (iosLayout) {
+                    insertIfAvailable(out, KEY_MESSAGE);
+                    insertIfAvailable(out, KEY_CALL);
+                    insertIfAvailable(out, KEY_VIDEO);
+                    insertIfAvailable(out, KEY_NOTIFICATION);
+                    insertIfNotAvailable(out, KEY_GIFT, KEY_VIDEO);
+                    insertIfAvailable(out, KEY_MORE);
+                    break;
+                }
                 insertIfAvailable(out, KEY_MESSAGE);
                 insertIfAvailable(out, KEY_NOTIFICATION);
                 insertIfAvailable(out, KEY_CALL);
@@ -854,6 +866,9 @@ public class ProfileActionsView extends View {
                 newAction = new Action(ActionButton.STOP);
                 newAction.supportsLoading = true;
                 newAction.stopDelay = 300;
+                break;
+            case KEY_MORE:
+                newAction = new Action(ActionButton.MORE);
                 break;
             case KEY_NOTIFICATION:
                 newAction = new Action();
@@ -1196,7 +1211,8 @@ public class ProfileActionsView extends View {
         SET_PHOTO(R.string.ProfileActionsEditPhoto2, R.drawable.filled_profile_photo, R.drawable.outline_profile_photo),
         EDIT_USERNAME(R.string.ProfileActionsEditUsername, R.drawable.filled_profile_edit_24, R.drawable.outline_profile_edit_24),
         EDIT_INFO(R.string.ProfileActionsEditInfo, R.drawable.filled_profile_edit_24, R.drawable.outline_profile_edit_24),
-        SETTINGS(R.string.Settings, R.drawable.filled_profile_settings, R.drawable.outline_profile_settings),;
+        SETTINGS(R.string.Settings, R.drawable.filled_profile_settings, R.drawable.outline_profile_settings),
+        MORE(R.string.AccDescrMoreOptions, R.drawable.ic_ab_other, R.drawable.ic_ab_other),;
 
         final @StringRes int title;
         final @DrawableRes int filledIcon;

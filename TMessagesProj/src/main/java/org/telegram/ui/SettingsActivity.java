@@ -179,6 +179,10 @@ import xyz.nextalone.nagram.NaConfig;
 import kotlin.Unit;
 
 public class SettingsActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, ImageUpdater.ImageUpdaterDelegate, MainTabsActivity.TabFragmentDelegate, FactorAnimator.Target {
+    private static final int IOS_MY_PROFILE = 102;
+    private static final int IOS_SAVED_MESSAGES = 103;
+    private static final int IOS_RECENT_CALLS = 104;
+    private static final int IOS_CONTACTS = 105;
 
     private static final int ANIMATOR_ID_SEARCH_PAGE_VISIBLE = 0;
 
@@ -299,6 +303,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
 
     @Override
     public View createView(Context context) {
+        final boolean iosLayout = app.exteraless.appearance.AppearanceConfig.iosMode();
+        getBaseSimpleGlass().setUseFreezgramHeaderGlass(iosLayout);
         additionNavigationBarHeight = hasMainTabs ? dp(app.exteraless.appearance.MainTabsUiHelper.getTabsBottomOccupiedHeightDp()) : 0;
         setHasOwnBackground(true);
         additionNavigationBarHeight = hasMainTabs ? dp(app.exteraless.appearance.MainTabsUiHelper.getTabsViewHeightDp()) : 0;
@@ -344,12 +350,17 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                     }
                 } else if (id == 2) {
                     presentSettingFragment(new LogoutActivity());
+                } else if (id == 3) {
+                    presentSettingFragment(new UserInfoActivity());
                 }
             }
         });
         simpleActionBar.setBackground(null);
 
         final SimpleActionBarMenu menu = simpleActionBar.createMenu();
+        if (iosLayout) {
+            menu.addItem(3, R.drawable.msg_edit).setContentDescription(getString(R.string.Edit));
+        }
         searchItem = menu.addItem(0, R.drawable.outline_header_search, resourceProvider).setIsSearchField(true).setActionBarMenuItemSearchListener(new ActionBarMenuItem.ActionBarMenuItemSearchListener() {
 
             @Override
@@ -435,6 +446,10 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         };
         topView.addView(avatarTouchView, LayoutHelper.createFrame(120, 120, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, 23 - 12, 0, 0));
         avatarTouchView.setOnClickListener(v -> {
+            if (iosLayout) {
+                openOwnProfile();
+                return;
+            }
             TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(UserConfig.getInstance(currentAccount).getClientUserId());
             if (user == null) {
                 user = UserConfig.getInstance(currentAccount).getCurrentUser();
@@ -872,6 +887,11 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             }
             items.add(UItem.asShadow(null));
         }
+        final boolean iosLayout = app.exteraless.appearance.AppearanceConfig.iosMode();
+        if (iosLayout) {
+            items.add(iosShortcut(IOS_MY_PROFILE, R.drawable.settings_account, R.string.MyProfile));
+            items.add(UItem.asShadow(null));
+        }
 
         // Настройки NagramX по умолчанию спрятаны: у форка свои экраны, а второй
         // набор тех же настроек рядом только путает. Строку включают на экране
@@ -890,6 +910,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             items.add(UItem.asShadow(null));
         }
 
+        final int standardSettingsStart = items.size();
         items.add(SettingCell.Factory.of(1, IconBackgroundColors.BLUE.top, IconBackgroundColors.BLUE.bottom, R.drawable.settings_account, getString(R.string.SettingsAccount), getString(R.string.SettingsAccountInfo)));
         items.add(SettingCell.Factory.of(2, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.settings_chat, getString(R.string.SettingsChat), getString(R.string.SettingsChatInfo)));
         if (NaConfig.INSTANCE.getShowStickersRowToplevel().Bool()) {
@@ -902,6 +923,22 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         items.add(SettingCell.Factory.of(8, IconBackgroundColors.CYAN.top, IconBackgroundColors.CYAN.bottom, R.drawable.settings_devices, getString(R.string.SettingsDevices), getString(R.string.SettingsDevicesInfo), getDevicesCount()));
         items.add(SettingCell.Factory.of(9, IconBackgroundColors.ORANGE_DEEP.top, IconBackgroundColors.ORANGE_DEEP.bottom, R.drawable.settings_power, getString(R.string.SettingsPowerSaving), getString(R.string.SettingsPowerSavingInfo)));
         items.add(SettingCell.Factory.of(10, IconBackgroundColors.PURPLE.top, IconBackgroundColors.PURPLE.bottom, R.drawable.settings_language, getString(R.string.SettingsLanguage), null, LocaleController.getCurrentLanguageName()));
+        if (iosLayout) {
+            final java.util.List<UItem> standard = items.subList(standardSettingsStart, items.size());
+            final android.util.SparseArray<UItem> byId = new android.util.SparseArray<>();
+            for (UItem item : standard) byId.put(item.id, item);
+            standard.clear();
+            items.add(iosShortcut(IOS_SAVED_MESSAGES, R.drawable.msg_saved, R.string.SavedMessages));
+            items.add(iosShortcut(IOS_RECENT_CALLS, R.drawable.msg_calls, R.string.RecentCalls));
+            items.add(iosShortcut(IOS_CONTACTS, R.drawable.msg_contacts, R.string.Contacts));
+            items.add(byId.get(8));
+            items.add(byId.get(7));
+            items.add(UItem.asShadow(null));
+            for (int id : new int[]{5, 3, 6, 2, 101, 9, 10, 1}) {
+                UItem item = byId.get(id);
+                if (item != null) items.add(item);
+            }
+        }
 
         boolean hidePremium = NaConfig.INSTANCE.getHidePremiumSection().Bool();
         boolean hideHelp = NaConfig.INSTANCE.getHideHelpSection().Bool();
@@ -984,6 +1021,18 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         }
     }
 
+    private UItem iosShortcut(int id, int icon, int title) {
+        return SettingCell.Factory.of(id, IconBackgroundColors.BLUE.top, IconBackgroundColors.BLUE.bottom,
+                icon, getString(title));
+    }
+
+    private void openOwnProfile() {
+        final Bundle args = new Bundle();
+        args.putLong("user_id", getUserConfig().getClientUserId());
+        args.putBoolean("my_profile", true);
+        presentSettingFragment(new ProfileActivity(args));
+    }
+
     private void onClick(UItem item, View view, int position, float x, float y) {
         if (item.object instanceof TLRPC.TL_attachMenuBot) {
             TLRPC.TL_attachMenuBot attachMenuBot = (TLRPC.TL_attachMenuBot) item.object;
@@ -1024,6 +1073,24 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             return;
         }
         switch (item.id) {
+            case IOS_MY_PROFILE:
+                openOwnProfile();
+                break;
+            case IOS_SAVED_MESSAGES: {
+                final Bundle args = new Bundle();
+                args.putLong("user_id", getUserConfig().getClientUserId());
+                presentSettingFragment(new ChatActivity(args));
+                break;
+            }
+            case IOS_RECENT_CALLS:
+                presentSettingFragment(new CallLogActivity());
+                break;
+            case IOS_CONTACTS: {
+                final Bundle args = new Bundle();
+                args.putBoolean("needPhonebook", true);
+                presentSettingFragment(new ContactsActivity(args));
+                break;
+            }
             case 1:
                 presentSettingFragment(new UserInfoActivity());
                 break;

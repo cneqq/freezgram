@@ -5813,7 +5813,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         nameTextView.setPadding(0, AndroidUtilities.dp(6), 0, AndroidUtilities.dp(4));
         nameTextView.setTextSizePx(dp(17.5f));
         nameTextView.setGravity(Gravity.LEFT);
-        nameTextView.setTypeface(AndroidUtilities.bold());
+        nameTextView.setTypeface(app.exteraless.appearance.AppearanceConfig.iosMode()
+                ? app.freezgram.IosTypography.SEMIBOLD : AndroidUtilities.bold());
         nameTextView.setLeftDrawableTopPadding(-AndroidUtilities.dp(1.3f));
         nameTextView.setPivotX(0);
         nameTextView.setPivotY(0);
@@ -8405,7 +8406,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             simpleActionBar.setBackButtonImage(R.drawable.outline_header_qr_24);
             simpleActionBar.setBackButtonContentDescription(getString(R.string.QrCode));
         } else {
-            simpleActionBar.setBackButtonImage(R.drawable.ic_ab_back);
+            simpleActionBar.setBackButtonImage(app.exteraless.appearance.AppearanceConfig.iosMode()
+                    ? R.drawable.freezgram_ios_back : R.drawable.ic_ab_back);
         }
         simpleActionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override

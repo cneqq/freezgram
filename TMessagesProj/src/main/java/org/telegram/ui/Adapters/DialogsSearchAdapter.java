@@ -1715,6 +1715,13 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 view = new TextCell(mContext, 16, false);
                 break;
         }
+        if (dialogsActivity != null && dialogsActivity.usesIosListLayout()) {
+            if (view instanceof DialogCell dialogCell) {
+                dialogCell.useIosLayout();
+            } else if (view instanceof ProfileSearchCell profileCell) {
+                profileCell.useIosLayout();
+            }
+        }
         if (viewType == 5) {
             view.setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, dp(86)));
         } else {

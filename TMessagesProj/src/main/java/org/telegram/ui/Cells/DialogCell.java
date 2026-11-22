@@ -185,6 +185,29 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     public int heightThreeLines = 76;
     public int addHeightForTags = 3;
     public int addForumHeightForTags = 11;
+    private TextPaint iosNamePaint;
+    private TextPaint iosMessagePaint;
+
+    public void useIosLayout() {
+        useForceThreeLines = true;
+        heightThreeLines = 78;
+        avatarStart = 14;
+        messagePaddingStart = 76;
+        iosNamePaint = new TextPaint(Theme.dialogs_namePaint[1]);
+        iosNamePaint.setTypeface(app.freezgram.IosTypography.SEMIBOLD);
+        iosNamePaint.setTextSize(dp(17));
+        iosMessagePaint = new TextPaint(Theme.dialogs_messagePaint[1]);
+        iosMessagePaint.setTypeface(app.freezgram.IosTypography.REGULAR);
+        iosMessagePaint.setTextSize(dp(15));
+    }
+
+    private TextPaint rowNamePaint() {
+        return iosNamePaint != null ? iosNamePaint : Theme.dialogs_namePaint[paintIndex];
+    }
+
+    private TextPaint rowMessagePaint() {
+        return iosMessagePaint != null ? iosMessagePaint : Theme.dialogs_messagePaint[paintIndex];
+    }
     public TLRPC.TL_forumTopic forumTopic;
     public boolean useFromUserAsAvatar;
     private boolean isTopic;
@@ -1320,7 +1343,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             }
             builder.append(LocaleController.formatPluralString("Stories", totalCount));
         }
-        return Emoji.replaceEmoji(builder, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), false);
+        return Emoji.replaceEmoji(builder, rowMessagePaint().getFontMetricsInt(), false);
     }
 
     private CharSequence formatCommunityDialogNames() {
@@ -1372,7 +1395,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 break;
             }
         }
-        return Emoji.replaceEmoji(builder, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), false);
+        return Emoji.replaceEmoji(builder, rowMessagePaint().getFontMetricsInt(), false);
     }
 
     public boolean hasTags() {
@@ -1446,7 +1469,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         if (!isForumCell() && (isDialogCell || isTopic)) {
             printingString = MessagesController.getInstance(currentAccount).getPrintingString(currentDialogId, getTopicId(), true);
         }
-        currentMessagePaint = Theme.dialogs_messagePaint[paintIndex];
+        currentMessagePaint = rowMessagePaint();
         boolean checkMessage = true;
 
         drawNameLock = false;
@@ -1559,7 +1582,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                         stringBuilder = formatInternal(messageFormatType, mess.replace('\n', ' '), messageNameString);
                     }
                 }
-                messageString = Emoji.replaceEmoji(stringBuilder, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), false);
+                messageString = Emoji.replaceEmoji(stringBuilder, rowMessagePaint().getFontMetricsInt(), false);
             } else {
                 messageString = customDialog.message;
                 if (customDialog.isMedia) {
@@ -1737,13 +1760,13 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                     spannableStringBuilder.setSpan(new ForegroundColorSpanThemable(Theme.key_chats_name, resourcesProvider), 0, Math.min(spannableStringBuilder.length(), messageNameString.length() + 1), 0);
                     buttonString = spannableStringBuilder;
                 }
-                currentMessagePaint = Theme.dialogs_messagePaint[paintIndex];
+                currentMessagePaint = rowMessagePaint();
             } else if (!TextUtils.isEmpty(customMessage)) {
                 draftMessage = null;
                 draftVoice = false;
                 messageString = customMessage;
                 timeString = "";
-                currentMessagePaint = Theme.dialogs_messagePaint[paintIndex];
+                currentMessagePaint = rowMessagePaint();
             } else {
                 if (printingString != null) {
                     lastPrintString = printingString;
@@ -1785,7 +1808,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                     } else {
                         CharSequence mess;
                         if (draftMessage != null && draftMessage.rich_message != null) {
-                            mess = AnimatedEmojiSpan.cloneSpans(MessageObject.formatRichMessage(draftMessage.rich_message, false, false, 150), -1, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt());
+                            mess = AnimatedEmojiSpan.cloneSpans(MessageObject.formatRichMessage(draftMessage.rich_message, false, false, 150), -1, rowMessagePaint().getFontMetricsInt());
                         } else if (draftVoice) {
                             mess = getString(R.string.AttachAudio);
                         } else if (draftMessage != null) {
@@ -1811,7 +1834,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                         if (!useForceThreeLines && !SharedConfig.useThreeLinesLayout || hasTags()) {
                             stringBuilder.setSpan(new ForegroundColorSpanThemable(Theme.key_chats_draft, resourcesProvider), 0, messageNameString.length() + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                         }
-                        messageString = Emoji.replaceEmoji(stringBuilder, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), false);
+                        messageString = Emoji.replaceEmoji(stringBuilder, rowMessagePaint().getFontMetricsInt(), false);
                     }
                 } else {
                     if (clearingDialog) {
@@ -1989,7 +2012,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                         FileLog.e(e);
                                     }
                                 }
-                                messageString = Emoji.replaceEmoji(stringBuilder, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), false);
+                                messageString = Emoji.replaceEmoji(stringBuilder, rowMessagePaint().getFontMetricsInt(), false);
                                 if (message.hasHighlightedWords()) {
                                     CharSequence messageH = AndroidUtilities.highlightText(messageString, message.highlightedWords, resourcesProvider);
                                     if (messageH != null) {
@@ -2109,7 +2132,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                         if (mediaPoll.poll.question != null && mediaPoll.poll.question.entities != null) {
                                             SpannableString questionText = new SpannableString(mediaPoll.poll.question.text);
                                             MediaDataController.addTextStyleRuns(mediaPoll.poll.question.entities, mediaPoll.poll.question.text, questionText);
-                                            MediaDataController.addAnimatedEmojiSpans(mediaPoll.poll.question.entities, questionText, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt());
+                                            MediaDataController.addAnimatedEmojiSpans(mediaPoll.poll.question.entities, questionText, rowMessagePaint().getFontMetricsInt());
                                             messageString = DialogMediaIconsHelper.addDialogMediaSpan(questionText, R.drawable.dialog_media_poll_20, false);
                                         } else {
                                             messageString = DialogMediaIconsHelper.addDialogMediaSpan(mediaPoll.poll.question.text, R.drawable.dialog_media_poll_20, false);
@@ -2119,7 +2142,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                         if (mediaToDo.todo.title != null && mediaToDo.todo.title.entities != null) {
                                             SpannableString questionText = new SpannableString(mediaToDo.todo.title.text);
                                             MediaDataController.addTextStyleRuns(mediaToDo.todo.title.entities, mediaToDo.todo.title.text, questionText);
-                                            MediaDataController.addAnimatedEmojiSpans(mediaToDo.todo.title.entities, questionText, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt());
+                                            MediaDataController.addAnimatedEmojiSpans(mediaToDo.todo.title.entities, questionText, rowMessagePaint().getFontMetricsInt());
                                             messageString = DialogMediaIconsHelper.addDialogMediaSpan(questionText, R.drawable.dialog_media_checklist_20, false);
                                         } else {
                                             messageString = DialogMediaIconsHelper.addDialogMediaSpan(mediaToDo.todo.title.text, R.drawable.dialog_media_checklist_20, false);
@@ -2201,7 +2224,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                     SpannableStringBuilder builder = (SpannableStringBuilder) messageString;
                                     builder.insert(0, " ");
                                     builder.setSpan(new ThumbnailSpan(dp((thumbSize + 2) * thumbsCount - 2 + 5)), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    Emoji.replaceEmoji(builder, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), false);
+                                    Emoji.replaceEmoji(builder, rowMessagePaint().getFontMetricsInt(), false);
                                     if (message.hasHighlightedWords()) {
                                         CharSequence s = AndroidUtilities.highlightText(builder, message.highlightedWords, resourcesProvider);
                                         if (s != null) {
@@ -2241,7 +2264,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 messageString = builder;
                 final TLRPC.TL_messageActionStarGift action = (TLRPC.TL_messageActionStarGift) message.messageOwner.action;
                 if (action.message != null && !TextUtils.isEmpty(action.message.text)) {
-                    currentMessagePaint = Theme.dialogs_messagePaint[paintIndex];
+                    currentMessagePaint = rowMessagePaint();
                 }
             }
 
@@ -2379,7 +2402,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                             topicIconInName = new Drawable[1];
                         }
                         topicIconInName[0] = null;
-                        nameString = showTopicIconInName ? ForumUtilities.getTopicSpannedName(forumTopic, Theme.dialogs_namePaint[paintIndex], topicIconInName, false) : AndroidUtilities.escape(forumTopic.title);
+                        nameString = showTopicIconInName ? ForumUtilities.getTopicSpannedName(forumTopic, rowNamePaint(), topicIconInName, false) : AndroidUtilities.escape(forumTopic.title);
                     } else if (chat.monoforum && chat.linked_monoforum_id != 0) {
                         final TLRPC.Chat chat2 = MessagesController.getInstance(currentAccount).getChat(chat.linked_monoforum_id);
                         if (chat2 != null) {
@@ -2416,7 +2439,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                             topicIconInName = new Drawable[1];
                         }
                         topicIconInName[0] = null;
-                        nameString = showTopicIconInName ? ForumUtilities.getTopicSpannedName(forumTopic, Theme.dialogs_namePaint[paintIndex], topicIconInName, false) : AndroidUtilities.escape(forumTopic.title);
+                        nameString = showTopicIconInName ? ForumUtilities.getTopicSpannedName(forumTopic, rowNamePaint(), topicIconInName, false) : AndroidUtilities.escape(forumTopic.title);
                     } else {
                         nameString = AndroidUtilities.escape(UserObject.getUserName(user));
                     }
@@ -2569,17 +2592,17 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             }
             CharSequence nameStringFinal = nameString;
             if (nameLayoutEllipsizeByGradient) {
-                nameLayoutFits = nameStringFinal.length() == TextUtils.ellipsize(nameStringFinal, Theme.dialogs_namePaint[paintIndex], ellipsizeWidth, TextUtils.TruncateAt.END).length();
+                nameLayoutFits = nameStringFinal.length() == TextUtils.ellipsize(nameStringFinal, rowNamePaint(), ellipsizeWidth, TextUtils.TruncateAt.END).length();
                 ellipsizeWidth += dp(48);
                 channelShouldUseLineWidth = nameLayoutFits;
             } else if (isForChannelSubscriberCell) {
-                channelShouldUseLineWidth = nameStringFinal.length() == TextUtils.ellipsize(nameStringFinal, Theme.dialogs_namePaint[paintIndex], ellipsizeWidth, TextUtils.TruncateAt.END).length();
+                channelShouldUseLineWidth = nameStringFinal.length() == TextUtils.ellipsize(nameStringFinal, rowNamePaint(), ellipsizeWidth, TextUtils.TruncateAt.END).length();
             }
-            nameIsEllipsized = Theme.dialogs_namePaint[paintIndex].measureText(nameStringFinal.toString()) > ellipsizeWidth;
+            nameIsEllipsized = rowNamePaint().measureText(nameStringFinal.toString()) > ellipsizeWidth;
             if (!twoLinesForName) {
-                nameStringFinal = TextUtils.ellipsize(nameStringFinal, Theme.dialogs_namePaint[paintIndex], ellipsizeWidth, TextUtils.TruncateAt.END);
+                nameStringFinal = TextUtils.ellipsize(nameStringFinal, rowNamePaint(), ellipsizeWidth, TextUtils.TruncateAt.END);
             }
-            nameStringFinal = Emoji.replaceEmoji(nameStringFinal, Theme.dialogs_namePaint[paintIndex].getFontMetricsInt(), false);
+            nameStringFinal = Emoji.replaceEmoji(nameStringFinal, rowNamePaint().getFontMetricsInt(), false);
             if (message != null && message.hasHighlightedWords()) {
                 CharSequence s = AndroidUtilities.highlightText(nameStringFinal, message.highlightedWords, resourcesProvider);
                 if (s != null) {
@@ -2587,9 +2610,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 }
             }
             if (twoLinesForName) {
-                nameLayout = StaticLayoutEx.createStaticLayout(nameStringFinal, Theme.dialogs_namePaint[paintIndex], ellipsizeWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false, TextUtils.TruncateAt.END, ellipsizeWidth, 2);
+                nameLayout = StaticLayoutEx.createStaticLayout(nameStringFinal, rowNamePaint(), ellipsizeWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false, TextUtils.TruncateAt.END, ellipsizeWidth, 2);
             } else {
-                nameLayout = new StaticLayout(nameStringFinal, Theme.dialogs_namePaint[paintIndex], Math.max(ellipsizeWidth, nameWidth), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+                nameLayout = new StaticLayout(nameStringFinal, rowNamePaint(), Math.max(ellipsizeWidth, nameWidth), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
             }
             nameLayoutTranslateX = nameLayoutEllipsizeByGradient && nameLayout.isRtlCharAt(0) ? -dp(36) : 0;
             nameLayoutEllipsizeLeft = nameLayout.isRtlCharAt(0);
@@ -2852,7 +2875,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             } else {
                 mess = AndroidUtilities.replaceTwoNewLinesToOne(mess);
             }
-            messageString = Emoji.replaceEmoji(mess, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), false);
+            messageString = Emoji.replaceEmoji(mess, rowMessagePaint().getFontMetricsInt(), false);
             if (message != null) {
                 CharSequence s = AndroidUtilities.highlightText(messageString, message.highlightedWords, resourcesProvider);
                 if (s != null) {
@@ -2951,7 +2974,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             if ((useForceThreeLines || SharedConfig.useThreeLinesLayout) && !hasTags() && currentDialogFolderId != 0 && currentDialogFolderDialogsCount > 1) {
                 messageStringFinal = messageNameString;
                 messageNameString = null;
-                currentMessagePaint = Theme.dialogs_messagePaint[paintIndex];
+                currentMessagePaint = rowMessagePaint();
             } else if (!useForceThreeLines && !SharedConfig.useThreeLinesLayout || hasTags() || messageNameString != null || ChatObject.isMonoForum(chat) && ChatObject.canManageMonoForum(currentAccount, chat)) {
                 if (!isForumCell() && messageString instanceof Spanned && ((Spanned) messageString).getSpans(0, messageString.length(), ThumbnailSpan.class).length <= 0) {
                     messageStringFinal = TextUtils.ellipsize(messageString, currentMessagePaint, messageWidth - dp(12 + (thumbsCount * (thumbSize + 2) - 2) + 5), TextUtils.TruncateAt.END);
@@ -4407,11 +4430,11 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                     canvas.clipRect(nameLeft, 0, nameLeft + nameWidth, getMeasuredHeight());
                 }
                 if (currentDialogFolderId != 0) {
-                    Theme.dialogs_namePaint[paintIndex].setColor(Theme.dialogs_namePaint[paintIndex].linkColor = Theme.getColor(Theme.key_chats_nameArchived, resourcesProvider));
+                    rowNamePaint().setColor(rowNamePaint().linkColor = Theme.getColor(Theme.key_chats_nameArchived, resourcesProvider));
                 } else if (encryptedChat != null || customDialog != null && customDialog.type == 2) {
-                    Theme.dialogs_namePaint[paintIndex].setColor(Theme.dialogs_namePaint[paintIndex].linkColor = Theme.getColor(Theme.key_chats_secretName, resourcesProvider));
+                    rowNamePaint().setColor(rowNamePaint().linkColor = Theme.getColor(Theme.key_chats_secretName, resourcesProvider));
                 } else {
-                    Theme.dialogs_namePaint[paintIndex].setColor(Theme.dialogs_namePaint[paintIndex].linkColor = Theme.getColor(Theme.key_chats_name, resourcesProvider));
+                    rowNamePaint().setColor(rowNamePaint().linkColor = Theme.getColor(Theme.key_chats_name, resourcesProvider));
                 }
                 canvas.save();
                 canvas.translate(nameLeft + nameLayoutTranslateX, nameTop);
@@ -4515,12 +4538,12 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             if (messageLayout != null) {
                 if (currentDialogFolderId != 0) {
                     if (chat != null) {
-                        Theme.dialogs_messagePaint[paintIndex].setColor(Theme.dialogs_messagePaint[paintIndex].linkColor = Theme.getColor(Theme.key_chats_nameMessageArchived, resourcesProvider));
+                        rowMessagePaint().setColor(rowMessagePaint().linkColor = Theme.getColor(Theme.key_chats_nameMessageArchived, resourcesProvider));
                     } else {
-                        Theme.dialogs_messagePaint[paintIndex].setColor(Theme.dialogs_messagePaint[paintIndex].linkColor = Theme.getColor(Theme.key_chats_messageArchived, resourcesProvider));
+                        rowMessagePaint().setColor(rowMessagePaint().linkColor = Theme.getColor(Theme.key_chats_messageArchived, resourcesProvider));
                     }
                 } else {
-                    Theme.dialogs_messagePaint[paintIndex].setColor(Theme.dialogs_messagePaint[paintIndex].linkColor = Theme.getColor(Theme.key_chats_message, resourcesProvider));
+                    rowMessagePaint().setColor(rowMessagePaint().linkColor = Theme.getColor(Theme.key_chats_message, resourcesProvider));
                 }
                 float top;
                 float typingAnimationOffset = dp(14);
@@ -6314,7 +6337,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 final TL_iv.PageBlock block = message.messageOwner.rich_message.blocks.get(0);
                 accentColor = MessageObject.isBlueBlock(block);
             }
-            stringBuilder = formatInternal(messageFormatType, AnimatedEmojiSpan.cloneSpans(message.messageText, -1, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt()), messageNameString);
+            stringBuilder = formatInternal(messageFormatType, AnimatedEmojiSpan.cloneSpans(message.messageText, -1, rowMessagePaint().getFontMetricsInt()), messageNameString);
             if (accentColor && !isForumCell()) {
                 try {
                     stringBuilder.setSpan(new ForegroundColorSpanThemable(Theme.key_chats_actionMessage, resourcesProvider), hasNameInMessage ? messageNameString.length() + 2 : 0, stringBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -6332,7 +6355,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 if (mediaPoll.poll.question != null && mediaPoll.poll.question.entities != null) {
                     SpannableString questionText = new SpannableString(mediaPoll.poll.question.text.replace('\n', ' '));
                     MediaDataController.addTextStyleRuns(mediaPoll.poll.question.entities, mediaPoll.poll.question.text, questionText);
-                    MediaDataController.addAnimatedEmojiSpans(mediaPoll.poll.question.entities, questionText, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt());
+                    MediaDataController.addAnimatedEmojiSpans(mediaPoll.poll.question.entities, questionText, rowMessagePaint().getFontMetricsInt());
                     innerMessage = DialogMediaIconsHelper.addDialogMediaSpan(questionText, R.drawable.dialog_media_poll_20, true);
                 } else {
                     innerMessage = DialogMediaIconsHelper.addDialogMediaSpan(mediaPoll.poll.question.text, R.drawable.dialog_media_poll_20, true);
@@ -6342,7 +6365,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 if (mediaTodo.todo.title != null && mediaTodo.todo.title.entities != null) {
                     SpannableString questionText = new SpannableString(mediaTodo.todo.title.text.replace('\n', ' '));
                     MediaDataController.addTextStyleRuns(mediaTodo.todo.title.entities, mediaTodo.todo.title.text, questionText);
-                    MediaDataController.addAnimatedEmojiSpans(mediaTodo.todo.title.entities, questionText, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt());
+                    MediaDataController.addAnimatedEmojiSpans(mediaTodo.todo.title.entities, questionText, rowMessagePaint().getFontMetricsInt());
                     innerMessage = DialogMediaIconsHelper.addDialogMediaSpan(questionText, R.drawable.dialog_media_checklist_20, true);
                 } else {
                     innerMessage = DialogMediaIconsHelper.addDialogMediaSpan(mediaTodo.todo.title.text, R.drawable.dialog_media_checklist_20, true);

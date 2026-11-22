@@ -13,7 +13,10 @@
     <string name="FreezgramStyleEntryInfo">Interface, chat and effects</string>
     <string name="FreezgramStyleInterface">Interface</string>
     <string name="FreezgramIosMode">iOS mode</string>
-    <string name="FreezgramIosModeInfo">Tab order, chat header, profiles and settings</string>
+    <string name="FreezgramIosModeInfo">Chat list, search, navigation, profiles and separate glass settings</string>
+    <string name="FreezgramIosGlass">iOS mode glass</string>
+    <string name="FreezgramIosGlassInfo">These glass settings apply in iOS mode.</string>
+    <string name="FreezgramIosGlassEdge">Refracting edge width</string>
     <string name="FreezgramProfileMore">More</string>
     <string name="FreezgramStyleChat">Chat</string>
     <string name="FreezgramStyleEffects">Effects</string>

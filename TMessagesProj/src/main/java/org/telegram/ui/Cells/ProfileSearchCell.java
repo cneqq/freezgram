@@ -198,10 +198,16 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
     }
 
     private boolean customPaints;
+    private boolean iosLayout;
     private TextPaint namePaint, statusPaint;
     public ProfileSearchCell useCustomPaints() {
         customPaints = true;
         return this;
+    }
+
+    public void useIosLayout() {
+        iosLayout = true;
+        useCustomPaints();
     }
 
     @Override
@@ -547,9 +553,9 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
         if (customPaints) {
             if (namePaint == null) {
                 namePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-                namePaint.setTypeface(AndroidUtilities.bold());
+                namePaint.setTypeface(iosLayout ? app.freezgram.IosTypography.SEMIBOLD : AndroidUtilities.bold());
             }
-            namePaint.setTextSize(dp(callCellStyle ? 15 : 16));
+            namePaint.setTextSize(dp(callCellStyle ? 15 : iosLayout ? 17 : 16));
             if (encryptedChat != null) {
                 namePaint.setColor(Theme.getColor(Theme.key_chats_secretName, resourcesProvider));
             } else {
@@ -714,6 +720,7 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
         if (customPaints) {
             if (statusPaint == null) {
                 statusPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+                if (iosLayout) statusPaint.setTypeface(app.freezgram.IosTypography.REGULAR);
             }
             statusPaint.setTextSize(dp(callCellStyle ? 13f : 15));
             if (currentStatusPaint == Theme.dialogs_offlinePaint) {

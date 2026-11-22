@@ -24,6 +24,7 @@ import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
 import org.telegram.utils.glass.source.GlassSourceRenderNode;
 import org.telegram.ui.Components.glass.GlassTabView;
+import tw.nekomimi.nekogram.config.ConfigItem;
 
 /** Local visual settings with sample background content and the actual navigation tabs. */
 public final class NavigationGlassSettingsActivity extends BaseFragment {
@@ -38,7 +39,7 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
         return true;
     }
     private GlassPreview preview;
-    private AvatarCornersSeekBar blur, intensity, transparency, width, lift, composerLift, composerSide, composerContent;
+    private AvatarCornersSeekBar blur, intensity, transparency, edge, width, lift, composerLift, composerSide, composerContent;
     private boolean geometryChanged;
     private org.telegram.ui.Cells.TextCheckCell contacts, enhanceColors, wallpaperDim;
 
@@ -46,8 +47,14 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
 
     @Override
     public View createView(Context context) {
+        boolean ios = AppearanceConfig.iosMode();
+        ConfigItem blurSetting = ios ? AppearanceConfig.iosGlassBlur : AppearanceConfig.navigationGlassBlur;
+        ConfigItem refractionSetting = ios ? AppearanceConfig.iosGlassIntensity : AppearanceConfig.navigationGlassIntensity;
+        ConfigItem transparencySetting = ios ? AppearanceConfig.iosGlassTransparency : AppearanceConfig.navigationGlassTransparency;
+        ConfigItem saturationSetting = ios ? AppearanceConfig.iosGlassEnhanceColors : AppearanceConfig.glassEnhanceColors;
+        ConfigItem wallpaperSetting = ios ? AppearanceConfig.iosGlassWallpaperDim : AppearanceConfig.glassWallpaperDim;
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
-        actionBar.setTitle(text(mode == SHARED ? R.string.FreezgramStyleGlass : mode == COMPOSER ? R.string.FreezgramComposerSettings : R.string.FreezgramPanelSettings));
+        actionBar.setTitle(text(mode == SHARED ? (ios ? R.string.FreezgramIosGlass : R.string.FreezgramStyleGlass) : mode == COMPOSER ? R.string.FreezgramComposerSettings : R.string.FreezgramPanelSettings));
         StyleSettingsLinks.install(this, mode == SHARED ? "glass" : mode == COMPOSER ? "composer" : "navigation");
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override public void onItemClick(int id) { if (id == -1) finishFragment(); }
@@ -57,40 +64,45 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
         preview = new GlassPreview(context);
         StyleEditorUi.preview(content, preview, mode == SHARED ? 420 : 240, resourceProvider);
         TextView info = new TextView(context);
-        info.setText(text(mode == NAVIGATION ? R.string.FreezgramPanelPreviewInfo : mode == SHARED ? R.string.FreezgramStyleGlassInfo : R.string.FreezgramStyleComposerInfo));
+        info.setText(text(mode == NAVIGATION ? R.string.FreezgramPanelPreviewInfo : mode == SHARED ? (ios ? R.string.FreezgramIosGlassInfo : R.string.FreezgramStyleGlassInfo) : R.string.FreezgramStyleComposerInfo));
         info.setTextSize(14);
         info.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText));
         info.setPadding(dp(20), dp(12), dp(20), dp(12));
         content.addView(info);
-        if (mode == 1) {
+        if (mode == SHARED) {
             LinearLayout optics = StyleEditorUi.section(content, R.string.FreezgramStyleAppearance, resourceProvider);
             LinearLayout switches = StyleEditorUi.section(content, 0, resourceProvider);
             enhanceColors = new org.telegram.ui.Cells.TextCheckCell(context);
             enhanceColors.setTextAndCheck(text(R.string.FreezgramGlassEnhanceColors), LiquidGlassStyle.enhanceColors(), false);
             enhanceColors.setOnClickListener(v -> {
-                AppearanceConfig.glassEnhanceColors.setConfigBool(!LiquidGlassStyle.enhanceColors());
+                saturationSetting.setConfigBool(!LiquidGlassStyle.enhanceColors());
                 enhanceColors.setChecked(LiquidGlassStyle.enhanceColors()); geometryChanged = true; preview.invalidate();
             });
             switches.addView(enhanceColors);
             wallpaperDim = new org.telegram.ui.Cells.TextCheckCell(context);
-            wallpaperDim.setTextAndCheck(text(R.string.FreezgramGlassWallpaperDim), AppearanceConfig.glassWallpaperDim(), false);
+            wallpaperDim.setTextAndCheck(text(R.string.FreezgramGlassWallpaperDim), LiquidGlassStyle.wallpaperDim(), false);
             wallpaperDim.setOnClickListener(v -> {
-                AppearanceConfig.glassWallpaperDim.setConfigBool(!AppearanceConfig.glassWallpaperDim());
-                wallpaperDim.setChecked(AppearanceConfig.glassWallpaperDim()); geometryChanged = true; preview.invalidate();
+                wallpaperSetting.setConfigBool(!LiquidGlassStyle.wallpaperDim());
+                wallpaperDim.setChecked(LiquidGlassStyle.wallpaperDim()); geometryChanged = true; preview.invalidate();
             });
             switches.addView(wallpaperDim);
             blur = slider(context, optics, R.string.FreezgramPanelBlur, 30,
-                    AppearanceConfig.navigationGlassBlur(), value -> {
-                        AppearanceConfig.navigationGlassBlur.setConfigInt(value); geometryChanged = true; preview.invalidate();
+                    LiquidGlassStyle.blurRadiusDp(), value -> {
+                        blurSetting.setConfigInt(value); geometryChanged = true; preview.invalidate();
                     });
             intensity = slider(context, optics, R.string.FreezgramPanelIntensity, 100,
-                    AppearanceConfig.navigationGlassIntensity(), value -> {
-                        AppearanceConfig.navigationGlassIntensity.setConfigInt(value); geometryChanged = true; preview.invalidate();
+                    LiquidGlassStyle.refraction(), value -> {
+                        refractionSetting.setConfigInt(value); geometryChanged = true; preview.invalidate();
                     });
             transparency = slider(context, optics, R.string.FreezgramPanelTransparency, 100,
                     effectiveTransparency(), value -> {
-                        AppearanceConfig.navigationGlassTransparency.setConfigInt(value); geometryChanged = true; preview.invalidate();
+                        transparencySetting.setConfigInt(value); geometryChanged = true; preview.invalidate();
                     });
+            if (ios) {
+                edge = slider(context, optics, R.string.FreezgramIosGlassEdge, 20, AppearanceConfig.iosGlassEdge(), value -> {
+                    AppearanceConfig.iosGlassEdge.setConfigInt(value); geometryChanged = true; preview.invalidate();
+                });
+            }
         }
         if (mode == NAVIGATION) {
             LinearLayout styleGroup = StyleEditorUi.section(content, R.string.FreezgramStyleAppearance, resourceProvider);
@@ -178,15 +190,21 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
                     });
         }
         StyleEditorUi.reset(content, resourceProvider, () -> {
-            if (mode == 1) {
-                AppearanceConfig.glassWallpaperDim.setConfigBool(true);
-                wallpaperDim.setChecked(true);
-                AppearanceConfig.glassEnhanceColors.setConfigBool(true);
-                enhanceColors.setChecked(true);
-                AppearanceConfig.navigationGlassBlur.setConfigInt(6);
-                AppearanceConfig.navigationGlassIntensity.setConfigInt(55);
-                AppearanceConfig.navigationGlassTransparency.setConfigInt(-1);
-                blur.setValue(6); intensity.setValue(55); transparency.setValue(effectiveTransparency());
+            if (mode == SHARED) {
+                wallpaperSetting.setConfigBool(!ios);
+                wallpaperDim.setChecked(!ios);
+                saturationSetting.setConfigBool(!ios);
+                enhanceColors.setChecked(!ios);
+                blurSetting.setConfigInt(ios ? 9 : 6);
+                refractionSetting.setConfigInt(ios ? 38 : 55);
+                transparencySetting.setConfigInt(-1);
+                if (ios) {
+                    AppearanceConfig.iosGlassEdge.setConfigInt(7);
+                    edge.setValue(7);
+                }
+                blur.setValue(LiquidGlassStyle.blurRadiusDp());
+                intensity.setValue(LiquidGlassStyle.refraction());
+                transparency.setValue(effectiveTransparency());
             } else if (mode == 0) {
                 AppearanceConfig.navigationPanelWidth.setConfigInt(100);
                 AppearanceConfig.navigationPanelLift.setConfigInt(12);
@@ -218,8 +236,9 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
 
     private AvatarCornersSeekBar slider(Context context, LinearLayout parent, int title, int max,
                                        int value, AvatarCornersSeekBar.OnDrag onDrag) {
-        AvatarCornersSeekBar slider = new AvatarCornersSeekBar(context, onDrag, title == R.string.FreezgramPanelWidth ? 80 : 0, max,
-                text(title), title == R.string.FreezgramPanelWidth ? "80" : "0", String.valueOf(max), true);
+        int min = title == R.string.FreezgramPanelWidth ? 80 : title == R.string.FreezgramIosGlassEdge ? 1 : 0;
+        AvatarCornersSeekBar slider = new AvatarCornersSeekBar(context, onDrag, min, max,
+                text(title), String.valueOf(min), String.valueOf(max), true);
         slider.setValueSuffix(max == 100 ? "%" : "dp");
         slider.setValue(value);
         parent.addView(slider, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 84));

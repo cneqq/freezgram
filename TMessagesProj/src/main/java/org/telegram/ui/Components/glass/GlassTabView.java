@@ -278,9 +278,13 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
         }
         checkPlayAnimation(animated);
 
-        textView.setTypeface(!selected || mainTabMaterial3
-                ? AndroidUtilities.bold()
-                : AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_EXTRA_BOLD));
+        if (mainTabIos && app.exteraless.appearance.AppearanceConfig.iosMode()) {
+            textView.setTypeface(selected ? app.freezgram.IosTypography.SEMIBOLD : app.freezgram.IosTypography.MEDIUM);
+        } else {
+            textView.setTypeface(!selected || mainTabMaterial3
+                    ? AndroidUtilities.bold()
+                    : AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_EXTRA_BOLD));
+        }
     }
 
     public boolean isTabSelected() {
@@ -371,6 +375,24 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
 
         if (tabAnimation == null) {
             return;
+        }
+
+        if (mainTabIos && app.exteraless.appearance.AppearanceConfig.iosMode()) {
+            int icon = switch (tabAnimation) {
+                case CHATS -> R.drawable.freezgram_ios_chats;
+                case SETTINGS -> R.drawable.freezgram_ios_settings;
+                case CONTACTS -> R.drawable.freezgram_ios_contacts;
+                default -> 0;
+            };
+            if (icon != 0) {
+                if (lastIconAnimationRaw != icon) {
+                    lastIconAnimationRaw = icon;
+                    imageView.clearAnimationDrawable();
+                    imageView.setImageResource(icon);
+                }
+                applyColors();
+                return;
+            }
         }
 
         if ((tabAnimation.iconToFilled == 0 || ChatActivityEnterViewStaticIconView.isStaticIconsEnabled())

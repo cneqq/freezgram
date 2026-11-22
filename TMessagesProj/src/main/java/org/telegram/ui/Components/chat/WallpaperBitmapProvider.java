@@ -78,7 +78,7 @@ public class WallpaperBitmapProvider {
                 canvas.save();
                 try {
                     canvas.clipRect(left, top, right, bottom);
-                    if (!app.exteraless.appearance.AppearanceConfig.glassWallpaperDim() || !renderWallpaper.test(canvas)) {
+                    if (!app.freezgram.LiquidGlassStyle.wallpaperDim() || !renderWallpaper.test(canvas)) {
                         super.draw(canvas, left, top, right, bottom);
                     }
                 } finally {
@@ -147,7 +147,7 @@ public class WallpaperBitmapProvider {
 
         int getDimColor() {
             paint.setColor(Color.BLACK);
-            paint.setAlpha(app.exteraless.appearance.AppearanceConfig.glassWallpaperDim() ? (int) (255 * dim) : 0);
+            paint.setAlpha(app.freezgram.LiquidGlassStyle.wallpaperDim() ? (int) (255 * dim) : 0);
             return paint.getColor();
         }
 

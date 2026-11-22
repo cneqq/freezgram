@@ -692,6 +692,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                     view = new ProfileSearchCell(mContext);
                 } else {
                     DialogCell dialogCell = new DialogCell(parentFragment, mContext, true, false, currentAccount, null);
+                    if (parentFragment != null && parentFragment.usesIosListLayout()) {
+                        dialogCell.useIosLayout();
+                    }
                     if (showOpenBotButton()) {
                         dialogCell.allowBotOpenButton(true, this::onOpenBot);
                     }

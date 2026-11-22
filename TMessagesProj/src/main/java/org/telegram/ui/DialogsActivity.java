@@ -553,6 +553,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     /** Бургер вместо стрелки «назад», когда включена своя шторка. */
     private MenuDrawable menuDrawable;
     private ActionBarMenuItem speedItem;
+    private ActionBarMenuItem iosComposeItem;
+    private ActionBarMenuItem iosStoryItem;
     public static boolean switchingTheme;
     private ActionBarMenuItem doneItem;
     private ProxyDrawable proxyDrawable;
@@ -3028,7 +3030,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (actionBar == null || actionBarTitleNax == null || onlySelect || folderId != 0 || communityId != 0) {
             return;
         }
-        final CharSequence title = TypefaceHelper.getTitleText(currentAccount);
+        final CharSequence title = usesIosListLayout() ? getString(R.string.MainTabsChats) : TypefaceHelper.getTitleText(currentAccount);
         if (TextUtils.equals(title, actionBarTitleNax)) {
             return;
         }
@@ -3298,7 +3300,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
         ActionBarMenu menu = actionBar.createMenu();
         menu.setTranslationX(-dp(5));
-        searchItem = menu.addItem(0, R.drawable.outline_header_search).setIsSearchField(true, false);
+        boolean iosLayout = usesIosListLayout();
+        iosComposeItem = null;
+        iosStoryItem = null;
+        searchItem = menu.addItem(0, iosLayout ? R.drawable.freezgram_ios_search : R.drawable.outline_header_search).setIsSearchField(true, false);
         searchItem.setOnClickListener(v -> {
             showSearch(true, false, true);
             fragmentSearchFieldWatcher.toggleSearch(true);
@@ -3361,6 +3366,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             updateProxyButton(false, false);
         }
 
+        if (iosLayout && folderId == 0) {
+            iosStoryItem = menu.addItemWithWidth(-48, R.drawable.freezgram_ios_story, dp(42), getString(R.string.StoryPrivacyButtonPost));
+            iosStoryItem.setOnClickListener(v -> floatingButtonStories.performClick());
+            iosComposeItem = menu.addItemWithWidth(-49, R.drawable.freezgram_ios_compose, dp(44), getString(R.string.NewMessageTitle));
+            iosComposeItem.setOnClickListener(v -> floatingButton3.performClick());
+        }
+
         fragmentSearchField = new FragmentSearchField(context, resourceProvider) {
             @Override
             public boolean dispatchTouchEvent(MotionEvent ev) {
@@ -3372,6 +3384,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         };
         // openExtera: полоса пилюль в строке поиска, вся логика — в PillStackController
         app.exteraless.pillstack.PillStackController.attach(fragmentSearchField, fragmentSearchField.editText);
+        if (iosLayout) fragmentSearchField.useIosLayout();
         fragmentSearchField.setPadding(dp(4), dp(4), dp(4), dp(4));
         fragmentSearchField.setPivotX(0);
         fragmentSearchField.setPivotY(0);
@@ -3437,7 +3450,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (searchViewPager != null) {
                     searchViewPager.onShown();
                 }
-                if ((searchViewPager != null && searchViewPager.dialogsSearchAdapter != null && searchViewPager.dialogsSearchAdapter.hasRecentSearch()) || getMessagesController().getTotalDialogsCount() > 10 || searchFiltersWasShowed || hasStories) {
+                if (iosLayout || (searchViewPager != null && searchViewPager.dialogsSearchAdapter != null && searchViewPager.dialogsSearchAdapter.hasRecentSearch()) || getMessagesController().getTotalDialogsCount() > 10 || searchFiltersWasShowed || hasStories) {
                     searchWas = true;
                     if (!searchIsShowed) {
                         showSearch(true, false, true);
@@ -3638,6 +3651,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
             if (folderId == 0) {
                 actionBar.setSupportsHolidayImage(true);
+            }
+        }
+        if (iosLayout) {
+            actionBar.centerTitle();
+            actionBar.getTitleTextView().setTypeface(app.freezgram.IosTypography.SEMIBOLD);
+            if (folderId == 0) {
+                actionBar.setTitle(actionBarTitleNax = getString(R.string.MainTabsChats), statusDrawable);
             }
         }
         //if (!onlySelect || initialDialogsType == DIALOGS_TYPE_FORWARD) {
@@ -4944,7 +4964,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
         });
 
-        if (!isArchive() && initialDialogsType == DIALOGS_TYPE_DEFAULT) {
+        if (iosStoryItem == null && !isArchive() && initialDialogsType == DIALOGS_TYPE_DEFAULT) {
             if (MessagesController.getInstance(currentAccount).getMainSettings().getBoolean("storyhint", true)) {
                 storyHint = new HintView2(context, HintView2.DIRECTION_RIGHT)
                         .setRounding(8)
@@ -5356,13 +5376,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
         searchFieldGlassSource = null;
         if (fragmentSearchField != null) {
-            fragmentSearchField.setCenteredPlaceholder(true);
-            if (app.exteraless.appearance.AppearanceConfig.dialogsHeaderGlass() && Build.VERSION.SDK_INT >= 33) {
+            if (!iosLayout) fragmentSearchField.setCenteredPlaceholder(true);
+            if ((iosLayout || AppearanceConfig.dialogsHeaderGlass()) && Build.VERSION.SDK_INT >= 33) {
                 searchFieldGlassSource = createFreezgramHeaderSource();
                 BlurredBackgroundDrawableViewFactory searchFactory = new BlurredBackgroundDrawableViewFactory(searchFieldGlassSource);
                 searchFactory.setSourceRootView(viewPositionWatcher, contentView);
                 searchFactory.setLiquidGlassEffectAllowed(true);
-                java.util.function.BooleanSupplier enabled = () -> SharedConfig.chatBlurEnabled() && !LiteMode.isGlassPowerSaverApplied();
+                java.util.function.BooleanSupplier enabled = app.freezgram.LiquidGlassStyle::canDrawGlass;
                 fragmentSearchField.setSharedGlass(enabled);
                 fragmentSearchField.setupBlurredBackground(searchFactory.create(fragmentSearchField,
                         app.freezgram.LiquidGlassStyle.surfaceColors(resourceProvider, enabled)));
@@ -5558,7 +5578,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             contentView.addView(animatedStatusView, LayoutHelper.createFrame(20, 20, Gravity.LEFT | Gravity.TOP));
         }
         if (fragmentSearchField != null) {
-            contentView.addView(fragmentSearchField, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP, 7, -2, 7, 0));
+            int searchInset = iosLayout ? 14 : 7;
+            contentView.addView(fragmentSearchField, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP, searchInset, -2, searchInset, 0));
         }
 
 
@@ -5568,7 +5589,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
         if (hasMainTabs) {
             actionBar.getTitlesContainer().setTranslationX(NaConfig.INSTANCE.getCenterActionBarTitle().Bool() && NaConfig.INSTANCE.getCenterActionBarTitleType().Int() != 3 ? 0 : dp(4));
-            ThemeBind.actionBarTitleColor(actionBar, Theme.key_telegram_color_dialogsLogo, getResourceProvider());
+            ThemeBind.actionBarTitleColor(actionBar, iosLayout ? Theme.key_actionBarDefaultTitle : Theme.key_telegram_color_dialogsLogo, getResourceProvider());
         }
 
         if (folderId != 0 || communityId != 0) {
@@ -5646,7 +5667,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         actionBar.setBlurBackgroundOverride(null, null);
         dialogsHeaderGlassDrawable = null;
         dialogsHeaderGlassSource = null;
-        if (app.exteraless.appearance.AppearanceConfig.dialogsHeaderGlass() && Build.VERSION.SDK_INT >= 33) {
+        if ((iosLayout || AppearanceConfig.dialogsHeaderGlass()) && Build.VERSION.SDK_INT >= 33) {
             dialogsHeaderGlassSource = createFreezgramHeaderSource();
             BlurredBackgroundDrawableViewFactory headerFactory = new BlurredBackgroundDrawableViewFactory(dialogsHeaderGlassSource);
             headerFactory.setSourceRootView(viewPositionWatcher, contentView);
@@ -9219,10 +9240,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         final boolean isVisible = !(onlySelect && initialDialogsType != 10 || folderId != 0 || communityId != 0 || inPreviewMode || (searching && !onlySelect) || floatingButtonHidden);
 
         if (floatingButton3 != null) {
-            floatingButton3.setButtonVisible(isVisible, animated);
+            floatingButton3.setButtonVisible(isVisible && iosComposeItem == null, animated);
         }
         if (floatingButtonStories != null) {
-            floatingButtonStories.setButtonVisible(isVisible && !NaConfig.INSTANCE.getDisableStories().Bool(), animated);
+            floatingButtonStories.setButtonVisible(isVisible && iosStoryItem == null && !NaConfig.INSTANCE.getDisableStories().Bool(), animated);
         }
     }
 
@@ -14368,7 +14389,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     private void checkUi_searchFieldHint() {
         final boolean topics = getRightSlidingProgress() > 0.5f;
-        final String hint = getString(topics ? R.string.SearchTopics : R.string.SearchChats);
+        final String hint = getString(topics ? R.string.SearchTopics : usesIosListLayout() ? R.string.Search : R.string.SearchChats);
 
         fragmentSearchField.editText.setContentDescription(hint);
         fragmentSearchField.editText.setHint(hint);
@@ -14381,6 +14402,14 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         checkUi_itemSpeedVisibility();
         checkUi_itemPasscodeVisibility();
         checkUi_itemSearchVisibility();
+        float iosActions = (1f - animatorSearchVisible.getFloatValue()) * (1f - getRightSlidingProgress())
+                * (1f - animatorDoneButtonVisible.getFloatValue()) * (1f - animatorActionModeVisible.getFloatValue());
+        FragmentFloatingButton.setAnimatedVisibility(iosComposeItem, iosActions);
+        FragmentFloatingButton.setAnimatedVisibility(iosStoryItem, NaConfig.INSTANCE.getDisableStories().Bool() ? 0f : iosActions);
+    }
+
+    public boolean usesIosListLayout() {
+        return AppearanceConfig.iosMode() && !onlySelect && communityId == 0 && initialDialogsType == DIALOGS_TYPE_DEFAULT;
     }
 
     private DrawerContainer drawerContainer() {
@@ -14541,8 +14570,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private BlurredBackgroundDrawable dialogsHeaderGlassDrawable;
 
     private boolean isDialogsHeaderGlassEnabled() {
-        return dialogsHeaderGlassDrawable != null && app.exteraless.appearance.AppearanceConfig.dialogsHeaderGlass()
-                && Build.VERSION.SDK_INT >= 33 && SharedConfig.chatBlurEnabled() && !LiteMode.isGlassPowerSaverApplied()
+        return dialogsHeaderGlassDrawable != null && (usesIosListLayout() || AppearanceConfig.dialogsHeaderGlass())
+                && app.freezgram.LiquidGlassStyle.canDrawGlass()
                 && !inPreviewMode && searchAnimationProgress == 0;
     }
 

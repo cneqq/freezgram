@@ -72,6 +72,7 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
             AppearanceConfig.iosMode.setConfigBool(enabled);
             ((TextCheckCell) view).setChecked(enabled);
             effectsChanged = true;
+            refreshRows();
             return;
         }
         if (key.equals("profileMusic")) {
@@ -132,7 +133,7 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
             case "messages": return R.string.FreezgramMessageSurfaces;
             case "gifts": return R.string.FreezgramGiftGlassSettings;
             case "surfaces": return R.string.FreezgramStyleMenus;
-            case "glass": return R.string.FreezgramStyleGlass;
+            case "glass": return AppearanceConfig.iosMode() ? R.string.FreezgramIosGlass : R.string.FreezgramStyleGlass;
             case "dividers": return R.string.FreezgramGlassMenuDividers;
             case "motion": return R.string.FreezgramTransitionStyle;
             case "motionFreezgram": return R.string.FreezgramTransitionSmooth;
@@ -152,7 +153,7 @@ public final class FreezgramStyleActivity extends BaseNekoSettingsActivity {
                     ? R.string.OEProfileMusicUseCard : R.string.OEProfileMusicUseOfficial);
             case "messages": return text(AppearanceConfig.sameMessageSurfaces() ? R.string.FreezgramStyleLinked : R.string.FreezgramStyleSeparate);
             case "gifts": return text(new int[]{R.string.FreezgramGiftCardOrdinary, R.string.FreezgramGiftCardGlass, R.string.FreezgramGiftCardSoft}[GiftGlassStyle.style()]);
-            case "glass": return LiquidGlassStyle.blurRadiusDp() + " dp · " + AppearanceConfig.navigationGlassIntensity() + "%";
+            case "glass": return LiquidGlassStyle.blurRadiusDp() + " dp · " + LiquidGlassStyle.refraction() + "%";
             case "dividers": return text(AppearanceConfig.glassMenuDividers() ? R.string.FreezgramStyleOn : R.string.FreezgramStyleOff);
             case "motion": return text(AppearanceConfig.transitionStyle() == 1 ? R.string.FreezgramTransitionSmooth : R.string.FreezgramTransitionStandard);
             case "snow": return text(tw.nekomimi.nekogram.NekoConfig.actionBarDecoration.Int() != 1 ? R.string.FreezgramStyleOff

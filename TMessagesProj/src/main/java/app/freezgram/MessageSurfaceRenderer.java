@@ -59,7 +59,11 @@ public final class MessageSurfaceRenderer {
         glass.setSourceOffset(cellBounds.left, cellBounds.top);
         bounds.roundOut(AndroidUtilities.rectTmp2); glass.setBounds(AndroidUtilities.rectTmp2);
         glass.setRadius(radius); glass.setAlpha((int) (255 * alpha)); glass.setThickness(AndroidUtilities.dp(12));
-        glass.setIntensity((profile == 3 ? app.exteraless.appearance.AppearanceConfig.navigationGlassIntensity() : MessageSurfaceStyle.intensity(profile)) / 100f);
+        if (profile == 3) {
+            LiquidGlassStyle.configure(glass);
+        } else {
+            glass.setIntensity(MessageSurfaceStyle.intensity(profile) / 100f);
+        }
         ((BlurredBackgroundDrawable) glass).setLiquidGlassEffectAllowed(true);
         glass.updateColors(); glass.draw(canvas); return true;
     }

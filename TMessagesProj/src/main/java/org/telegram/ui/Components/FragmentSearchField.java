@@ -76,6 +76,8 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
     private final ImageView searchIcon;
     private final ImageView closeIcon;
     private final LinearLayout additionalIconsLayout;
+    private ImageView iosCancelButton;
+    private int cancelSpace;
     private boolean closeButtonForcedVisible;
     public final EditTextBoldCursor editText;
     private BlurredBackgroundDrawable blurredBackgroundDrawable;
@@ -171,7 +173,7 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
                     }
                 }
                 clearSearchFilters();
-            } else if (onCloseSearch != null) {
+            } else if (iosCancelButton == null && onCloseSearch != null) {
                 onCloseSearch.run();
             } else {
                 editText.getText().clear();
@@ -212,6 +214,26 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
         updatePlaceholderGravity();
     }
 
+    public void useIosLayout() {
+        searchIcon.setImageResource(R.drawable.freezgram_ios_search);
+        closeIcon.setImageResource(R.drawable.freezgram_ios_close);
+        closeIcon.setContentDescription(LocaleController.getString(R.string.Clear));
+        editText.setTypeface(app.freezgram.IosTypography.REGULAR);
+        editText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        editText.setIncludeFontPadding(false);
+        iosCancelButton = new ImageView(getContext());
+        iosCancelButton.setImageResource(R.drawable.freezgram_ios_close);
+        iosCancelButton.setScaleType(ImageView.ScaleType.CENTER);
+        iosCancelButton.setContentDescription(LocaleController.getString(R.string.Cancel));
+        iosCancelButton.setOnClickListener(v -> {
+            if (onCloseSearch != null) onCloseSearch.run();
+        });
+        iosCancelButton.setVisibility(GONE);
+        addView(iosCancelButton, LayoutHelper.createFrame(40, 40,
+                Gravity.CENTER_VERTICAL | (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT)));
+        updateColors();
+    }
+
     private void updatePlaceholderGravity() {
         if (editText == null) return;
         boolean center = centeredPlaceholder && editText.length() == 0 && !editText.hasFocus() && currentSearchFilters.isEmpty();
@@ -232,11 +254,13 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
     @Override
     protected void dispatchDraw(@NonNull Canvas canvas) {
         canvas.save();
+        int left = getPaddingLeft() + (LocaleController.isRTL ? cancelSpace : 0);
+        int right = getWidth() - getPaddingRight() - (LocaleController.isRTL ? 0 : cancelSpace);
         if (bg != null && !sharedGlassActive()) {
             bg.setBounds(
-                getPaddingLeft(),
+                left,
                 getPaddingTop(),
-                getWidth() - getPaddingRight(),
+                right,
                 getHeight() - getPaddingBottom()
             );
             bg.draw(canvas);
@@ -248,9 +272,9 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
                 blurredBackgroundDrawable.updateColors();
             }
             blurredBackgroundDrawable.setBounds(
-                    getPaddingLeft() - dp(4),
+                    left - dp(4),
                     getPaddingTop() - dp(4),
-                    getWidth() - getPaddingRight() + dp(4),
+                    right + dp(4),
                     (getHeight() - getPaddingBottom()) + dp(4));
             blurredBackgroundDrawable.draw(canvas);
         }
@@ -293,8 +317,9 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
 
     private void checkUi_editTextPaddings() {
         final int filtersWidth = (int) animatorSearchFiltersWidth.getFactor() + dp(6); //searchFilterLayout.getWidth();
-        final int pStart = Math.max(filtersWidth, dp(48));
-        final int pEnd = dp(48) + additionalIconsLayout.getMeasuredWidth();
+        final int iconSpace = dp(iosCancelButton != null ? 42 : 48);
+        final int pStart = Math.max(filtersWidth, iconSpace);
+        final int pEnd = iconSpace + additionalIconsLayout.getMeasuredWidth();
 
         final int pLeft = LocaleController.isRTL ? pEnd : pStart;
         final int pRight = LocaleController.isRTL ? pStart : pEnd;
@@ -331,6 +356,11 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
         searchIcon.setColorFilter(getThemedColor(Theme.key_windowBackgroundWhiteBlackText, 0.6f), PorterDuff.Mode.MULTIPLY);
         closeIcon.setColorFilter(getThemedColor(Theme.key_windowBackgroundWhiteBlackText, 0.6f), PorterDuff.Mode.MULTIPLY);
         closeIcon.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_listSelector), 1, dp(17)));
+        if (iosCancelButton != null) {
+            iosCancelButton.setColorFilter(getThemedColor(Theme.key_windowBackgroundWhiteBlackText), PorterDuff.Mode.SRC_IN);
+            iosCancelButton.setBackground(Theme.createSimpleSelectorCircleDrawable(dp(40),
+                    getThemedColor(Theme.key_windowBackgroundWhiteBlackText, .08f), getThemedColor(Theme.key_listSelector)));
+        }
         editText.setHintTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText, 0.5f));
         editText.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
         editText.setCursorColor(getThemedColor(Theme.key_groupcreate_cursor));
@@ -381,11 +411,30 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
 
     public void setCloseButtonVisible(boolean visible) {
         closeButtonForcedVisible = visible;
+        if (iosCancelButton != null) {
+            cancelSpace = visible ? dp(46) : 0;
+            iosCancelButton.setVisibility(visible ? VISIBLE : GONE);
+            moveSearchEnd(editText, 0);
+            moveSearchEnd(closeIcon, dp(12));
+            moveSearchEnd(additionalIconsLayout, dp(32));
+            invalidate();
+        }
         checkCloseButtonVisible();
     }
 
+    private void moveSearchEnd(View view, int margin) {
+        LayoutParams params = (LayoutParams) view.getLayoutParams();
+        if (LocaleController.isRTL) {
+            params.leftMargin = margin + cancelSpace;
+        } else {
+            params.rightMargin = margin + cancelSpace;
+        }
+        view.setLayoutParams(params);
+    }
+
     private void checkCloseButtonVisible() {
-        animatorCloseIconVisible.setValue(closeButtonForcedVisible || editText.length() > 0, true);
+        animatorCloseIconVisible.setValue((iosCancelButton == null && closeButtonForcedVisible)
+                || editText.length() > 0 || (iosCancelButton != null && hasRemovableFilters()), true);
     }
 
     @Override

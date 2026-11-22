@@ -648,6 +648,20 @@ object AppearanceConfig {
     @JvmStatic
     fun navigationGlassTransparency(): Int { ensureLoaded(); return navigationGlassTransparency.Int().coerceIn(-1, 100) }
 
+    @JvmField val iosGlassBlur = addConfig("FreezgramIosGlassBlur", ConfigItem.configTypeInt, 9)
+    @JvmField val iosGlassIntensity = addConfig("FreezgramIosGlassIntensity", ConfigItem.configTypeInt, 38)
+    @JvmField val iosGlassTransparency = addConfig("FreezgramIosGlassTransparency", ConfigItem.configTypeInt, -1)
+    @JvmField val iosGlassEdge = addConfig("FreezgramIosGlassEdge", ConfigItem.configTypeInt, 7)
+    @JvmField val iosGlassEnhanceColors = addConfig("FreezgramIosGlassEnhanceColors", ConfigItem.configTypeBool, false)
+    @JvmField val iosGlassWallpaperDim = addConfig("FreezgramIosGlassWallpaperDim", ConfigItem.configTypeBool, false)
+
+    @JvmStatic fun iosGlassBlur(): Int { ensureLoaded(); return iosGlassBlur.Int().coerceIn(0, 30) }
+    @JvmStatic fun iosGlassIntensity(): Int { ensureLoaded(); return iosGlassIntensity.Int().coerceIn(0, 100) }
+    @JvmStatic fun iosGlassTransparency(): Int { ensureLoaded(); return iosGlassTransparency.Int().coerceIn(-1, 100) }
+    @JvmStatic fun iosGlassEdge(): Int { ensureLoaded(); return iosGlassEdge.Int().coerceIn(1, 20) }
+    @JvmStatic fun iosGlassEnhanceColors(): Boolean { ensureLoaded(); return iosGlassEnhanceColors.Bool() }
+    @JvmStatic fun iosGlassWallpaperDim(): Boolean { ensureLoaded(); return iosGlassWallpaperDim.Bool() }
+
     @JvmField
     val profileMusicCard =
         addConfig("OEAppearanceProfileMusicCard", ConfigItem.configTypeBool, true)

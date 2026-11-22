@@ -386,7 +386,8 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
         ThemeBind.textColor(titleTextView, Theme.key_actionBarDefaultTitle, resourcesProvider);
         titleTextView.setTextSize(18);
         titleTextView.setGravity(isCentered() ? Gravity.CENTER_HORIZONTAL : Gravity.LEFT);
-        titleTextView.setTypeface(AndroidUtilities.bold());
+        titleTextView.setTypeface(app.exteraless.appearance.AppearanceConfig.iosMode()
+                ? app.freezgram.IosTypography.SEMIBOLD : AndroidUtilities.bold());
         titleTextView.setLeftDrawableTopPadding(-dp(1.3f));
         // titleTextView.setCanHideRightDrawable(false);
         // titleTextView.setRightDrawableOutside(true);
@@ -402,6 +403,9 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             ThemeBind.textColor(animatedSubtitleTextView, Theme.key_actionBarDefaultSubtitle, resourcesProvider);
             animatedSubtitleTextView.setTag(Theme.key_actionBarDefaultSubtitle);
             animatedSubtitleTextView.setTextSize(dp(14));
+            if (app.exteraless.appearance.AppearanceConfig.iosMode()) {
+                animatedSubtitleTextView.setTypeface(app.freezgram.IosTypography.REGULAR);
+            }
             animatedSubtitleTextView.setGravity(isCentered() ? Gravity.CENTER_HORIZONTAL : Gravity.LEFT);
             animatedSubtitleTextView.setPadding(0, 0, isCentered() ? 0 : dp(10), 0);
             animatedSubtitleTextView.setTranslationY(-dp(1));
@@ -412,6 +416,9 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             ThemeBind.textColor(subtitleTextView, Theme.key_actionBarDefaultSubtitle, resourcesProvider);
             subtitleTextView.setTag(Theme.key_actionBarDefaultSubtitle);
             subtitleTextView.setTextSize(14);
+            if (app.exteraless.appearance.AppearanceConfig.iosMode()) {
+                subtitleTextView.setTypeface(app.freezgram.IosTypography.REGULAR);
+            }
             subtitleTextView.setGravity(isCentered() ? Gravity.CENTER_HORIZONTAL : Gravity.LEFT);
             subtitleTextView.setPadding(0, 0, isCentered() ? 0 : dp(10), 0);
             addView(subtitleTextView);
@@ -928,7 +935,8 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
         ThemeBind.textColor(titleTextLargerCopyView, Theme.key_actionBarDefaultTitle, resourcesProvider);
         titleTextLargerCopyView.setTextSizePx(dp(glassMode ? 17.5f : 18));
         titleTextLargerCopyView.setGravity(isCentered() ? Gravity.CENTER_HORIZONTAL : Gravity.LEFT);
-        titleTextLargerCopyView.setTypeface(AndroidUtilities.bold());
+        titleTextLargerCopyView.setTypeface(app.exteraless.appearance.AppearanceConfig.iosMode()
+                ? app.freezgram.IosTypography.SEMIBOLD : AndroidUtilities.bold());
         titleTextLargerCopyView.setLeftDrawableTopPadding(-dp(1.3f));
         titleTextLargerCopyView.setRightDrawable(titleTextView.getRightDrawable());
         titleTextLargerCopyView.setRightDrawable2(titleTextView.getRightDrawable2());

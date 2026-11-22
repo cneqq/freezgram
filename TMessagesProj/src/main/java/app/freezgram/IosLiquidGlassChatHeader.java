@@ -11,6 +11,12 @@ import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundProvider
 
 /** Header eligibility; optical parameters come from LiquidGlassStyle. */
 public final class IosLiquidGlassChatHeader {
+    public static final int PILL_HEIGHT_DP = 44;
+    public static final int AVATAR_SIZE_DP = 36;
+    public static final int SIDE_INSET_DP = 8;
+    public static final int TITLE_PADDING_DP = 14;
+    public static final int MIN_TITLE_CONTENT_WIDTH_DP = 150;
+
     private IosLiquidGlassChatHeader() {}
 
     public static boolean isRequested() {

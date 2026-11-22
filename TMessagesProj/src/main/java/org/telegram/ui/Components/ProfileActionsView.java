@@ -107,6 +107,7 @@ public class ProfileActionsView extends View {
     public static final int KEY_EDIT_INFO = 16;
     public static final int KEY_SETTINGS = 17;
     public static final int KEY_MORE = 18;
+    public static final int KEY_SEARCH = 19;
 
     public final boolean iosLayout;
     private final boolean compactIosActions;
@@ -161,6 +162,7 @@ public class ProfileActionsView extends View {
             glass.add(glassFactory.create(this, ProfileButtonsGlass.NO_COLORS).setRadius(radius));
         }
         final BlurredBackgroundDrawable drawable = glass.get(glassUsed++);
+        drawable.setRadius(radius);
         drawable.setBounds((int) rect.left, (int) rect.top, (int) Math.ceil(rect.right), (int) Math.ceil(rect.bottom));
         drawable.setAlpha((int) (0xFF * alpha));
         drawable.draw(canvas);
@@ -311,8 +313,9 @@ public class ProfileActionsView extends View {
                 action.rect.width() / 2.0f * (1.0f - action.getScale()),
                 action.rect.height() / 2.0f * (1.0f - action.getScale())
             );
+            final float radius = iosLayout ? Math.min(r, Math.min(AndroidUtilities.rectTmp.width(), AndroidUtilities.rectTmp.height()) / 2f) : r;
             if (glassFactory != null) {
-                drawGlass(canvas, AndroidUtilities.rectTmp, r, action.getAlpha() * alphaFraction1);
+                drawGlass(canvas, AndroidUtilities.rectTmp, radius, action.getAlpha() * alphaFraction1);
                 continue;
             }
             int wasAlpha = paint.getAlpha();
@@ -320,13 +323,13 @@ public class ProfileActionsView extends View {
             paint.setAlpha((int) (newAlpha * (radialGradient != null ? 0.1f : 1f)));
             paint.setShadowLayer(0, 0, 0, 0);
 
-            canvas.drawRoundRect(AndroidUtilities.rectTmp, r, r, paint);
+            canvas.drawRoundRect(AndroidUtilities.rectTmp, radius, radius, paint);
             if (radialGradient != null) {
                 int wasAlpha2 = shaderPaint.getAlpha();
                 shaderPaint.setAlpha((int) (action.getAlpha() * alphaFraction1 * wasAlpha2));
                 matrix.setTranslate(AndroidUtilities.rectTmp.left, AndroidUtilities.rectTmp.top);
                 radialGradient.setLocalMatrix(matrix);
-                canvas.drawRoundRect(AndroidUtilities.rectTmp, r, r, shaderPaint);
+                canvas.drawRoundRect(AndroidUtilities.rectTmp, radius, radius, shaderPaint);
                 shaderPaint.setAlpha(wasAlpha2);
             }
             paint.setAlpha(wasAlpha);
@@ -374,7 +377,8 @@ public class ProfileActionsView extends View {
 
         action.text.setMaxWidth(action.rect.width() - dp(2));
         action.textScale = action.text.getLineCount() >= 3 ? 0.75f : action.text.getLineCount() >= 2 ? 0.85f : 1.0f;
-        final float drawableTop = Math.max(0, (targetHeight - action.text.getHeight() * action.textScale) / 3f + dpf2(1.33f));
+        final float drawableTop = iosLayout ? action.rect.top + dp(8)
+                : Math.max(0, (targetHeight - action.text.getHeight() * action.textScale) / 3f + dpf2(1.33f));
         action.setBounds(
             (int) (cx - drawableR),
             (int) (drawableTop),
@@ -421,7 +425,8 @@ public class ProfileActionsView extends View {
             textY = cy - action.text.getHeight() / 2f;
         } else {
             textCenterX = cx;
-            textY = action.bounds.bottom + action.bounds.top - action.text.getHeight() * action.textScale / 2.0f - dp(4.66f);
+            textY = iosLayout ? action.rect.bottom - dp(9) - action.text.getHeight()
+                    : action.bounds.bottom + action.bounds.top - action.text.getHeight() * action.textScale / 2.0f - dp(4.66f);
         }
         canvas.save();
         final float textPivotY = compactIosActions ? cy : textY + action.text.getHeight() * action.textScale / 2f;
@@ -706,11 +711,11 @@ public class ProfileActionsView extends View {
         switch (mode) {
             case MODE_USER:
                 if (iosLayout) {
-                    insertIfAvailable(out, KEY_MESSAGE);
-                    insertIfAvailable(out, KEY_CALL);
-                    insertIfAvailable(out, KEY_VIDEO);
+                    final boolean fromChat = allAvailableActions.contains(KEY_SEARCH);
+                    if (!fromChat) insertIfAvailable(out, KEY_MESSAGE);
+                    insertIfAvailable(out, allAvailableActions.contains(KEY_CALL) ? KEY_CALL : KEY_VIDEO);
                     insertIfAvailable(out, KEY_NOTIFICATION);
-                    insertIfNotAvailable(out, KEY_GIFT, KEY_VIDEO);
+                    if (fromChat) insertIfAvailable(out, KEY_SEARCH);
                     insertIfAvailable(out, KEY_MORE);
                     break;
                 }
@@ -898,6 +903,9 @@ public class ProfileActionsView extends View {
             case KEY_MORE:
                 newAction = new Action(ActionButton.MORE);
                 break;
+            case KEY_SEARCH:
+                newAction = new Action(ActionButton.SEARCH);
+                break;
             case KEY_NOTIFICATION:
                 newAction = new Action();
                 updateNotification(newAction, false);
@@ -1035,7 +1043,8 @@ public class ProfileActionsView extends View {
         }
 
         public void setText(CharSequence cs) {
-            this.text = new Text(cs, compactIosActions ? 14 : 11, AndroidUtilities.bold())
+            this.text = new Text(cs, compactIosActions ? 14 : 11,
+                    iosLayout && !compactIosActions ? AndroidUtilities.regular() : AndroidUtilities.bold())
                 .multiline(3)
                 .align(Layout.Alignment.ALIGN_CENTER);
         }
@@ -1240,7 +1249,8 @@ public class ProfileActionsView extends View {
         EDIT_USERNAME(R.string.ProfileActionsEditUsername, R.drawable.filled_profile_edit_24, R.drawable.outline_profile_edit_24),
         EDIT_INFO(R.string.ProfileActionsEditInfo, R.drawable.filled_profile_edit_24, R.drawable.outline_profile_edit_24),
         SETTINGS(R.string.Settings, R.drawable.filled_profile_settings, R.drawable.outline_profile_settings),
-        MORE(R.string.AccDescrMoreOptions, R.drawable.baseline_more_horiz_24, R.drawable.baseline_more_horiz_24),;
+        MORE(R.string.FreezgramProfileMore, R.drawable.baseline_more_horiz_24, R.drawable.baseline_more_horiz_24),
+        SEARCH(R.string.Search, R.drawable.msg_search, R.drawable.msg_search),;
 
         final @StringRes int title;
         final @DrawableRes int filledIcon;

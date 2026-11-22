@@ -137,6 +137,18 @@ public class SimpleActionBar extends FrameLayout implements FactorAnimator.Targe
 
     /* Glass */
 
+    private boolean compactGlassButtons;
+
+    public void setCompactGlassButtons(boolean compact) {
+        if (compactGlassButtons == compact) return;
+        compactGlassButtons = compact;
+        createButtonsGlass();
+    }
+
+    private int getGlassButtonRadius() {
+        return dp(compactGlassButtons ? 22 : 23);
+    }
+
     public void setupGlass(BlurredBackgroundDrawableViewFactory factory, BlurredBackgroundColorProvider colorProvider) {
         glassFactory = factory;
         glassColorProvider = colorProvider;
@@ -149,10 +161,11 @@ public class SimpleActionBar extends FrameLayout implements FactorAnimator.Targe
             return;
         }
         final BlurredBackgroundColorProvider buttonsColors = buttonsGlassColorProvider != null ? buttonsGlassColorProvider : glassColorProvider;
-        glassBack = factory.create(this).setColorProvider(buttonsColors).setRadius(dp(23)).setPadding(dp(6));
-        glassMenu = factory.create(this).setColorProvider(buttonsColors).setRadius(dp(23)).setPadding(dp(6));
-        glassDone = factory.create(this).setColorProvider(buttonsColors).setRadius(dp(23)).setPadding(dp(6));
-        glassMenuRadius = dp(23);
+        final int radius = getGlassButtonRadius();
+        glassBack = factory.create(this).setColorProvider(buttonsColors).setRadius(radius).setPadding(dp(6));
+        glassMenu = factory.create(this).setColorProvider(buttonsColors).setRadius(radius).setPadding(dp(6));
+        glassDone = factory.create(this).setColorProvider(buttonsColors).setRadius(radius).setPadding(dp(6));
+        glassMenuRadius = radius;
         invalidate();
     }
 
@@ -322,7 +335,7 @@ public class SimpleActionBar extends FrameLayout implements FactorAnimator.Targe
             computeMenuPill(out);
             return true;
         }
-        final float half = dp(23);
+        final float half = getGlassButtonRadius();
         final View itemMenu = (View) item.getParent();
         final float cx = (itemMenu != null ? itemMenu.getX() : 0) + item.getX() + item.getWidth() / 2f;
         final float cy = getRowTop() + ActionBar.getCurrentActionBarHeight() / 2f;
@@ -338,7 +351,9 @@ public class SimpleActionBar extends FrameLayout implements FactorAnimator.Targe
 
         if (glassBack != null && backButton.getVisibility() == VISIBLE && backButton.getAlpha() > 0) {
             final float cx = backButton.getX() + backButton.getWidth() / 2f, cy = backButton.getY() + backButton.getHeight() / 2f;
-            final float hw = backButton.getWidth() / 2f * backButton.getScaleX(), hh = backButton.getHeight() / 2f * backButton.getScaleY();
+            final float maxHalf = compactGlassButtons ? getGlassButtonRadius() : Float.MAX_VALUE;
+            final float hw = Math.min(maxHalf, backButton.getWidth() / 2f) * backButton.getScaleX();
+            final float hh = Math.min(maxHalf, backButton.getHeight() / 2f) * backButton.getScaleY();
             glassBack.setBounds((int) (cx - hw) - p, (int) (cy - hh) - p, (int) (cx + hw) + p, (int) (cy + hh) + p);
             glassBack.setAlpha((int) (255 * backButton.getAlpha()));
             glassBack.draw(canvas);
@@ -385,7 +400,7 @@ public class SimpleActionBar extends FrameLayout implements FactorAnimator.Targe
      */
     private float computeMenuPill(RectF rect) {
         final int p = dp(6);
-        final float half = dp(23);
+        final float half = getGlassButtonRadius();
         final float cy = getRowTop() + ActionBar.getCurrentActionBarHeight() / 2f;
         final float s = getSearchFactor();
         final float a = getActionModeFactor();
@@ -410,6 +425,11 @@ public class SimpleActionBar extends FrameLayout implements FactorAnimator.Targe
 
         float right = getWidth() - p - getDoneButtonSpace(false);
         float left = right - Math.max(width, half * 2);
+        if (compactGlassButtons && width <= dp(56) && right - left > half * 2) {
+            final float center = (left + right) / 2f;
+            left = center - half;
+            right = center + half;
+        }
         float top = cy - half, bottom = cy + half;
         if (k < 1f) {
             final float cx = (left + right) / 2f;

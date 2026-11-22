@@ -454,6 +454,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private FrameLayout avatarContainer;
     private FrameLayout avatarContainer2;
     private ProfileActionsView actionsView;
+    private ChatActivity pendingIosChatSearch;
     private MessagesController.SavedMusicList savedMusicList;
     private ProfileMusicView musicView;
     private ProfileBalanceView balanceView;
@@ -3979,6 +3980,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     app.exteraless.appearance.AppearanceConfig.iosMode(), myProfile);
             setActionsMode();
             updateNotifications(false);
+            if (actionsView.iosLayout && actionsView.mode == ProfileActionsView.MODE_USER) {
+                actionsView.set(ProfileActionsView.KEY_SEARCH, getIosProfileSourceChat() != null);
+            }
 
             actionsView.setOnActionClickListener((key, x, y) -> {
                 switch (key) {
@@ -4077,6 +4081,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             otherItem.toggleSubMenu();
                         }
                         break;
+                    case ProfileActionsView.KEY_SEARCH: {
+                        final ChatActivity chat = getIosProfileSourceChat();
+                        if (chat != null) {
+                            pendingIosChatSearch = chat;
+                            finishFragment();
+                        }
+                        break;
+                    }
                 }
             });
         }
@@ -7465,6 +7477,18 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
+    private ChatActivity getIosProfileSourceChat() {
+        if (parentLayout == null || userId == 0) return null;
+        final List<BaseFragment> stack = parentLayout.getFragmentStack();
+        final int index = stack.indexOf(this);
+        final int previousIndex = index >= 0 ? index - 1 : stack.size() - 1;
+        if (previousIndex >= 0 && stack.get(previousIndex) instanceof ChatActivity) {
+            final ChatActivity chat = (ChatActivity) stack.get(previousIndex);
+            if (chat.getChatMode() == 0 && chat.getDialogId() == getDialogId()) return chat;
+        }
+        return null;
+    }
+
     private void openChat() {
         if (userId != 0) {
             if (finishFragmentIfPreviousIsChatActivity()) {
@@ -8357,6 +8381,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             }
         };
         simpleActionBar.setTitlesAlpha(0f);
+        if (app.exteraless.appearance.AppearanceConfig.iosMode()) {
+            simpleActionBar.setCompactGlassButtons(true);
+        }
         if (!fragmentOpened && !hasMainTabs && playProfileAnimation != 0 && allowProfileAnimation && !disableProfileAnimation) {
             // opening from a chat the header comes in with the transition, over the chat's own until then
             simpleActionBar.setAlpha(0f);
@@ -10466,6 +10493,15 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
     @Override
     public void onTransitionAnimationEnd(boolean isOpen, boolean backward) {
+        if (!isOpen && backward && pendingIosChatSearch != null) {
+            final ChatActivity chat = pendingIosChatSearch;
+            pendingIosChatSearch = null;
+            AndroidUtilities.runOnUIThread(() -> {
+                if (chat.getParentLayout() != null && chat.getFragmentView() != null) {
+                    chat.openSearchWithText("");
+                }
+            });
+        }
         if (isOpen && simpleActionBar != null) {
             simpleActionBar.setAlpha(1f);
         }
@@ -13236,6 +13272,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         if (actionsView != null) {
             actionsView.beginApplyingActions();
+            if (actionsView.iosLayout && actionsView.mode == ProfileActionsView.MODE_USER
+                    && callItemVisible && videoCallItemVisible) {
+                otherItem.addSubItem(video_call_item, R.drawable.msg_videocall, getString(R.string.VideoCall));
+            }
             actionsView.set(ProfileActionsView.KEY_SHARE, shareAction);
             actionsView.set(ProfileActionsView.KEY_CALL, callItemVisible);
             actionsView.set(ProfileActionsView.KEY_VIDEO, videoCallItemVisible);

@@ -65,6 +65,7 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
+import app.freezgram.IosLiquidGlassChatHeader;
 import org.telegram.ui.ActionBar.ActionBarPopupWindow;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.SimpleTextView;
@@ -592,6 +593,10 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
         return isCentered();
     }
 
+    public boolean usesIosHeaderGeometry() {
+        return isCentered() && app.exteraless.appearance.AppearanceConfig.iosMode() && !isPreviewMode();
+    }
+
     private int layoutMenuWidth;
     private View boundMenu;
     private final View.OnLayoutChangeListener menuLayoutListener = (v, l, t, r, b, ol, ot, or, ob) -> {
@@ -623,6 +628,9 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
         final ActionBarMenu menu = ((ActionBar) parent).menu;
         if (menu == null || menu.getVisibility() != VISIBLE) {
             return 0;
+        }
+        if (usesIosHeaderGeometry()) {
+            return menu.getItemsWidth();
         }
         int width = 0;
         for (int i = 0; i < menu.getChildCount(); i++) {
@@ -863,18 +871,27 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        final boolean ios = usesIosHeaderGeometry();
         int padding = isCentered() ? dp(isPreviewMode() ? 35 : 10) : 0;
         final int width = MeasureSpec.getSize(widthMeasureSpec);
         // Ширина под текст считается от размера аватарки,
         // сама аватарка меряется с отступом ChatHeaderUiHelper.getAvatarInsetPx (при 42dp — как было)
         final int availableWidth = width - dp(((avatarImageView.getVisibility() == VISIBLE || isCentered()) ? avatarSizeInDp + 12 : 0) + 16);
         final int avatarSizePx = ChatHeaderUiHelper.getAvatarSizePx(avatarSizeInDp);
+        int textWidth = Math.max(0, availableWidth - padding);
+        if (ios) {
+            final ViewParent parent = getParent();
+            final int barWidth = parent instanceof ActionBar ? ((ActionBar) parent).getMeasuredWidth() : width;
+            final int side = dp(IosLiquidGlassChatHeader.SIDE_INSET_DP * 2 + IosLiquidGlassChatHeader.PILL_HEIGHT_DP);
+            final int reservedSide = side + getActionBarMenuWidth();
+            textWidth = Math.max(0, barWidth - 2 * (reservedSide + dp(IosLiquidGlassChatHeader.TITLE_PADDING_DP)));
+        }
         avatarImageView.measure(MeasureSpec.makeMeasureSpec(avatarSizePx, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(avatarSizePx, MeasureSpec.EXACTLY));
-        titleTextView.measure(MeasureSpec.makeMeasureSpec(availableWidth - padding, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(dp(24 + 8), MeasureSpec.AT_MOST));
+        titleTextView.measure(MeasureSpec.makeMeasureSpec(textWidth, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(dp(24 + 8), MeasureSpec.AT_MOST));
         if (subtitleTextView != null) {
-            subtitleTextView.measure(MeasureSpec.makeMeasureSpec(availableWidth - padding, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(dp(20), MeasureSpec.AT_MOST));
+            subtitleTextView.measure(MeasureSpec.makeMeasureSpec(textWidth, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(dp(20), MeasureSpec.AT_MOST));
         } else if (animatedSubtitleTextView != null) {
-            animatedSubtitleTextView.measure(MeasureSpec.makeMeasureSpec(availableWidth - padding, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(dp(20), MeasureSpec.AT_MOST));
+            animatedSubtitleTextView.measure(MeasureSpec.makeMeasureSpec(textWidth, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(dp(20), MeasureSpec.AT_MOST));
         }
         if (communityItem != null) {
             communityItem.measure(MeasureSpec.makeMeasureSpec(dp(14), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(dp(14), MeasureSpec.EXACTLY));
@@ -969,7 +986,8 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
         // Там setGlassMode()
         // и setAvatarSizeInDp(46) вызываются вместе из ChatActivity; у нас ChatActivity чужой,
         // поэтому размер применяется здесь же — результат тот же
-        setAvatarSizeInDp(ChatHeaderUiHelper.getChatAvatarSizeDp());
+        setAvatarSizeInDp(usesIosHeaderGeometry()
+                ? IosLiquidGlassChatHeader.AVATAR_SIZE_DP : ChatHeaderUiHelper.getChatAvatarSizeDp());
     }
 
     public void setAvatarSizeInDp(int sizeDp) {
@@ -983,6 +1001,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        final boolean ios = usesIosHeaderGeometry();
         // M3-шапка двигает аватарку и подписи
         final boolean material3 = ChatHeaderUiHelper.isMaterial3ChatHeaderStyle();
         final int avatarInsetPx = ChatHeaderUiHelper.getAvatarInsetPx();
@@ -990,7 +1009,10 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
         final int actionBarHeight = ActionBar.getCurrentActionBarHeight();
         final int viewTop = (actionBarHeight - avatarImageView.getMeasuredHeight() - avatarInsetPx * 2) / 2 + (occupyStatusBar ? AndroidUtilities.statusBarHeight : 0);
         final int iosTextOffset = isCentered() && app.freezgram.IosLiquidGlassChatHeader.isRequested() ? dp(1) : 0;
-        final int subtitleTop = viewTop - iosTextOffset + dp(material3 ? (glassMode ? 26.66f : 27f) : (glassMode ? 23.66f : 24f));
+        int subtitleTop = viewTop - iosTextOffset + dp(material3 ? (glassMode ? 26.66f : 27f) : (glassMode ? 23.66f : 24f));
+        final int rowCenterY = (occupyStatusBar ? AndroidUtilities.statusBarHeight : 0) + actionBarHeight / 2;
+        final ViewParent parent = getParent();
+        final int rowCenterX = (parent instanceof ActionBar ? ((ActionBar) parent).getWidth() / 2 - left : getWidth() / 2);
 
         int avatarLeft = avatarInsetPx + leftPadding;
         if (isCentered()) {
@@ -1001,6 +1023,11 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             if (menuWidth > 0) {
                 avatarLeft = Math.min(avatarLeft,
                         getWidth() - menuWidth - avatarImageView.getMeasuredWidth() - avatarInsetPx);
+            }
+            if (ios && menuWidth == 0 && parent instanceof ActionBar) {
+                final int avatarCenterX = ((ActionBar) parent).getWidth() - left
+                        - dp(IosLiquidGlassChatHeader.SIDE_INSET_DP + IosLiquidGlassChatHeader.PILL_HEIGHT_DP / 2);
+                avatarLeft = avatarCenterX - avatarImageView.getMeasuredWidth() / 2;
             }
         }
         avatarImageView.layout(avatarLeft, avatarInsetPx + viewTop, avatarLeft + avatarImageView.getMeasuredWidth(), avatarInsetPx + viewTop + avatarImageView.getMeasuredHeight());
@@ -1014,7 +1041,24 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             l += dp(6);
         }
         SimpleTextView titleTextLargerCopyView = this.titleTextLargerCopyView.get();
-        if (getSubtitleTextView().getVisibility() != GONE) {
+        if (ios) {
+            final View subtitle = getSubtitleTextView();
+            final int titleHeight = titleTextView.getTextHeight();
+            final int subtitleHeight = subtitle.getVisibility() == GONE ? 0
+                    : subtitleTextView != null ? subtitleTextView.getTextHeight() : subtitle.getMeasuredHeight();
+            final int gap = subtitleHeight > 0 ? dp(1) : 0;
+            final int titleTop = rowCenterY - (titleHeight + gap + subtitleHeight) / 2;
+            l = rowCenterX - titleTextView.getMeasuredWidth() / 2;
+            titleTextView.layout(l, titleTop - titleTextView.getPaddingTop(), l + titleTextView.getMeasuredWidth(),
+                    titleTop + titleHeight + titleTextView.getPaddingBottom() - titleTextView.getPaddingTop());
+            if (titleTextLargerCopyView != null) {
+                final int copyLeft = rowCenterX - titleTextLargerCopyView.getMeasuredWidth() / 2;
+                titleTextLargerCopyView.layout(copyLeft, titleTop, copyLeft + titleTextLargerCopyView.getMeasuredWidth(),
+                        titleTop + titleTextLargerCopyView.getTextHeight());
+            }
+            subtitleTop = titleTop + titleHeight + gap;
+            l = rowCenterX - subtitle.getMeasuredWidth() / 2;
+        } else if (getSubtitleTextView().getVisibility() != GONE) {
             titleTextView.layout(l, viewTop + iosTextOffset + dp(1.66f) - titleTextView.getPaddingTop(), l + titleTextView.getMeasuredWidth(), viewTop + iosTextOffset + titleTextView.getTextHeight() + dp(1.66f) - titleTextView.getPaddingTop() + titleTextView.getPaddingBottom());
             if (titleTextLargerCopyView != null) {
                 titleTextLargerCopyView.layout(l, viewTop + iosTextOffset + dp(1.66f), l + titleTextLargerCopyView.getMeasuredWidth(), viewTop + iosTextOffset + titleTextLargerCopyView.getTextHeight() + dp(1.66f));
@@ -1044,7 +1088,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             );
         }
         // Значки привязаны к размеру аватарки
-        final int starItemLeft = leftPadding + dp(avatarSizeInDp - 14);
+        final int starItemLeft = (ios ? avatarLeft : leftPadding) + dp(avatarSizeInDp - 14);
         final int starItemTop = viewTop + dp(avatarSizeInDp - 18);
         if (starBgItem != null) {
             starBgItem.layout(starItemLeft, starItemTop, starItemLeft + starBgItem.getMeasuredWidth(), starItemTop + starBgItem.getMeasuredHeight());
@@ -1059,6 +1103,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
         }
         SimpleTextView subtitleTextLargerCopyView = this.subtitleTextLargerCopyView.get();
         if (subtitleTextLargerCopyView != null) {
+            if (ios) l = rowCenterX - subtitleTextLargerCopyView.getMeasuredWidth() / 2;
             subtitleTextLargerCopyView.layout(l, subtitleTop, l + subtitleTextLargerCopyView.getMeasuredWidth(), subtitleTop + subtitleTextLargerCopyView.getTextHeight());
         }
     }
@@ -2080,5 +2125,13 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             width += dp(34);
         }
         return (int) width;
+    }
+
+    public int getIosHeaderTextWidth() {
+        final int titleWidth = (int) Math.ceil(titleTextView.getExactWidthIncludeDrawables());
+        if (getSubtitleTextView().getVisibility() == GONE) return titleWidth;
+        final int subtitleWidth = subtitleTextView != null ? (int) Math.ceil(subtitleTextView.getExactWidthIncludeDrawables())
+                : animatedSubtitleTextView.width();
+        return Math.max(titleWidth, subtitleWidth);
     }
 }

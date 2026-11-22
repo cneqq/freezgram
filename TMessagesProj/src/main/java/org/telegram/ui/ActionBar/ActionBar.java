@@ -2762,7 +2762,15 @@ public class ActionBar extends FrameLayout implements FactorAnimator.Target, The
         final int t = getHeight() - extraHeight - (getCurrentActionBarHeight() + s) / 2 - p;
         final int b = t + s + p * 2;
 
-        if (glassDrawable != null && drawGlassMiddlePill && !glassOnlyBack && drawGlassTitle) {
+        final ChatAvatarContainer compactAvatar = iosChatHeaderGlass ? findGlassAvatarContainer() : null;
+        final boolean compactIos = compactAvatar != null && compactAvatar.usesIosHeaderGeometry()
+                && compactAvatar.getVisibility() == View.VISIBLE && !glassOnlyBack
+                && (menu == null || !menu.searchFieldVisible() && menu.getItemsWidth() == 0)
+                && searchFactor == 0f && actionModeFactor == 0f;
+        if (compactIos) {
+            drawCompactIosHeaderPills(canvas, compactAvatar, hasBackButton, (t + b) / 2);
+        }
+        if (!compactIos && glassDrawable != null && drawGlassMiddlePill && !glassOnlyBack && drawGlassTitle) {
             if (centerTitleAndGlass && titleTextView[0] != null && titleTextView[0].getVisibility() == View.VISIBLE) {
                 int titleWidth = (int) Math.ceil(titleTextView[0].getTextWidth()) + p * 2 + dp(48);
                 int titleLeft = (getWidth() - titleWidth) / 2 + Math.round(titleTextView[0].getTranslationX());
@@ -2808,12 +2816,12 @@ public class ActionBar extends FrameLayout implements FactorAnimator.Target, The
                 }
             }
         }
-        if (glassDrawableBack != null && hasBackButton) {
+        if (!compactIos && glassDrawableBack != null && hasBackButton) {
             final int inset = iosChatHeaderGlass ? dp(3) : 0;
             glassDrawableBack.setBounds(inset, t + inset, s + p * 2 - inset, b - inset);
             glassDrawableBack.draw(canvas);
         }
-        if (glassDrawableMenu != null && menuWidth > 0 && !glassOnlyBack && !doNotDrawGlassMenu && !isMenuPillInOverlay()) {
+        if (!compactIos && glassDrawableMenu != null && menuWidth > 0 && !glassOnlyBack && !doNotDrawGlassMenu && !isMenuPillInOverlay()) {
             int menuLeft = getWidth() - Math.max(s, menuWidth) - p * 2;
             int menuTop = t;
             int menuRight = getWidth();
@@ -2866,6 +2874,52 @@ public class ActionBar extends FrameLayout implements FactorAnimator.Target, The
         }
 
         super.dispatchDraw(canvas);
+    }
+
+    private void drawCompactIosHeaderPills(Canvas canvas, ChatAvatarContainer avatar, boolean hasBackButton, int centerY) {
+        final int diameter = dp(app.freezgram.IosLiquidGlassChatHeader.PILL_HEIGHT_DP);
+        final int inset = dp(app.freezgram.IosLiquidGlassChatHeader.SIDE_INSET_DP);
+        if (hasBackButton && glassDrawableBack != null) {
+            final int centerX = Math.round(backButtonImageView.getX() + backButtonImageView.getWidth() / 2f);
+            drawCompactIosHeaderPill(canvas, glassDrawableBack, centerX, centerY, diameter, diameter);
+        }
+        if (glassDrawable != null && drawGlassMiddlePill && drawGlassTitle && !doNotDrawCenterGlass) {
+            final int maxWidth = getWidth() - 2 * (diameter + inset * 2);
+            final int minimumContent = dp(app.freezgram.IosLiquidGlassChatHeader.MIN_TITLE_CONTENT_WIDTH_DP);
+            final int content = Math.max(minimumContent, avatar.getIosHeaderTextWidth());
+            final int width = Math.min(maxWidth, content + 2 * dp(app.freezgram.IosLiquidGlassChatHeader.TITLE_PADDING_DP));
+            if (width > 0) {
+                drawCompactIosHeaderPill(canvas, glassDrawable, getWidth() / 2, centerY, width, diameter);
+            }
+        }
+        final View avatarView = getGlassMenuAvatarView(avatar);
+        if (avatarView != null && glassDrawableMenu != null && !doNotDrawGlassMenu) {
+            final int centerX = Math.round(avatar.getX() + avatarView.getX() + avatarView.getWidth() / 2f);
+            final int centerAvatarY = Math.round(avatar.getY() + avatarView.getY() + avatarView.getHeight() / 2f);
+            final boolean forum = glassModeIsForum;
+            final int radius = forum ? Math.round(glassAvatarRadius) : diameter / 2;
+            glassDrawableMenu.setAlpha(255);
+            setCompactIosHeaderPillBounds(glassDrawableMenu, centerX, centerAvatarY, diameter, diameter, radius);
+            if (!isMenuPillInOverlay()) glassDrawableMenu.draw(canvas);
+            glassMenuAppliedOuterRadius = glassMenuAppliedInnerRadius = -1;
+        } else if (glassDrawableMenu != null) {
+            glassDrawableMenu.setBounds(0, 0, 0, 0);
+        }
+    }
+
+    private void drawCompactIosHeaderPill(Canvas canvas, BlurredBackgroundDrawable drawable,
+                                          int cx, int cy, int width, int height) {
+        setCompactIosHeaderPillBounds(drawable, cx, cy, width, height, Math.min(width, height) / 2);
+        drawable.draw(canvas);
+    }
+
+    private void setCompactIosHeaderPillBounds(BlurredBackgroundDrawable drawable,
+                                               int cx, int cy, int width, int height, int radius) {
+        final int padding = dp(6);
+        final int left = cx - width / 2;
+        final int top = cy - height / 2;
+        drawable.setRadius(radius);
+        drawable.setBounds(left - padding, top - padding, left + width + padding, top + height + padding);
     }
 
     private int customHeaderAlpha = 255;

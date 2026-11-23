@@ -1527,7 +1527,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 // the pages reach up past their top by their overscan, the gap is only above it
                 final float mediaTop = listView.getY() + sharedMediaLayout.getY() - pagesOverscanTop;
                 if (mediaTop > y1) {
-                    gapPaint.setColor(Theme.getColor(Theme.key_windowBackgroundGray, getBaseProfileResources()));
+                    gapPaint.setColor(getThemedColor(Theme.key_windowBackgroundGray));
                     canvas.drawRect(0, y1, getMeasuredWidth(), Math.min(v, mediaTop), gapPaint);
                 }
             }
@@ -3823,9 +3823,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             initialTab = SharedMediaLayout.TAB_GROUPUSERS;
         }
         createHeaderBar(context);
-        sharedMediaLayout = new SharedMediaLayout(context, did, sharedMediaPreloader, userInfo != null ? userInfo.common_chats_count : 0,
-                sortedUsers, chatInfo, userInfo, initialTab, initialStoryAlbum, this, this,
-                SharedMediaLayout.VIEW_TYPE_PROFILE_ACTIVITY, getBaseProfileResources(), getBaseSimpleGlass().factory) {
+        sharedMediaLayout = new SharedMediaLayout(context, did, sharedMediaPreloader, userInfo != null ? userInfo.common_chats_count : 0, sortedUsers, chatInfo, userInfo, initialTab, initialStoryAlbum, this, this, SharedMediaLayout.VIEW_TYPE_PROFILE_ACTIVITY, resourcesProvider, getBaseSimpleGlass().factory) {
             @Override
             protected int processColor(int color) {
                 return dontApplyPeerColor(color, false);
@@ -6221,17 +6219,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         // only the images of the header: its texts (the name, the status) and buttons are over the glass, not under it
         iBlur3Capture = (c, p) -> {
             final ViewGroup root = (ViewGroup) fragmentView;
-            // over the media only they are under the glass: the rows above them would show through the pages' overscan
-            final boolean mediaInList = sharedMediaLayout.getParent() == listView;
-            final float mediaProgress = mediaInList ? mediaHeaderAnimationProgress : 0f;
-            final float mediaTop = mediaInList ? listView.getY() + sharedMediaLayout.getY() : Float.MAX_VALUE;
-            final int mediaBackground = Theme.getColor(Theme.key_windowBackgroundGray, getBaseProfileResources());
-            final boolean hasGiftBackground = iosGiftProfileColors != null && iosGiftProfileColors.headerFade != null;
-            final float profileBottom = Math.min(p.bottom, mediaTop);
-            if (hasGiftBackground && mediaProgress < 1f && p.top < profileBottom) {
+            if (iosGiftProfileColors != null && iosGiftProfileColors.headerFade != null) {
                 captureFillPaint.setColor(iosGiftProfileColors.background);
-                c.drawRect(p.left, p.top, p.right, profileBottom, captureFillPaint);
+                c.drawRect(p, captureFillPaint);
             }
+            // over the media only they are under the glass: the rows above them would show through the pages' overscan
+            final float mediaProgress = sharedMediaLayout != null && sharedMediaLayout.getParent() == listView ? mediaHeaderAnimationProgress : 0f;
             if (mediaProgress < 1f) {
                 if (isUnderGlass(topView, p, root)) {
                     Blur3Utils.captureRelativeParent((canvas, position) -> topView.drawForCapture(canvas), c, p, topView, root);
@@ -6242,13 +6235,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             }
             if (mediaProgress > 0f) {
                 // going over to the media: the rows above them fade into the background of the pages
-                captureFillPaint.setColor(mediaBackground);
+                final float mediaTop = mediaProgress < 1f ? listView.getY() + sharedMediaLayout.getY() : Float.MAX_VALUE;
+                captureFillPaint.setColor(getThemedColor(Theme.key_windowBackgroundGray));
                 captureFillPaint.setAlpha((int) (255 * mediaProgress));
-                c.drawRect(p.left, p.top, p.right, mediaProgress < 1f ? profileBottom : p.bottom, captureFillPaint);
-            }
-            if (hasGiftBackground && mediaProgress < 1f && mediaTop < p.bottom) {
-                captureFillPaint.setColor(mediaBackground);
-                c.drawRect(p.left, Math.max(p.top, mediaTop), p.right, p.bottom, captureFillPaint);
+                c.drawRect(p.left, p.top, p.right, Math.min(p.bottom, mediaTop), captureFillPaint);
             }
             sharedMediaLayout.capturePages(c, p, root);
             captureHeaderImage(avatarGooey, c, p, root);
@@ -6542,10 +6532,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
     private boolean usesIosUserProfile() {
         return userId != 0 && app.exteraless.appearance.AppearanceConfig.iosMode();
-    }
-
-    private Theme.ResourcesProvider getBaseProfileResources() {
-        return iosGiftProfileColors == null ? resourcesProvider : iosGiftProfileColors.base;
     }
 
     private static final class IosGiftProfileColors implements Theme.ResourcesProvider {
@@ -8687,11 +8673,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
         simpleActionBar.setButtonsGlass(buttonsGlass.headerFactory);
         simpleActionBar.setMenuGlassStroke(false);
-        final Theme.ResourcesProvider headerResources = getBaseProfileResources();
-        glass.setViews(contentView, simpleActionBar, headerResources);
+        glass.setViews(contentView, simpleActionBar, resourcesProvider);
         simpleActionBar.setMenuGlass(buttonsGlass.menuFactory, buttonsGlass.menuSource);
         simpleActionBar.setBackground(null);
-        headerMenuGlassColors = BlurredBackgroundProviderImpl.simpleActionBar(headerResources);
+        headerMenuGlassColors = BlurredBackgroundProviderImpl.simpleActionBar(resourcesProvider);
         simpleActionBar.setButtonsGlassColorProvider(headerButtonsGlassColors);
         updateHeaderButtonsColors();
         glass.setCapture(iBlur3Capture);

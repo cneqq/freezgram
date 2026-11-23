@@ -8775,8 +8775,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         setHeaderItemShown(editItem, profile && showEdit, animated);
         // the media's ⋮ takes the place of the profile's ⋮ (both the last in the pill): the same button, nothing to animate
         final boolean optionsSwap = sharedMediaLayout != null && sharedMediaLayout.hasSimpleOptions() && !sharedMediaLayout.isReordering();
-        setHeaderItemShown(otherItem, profile && !moreInProfileRow
-                && !(photo && showEdit && actionsView != null && actionsView.hasIosMoreButton()), animated && !optionsSwap);
+        final boolean standaloneEdit = usesIosUserProfile() && showEdit;
+        setHeaderItemShown(otherItem, profile && !moreInProfileRow && !standaloneEdit,
+                animated && !optionsSwap && !standaloneEdit);
         if (sharedMediaLayout != null) {
             sharedMediaLayout.setSimpleMenuItemsAllowed(mediaHeaderVisible, animated, animated && !optionsSwap);
         }
@@ -14989,7 +14990,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             detailCell.setImageClickListener(ProfileActivity.this::onTextDetailCellImageClicked);
                         }
                     } else if (containsQr) {
-                        Drawable drawable = ContextCompat.getDrawable(detailCell.getContext(), R.drawable.header_qr_24);
+                        final int icon = position == usernameRow && usesIosUserProfile()
+                                ? R.drawable.msg_qrcode_mini_solar : R.drawable.header_qr_24;
+                        Drawable drawable = ContextCompat.getDrawable(detailCell.getContext(), icon).mutate();
                         drawable.setColorFilter(new PorterDuffColorFilter(dontApplyPeerColor(getThemedColor(Theme.key_actionBarDefaultIcon), false), PorterDuff.Mode.MULTIPLY));
                         qrRowIconDrawable = drawable;
                         detailCell.setImage(drawable, LocaleController.getString(R.string.GetQRCode));

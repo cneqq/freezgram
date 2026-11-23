@@ -14016,7 +14016,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 if (currentMessageObject.isOutOwner()) {
                     // Grouped reactions belong to the bottom-left cell even though the row
                     // extends to the far edge of the outgoing album.
-                    final int right = currentPosition == null ? Math.round(photoImage.getImageX2()) : layoutWidth - dp(9);
+                    final int right = currentPosition != null && getParent() instanceof View
+                            ? ((View) getParent()).getWidth() - getLeft() - dp(9)
+                            : Math.round(photoImage.getImageX2());
                     reactionsLayoutInBubble.x = right - reactionsLayoutInBubble.width - dp(2);
                 } else {
                     reactionsLayoutInBubble.x = Math.round(photoImage.getImageX()) + dp(2);
@@ -21854,7 +21856,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             boolean restore = false;
             if (alpha * getAlpha() != 1f) {
-                AndroidUtilities.rectTmp.set(0, 0, getWidth(), getHeight());
+                final int right = usesIosMediaReactionCapsule()
+                        ? Math.max(getWidth(), reactionsLayoutInBubble.x + reactionsLayoutInBubble.width)
+                        : getWidth();
+                AndroidUtilities.rectTmp.set(0, 0, right, getHeight());
                 canvas.saveLayerAlpha(AndroidUtilities.rectTmp, (int) (0xFF * alpha * getAlpha()), Canvas.ALL_SAVE_FLAG);
                 restore = true;
             }

@@ -1527,7 +1527,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 // the pages reach up past their top by their overscan, the gap is only above it
                 final float mediaTop = listView.getY() + sharedMediaLayout.getY() - pagesOverscanTop;
                 if (mediaTop > y1) {
-                    gapPaint.setColor(getThemedColor(Theme.key_windowBackgroundGray));
+                    gapPaint.setColor(Theme.getColor(Theme.key_windowBackgroundGray, getBaseProfileResources()));
                     canvas.drawRect(0, y1, getMeasuredWidth(), Math.min(v, mediaTop), gapPaint);
                 }
             }
@@ -3823,7 +3823,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             initialTab = SharedMediaLayout.TAB_GROUPUSERS;
         }
         createHeaderBar(context);
-        sharedMediaLayout = new SharedMediaLayout(context, did, sharedMediaPreloader, userInfo != null ? userInfo.common_chats_count : 0, sortedUsers, chatInfo, userInfo, initialTab, initialStoryAlbum, this, this, SharedMediaLayout.VIEW_TYPE_PROFILE_ACTIVITY, resourcesProvider, getBaseSimpleGlass().factory) {
+        sharedMediaLayout = new SharedMediaLayout(context, did, sharedMediaPreloader, userInfo != null ? userInfo.common_chats_count : 0,
+                sortedUsers, chatInfo, userInfo, initialTab, initialStoryAlbum, this, this,
+                SharedMediaLayout.VIEW_TYPE_PROFILE_ACTIVITY, getBaseProfileResources(), getBaseSimpleGlass().factory) {
             @Override
             protected int processColor(int color) {
                 return dontApplyPeerColor(color, false);
@@ -5508,9 +5510,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
             @Override
             protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
-                if (child == nameTextView) {
-                    drawIosProfileTitleGlass(canvas);
-                }
                 float captionAlpha = 1f;
                 if (!openAnimationInProgress) {
                     if (child == onlineTextView || child == ratingView) {
@@ -6222,12 +6221,17 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         // only the images of the header: its texts (the name, the status) and buttons are over the glass, not under it
         iBlur3Capture = (c, p) -> {
             final ViewGroup root = (ViewGroup) fragmentView;
-            if (iosGiftProfileColors != null && iosGiftProfileColors.headerFade != null) {
-                captureFillPaint.setColor(iosGiftProfileColors.background);
-                c.drawRect(p, captureFillPaint);
-            }
             // over the media only they are under the glass: the rows above them would show through the pages' overscan
-            final float mediaProgress = sharedMediaLayout != null && sharedMediaLayout.getParent() == listView ? mediaHeaderAnimationProgress : 0f;
+            final boolean mediaInList = sharedMediaLayout.getParent() == listView;
+            final float mediaProgress = mediaInList ? mediaHeaderAnimationProgress : 0f;
+            final float mediaTop = mediaInList ? listView.getY() + sharedMediaLayout.getY() : Float.MAX_VALUE;
+            final int mediaBackground = Theme.getColor(Theme.key_windowBackgroundGray, getBaseProfileResources());
+            final boolean hasGiftBackground = iosGiftProfileColors != null && iosGiftProfileColors.headerFade != null;
+            final float profileBottom = Math.min(p.bottom, mediaTop);
+            if (hasGiftBackground && mediaProgress < 1f && p.top < profileBottom) {
+                captureFillPaint.setColor(iosGiftProfileColors.background);
+                c.drawRect(p.left, p.top, p.right, profileBottom, captureFillPaint);
+            }
             if (mediaProgress < 1f) {
                 if (isUnderGlass(topView, p, root)) {
                     Blur3Utils.captureRelativeParent((canvas, position) -> topView.drawForCapture(canvas), c, p, topView, root);
@@ -6238,10 +6242,13 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             }
             if (mediaProgress > 0f) {
                 // going over to the media: the rows above them fade into the background of the pages
-                final float mediaTop = mediaProgress < 1f ? listView.getY() + sharedMediaLayout.getY() : Float.MAX_VALUE;
-                captureFillPaint.setColor(getThemedColor(Theme.key_windowBackgroundGray));
+                captureFillPaint.setColor(mediaBackground);
                 captureFillPaint.setAlpha((int) (255 * mediaProgress));
-                c.drawRect(p.left, p.top, p.right, Math.min(p.bottom, mediaTop), captureFillPaint);
+                c.drawRect(p.left, p.top, p.right, mediaProgress < 1f ? profileBottom : p.bottom, captureFillPaint);
+            }
+            if (hasGiftBackground && mediaProgress < 1f && mediaTop < p.bottom) {
+                captureFillPaint.setColor(mediaBackground);
+                c.drawRect(p.left, Math.max(p.top, mediaTop), p.right, p.bottom, captureFillPaint);
             }
             sharedMediaLayout.capturePages(c, p, root);
             captureHeaderImage(avatarGooey, c, p, root);
@@ -6535,6 +6542,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
     private boolean usesIosUserProfile() {
         return userId != 0 && app.exteraless.appearance.AppearanceConfig.iosMode();
+    }
+
+    private Theme.ResourcesProvider getBaseProfileResources() {
+        return iosGiftProfileColors == null ? resourcesProvider : iosGiftProfileColors.base;
     }
 
     private static final class IosGiftProfileColors implements Theme.ResourcesProvider {
@@ -8676,15 +8687,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
         simpleActionBar.setButtonsGlass(buttonsGlass.headerFactory);
         simpleActionBar.setMenuGlassStroke(false);
-        glass.setViews(contentView, simpleActionBar, resourcesProvider);
+        final Theme.ResourcesProvider headerResources = getBaseProfileResources();
+        glass.setViews(contentView, simpleActionBar, headerResources);
         simpleActionBar.setMenuGlass(buttonsGlass.menuFactory, buttonsGlass.menuSource);
         simpleActionBar.setBackground(null);
-        headerMenuGlassColors = BlurredBackgroundProviderImpl.simpleActionBar(resourcesProvider);
+        headerMenuGlassColors = BlurredBackgroundProviderImpl.simpleActionBar(headerResources);
         simpleActionBar.setButtonsGlassColorProvider(headerButtonsGlassColors);
-        iosProfileTitleGlass = usesIosUserProfile()
-                ? buttonsGlass.headerFactory.create(avatarContainer2, headerButtonsGlassColors)
-                        .setContinuousCorners(true).setRadius(dp(16)).setPadding(dp(6))
-                : null;
         updateHeaderButtonsColors();
         glass.setCapture(iBlur3Capture);
         // under the tabs of the media, so it is in their layout, up over the header when the media reach it
@@ -8735,34 +8743,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     }
 
     private int headerBlurBaseHeight;
-    private BlurredBackgroundDrawable iosProfileTitleGlass;
-
-    private void drawIosProfileTitleGlass(Canvas canvas) {
-        if (iosProfileTitleGlass == null || simpleActionBar == null || nameTextView.getVisibility() != View.VISIBLE
-                || iosProfileHeaderExpanded || isPulledDown || searchMode || openAnimationInProgress) {
-            return;
-        }
-        float alpha = Utilities.clamp01((getHeaderSimpleFactor() - .55f) / .45f) * nameTextView.getAlpha();
-        if (alpha <= 0f) return;
-
-        int viewportWidth = avatarContainer2.getWidth();
-        float leftInset = Math.max(simpleActionBar.getBackButton().getRight(), viewportWidth - simpleActionBar.getMenuPillLeft()) + dp(8);
-        float labelsWidth = Math.max(nameTextView.getExactWidth() * nameTextView.getScaleX(),
-                onlineTextView.getExactWidth() * onlineTextView.getScaleX());
-        int width = (int) Math.min(Math.max(dp(100), labelsWidth + dp(28)), viewportWidth - 2f * leftInset);
-        if (width < dp(48)) return;
-
-        int centerY = (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0)
-                + ActionBar.getCurrentActionBarHeight() / 2 + Math.round(actionBar.getTranslationY());
-        int centerX = viewportWidth / 2;
-        int halfHeight = dp(22);
-        int padding = dp(6);
-        iosProfileTitleGlass.setBounds(centerX - width / 2 - padding, centerY - halfHeight - padding,
-                centerX + width / 2 + padding, centerY + halfHeight + padding);
-        iosProfileTitleGlass.setAlpha(Math.round(alpha * 255f));
-        iosProfileTitleGlass.updateColors();
-        iosProfileTitleGlass.draw(canvas);
-    }
 
     /**
      * The blur grows by the player above the tabs only as the media come up to the header: once they are at the top

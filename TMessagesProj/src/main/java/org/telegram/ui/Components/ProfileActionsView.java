@@ -145,8 +145,8 @@ public class ProfileActionsView extends View {
         paint.setAlpha(40);
 
         xpadding = dpf2(iosLayout ? 16 : 14);
-        ypadding = dpf2(iosLayout ? 16 : 12);
-        top = dpf2(compactIosActions ? 18 : iosLayout ? 6 : 8);
+        ypadding = dpf2(iosLayout && !compactIosActions ? 4 : iosLayout ? 16 : 12);
+        top = dpf2(iosLayout ? 18 : 8);
         textPadding = dpf2(4);
 
         this.targetHeight = (int) (targetHeight - ypadding - top);
@@ -226,7 +226,7 @@ public class ProfileActionsView extends View {
         }
         iosCoverColor = cover;
         iosDarkTheme = dark;
-        final int shade = 0x21000000;
+        final int shade = 0x19000000;
         final int highlight = dark ? 0x28ffffff : 0x42ffffff;
         final int preferred = dark ? shade : highlight;
         final int alternate = dark ? highlight : shade;
@@ -1147,7 +1147,7 @@ public class ProfileActionsView extends View {
                 cs = cs.toString().toLowerCase(org.telegram.messenger.LocaleController.getInstance().getCurrentLocale());
             }
             this.text = new Text(cs, compactIosActions ? 14 : 11,
-                    iosLayout && !compactIosActions ? app.freezgram.IosTypography.REGULAR : AndroidUtilities.bold())
+                    iosLayout && !compactIosActions ? app.freezgram.IosTypography.Profile.REGULAR : AndroidUtilities.bold())
                 .multiline(usesRoundIosActions() ? 1 : 3)
                 .align(Layout.Alignment.ALIGN_CENTER);
         }

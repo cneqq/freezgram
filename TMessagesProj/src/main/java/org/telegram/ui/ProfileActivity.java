@@ -518,7 +518,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private ActionBarMenuItem callItem;
     private ActionBarMenuItem videoCallItem;
     private ActionBarMenuItem editItem;
-    private ActionBarMenuItem iosAddContactItem;
     private ActionBarMenuItem otherItem;
     // exteraless plugins: подменю PROFILE_ACTION_MENU в меню «⋮».
     private app.exteraless.plugins.menus.MenuInjector.SwipeBackMenu pluginsMenu;
@@ -1491,8 +1490,15 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     canvas.drawRect(0, 0, getMeasuredWidth(), y1, paint);
                 }
                 if (progressToGradient > 0) {
-                    backgroundPaint.setAlpha((int) (0xFF * progressToGradient));
-                    canvas.drawRect(0, 0, getMeasuredWidth(), y1, backgroundPaint);
+                    if (iosGiftProfileColors != null && iosGiftProfileColors.coverGradient != null) {
+                        final GradientDrawable cover = iosGiftProfileColors.coverGradient;
+                        cover.setBounds(0, 0, getMeasuredWidth(), y1);
+                        cover.setAlpha(Math.round(255 * progressToGradient));
+                        cover.draw(canvas);
+                    } else {
+                        backgroundPaint.setAlpha((int) (0xFF * progressToGradient));
+                        canvas.drawRect(0, 0, getMeasuredWidth(), y1, backgroundPaint);
+                    }
                 }
                 if (hasEmoji && !capturing) {
                     final float loadedScale = emojiLoadedT.set(isEmojiLoaded());
@@ -1505,11 +1511,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         StarGiftPatterns.drawProfileAnimatedPattern(canvas, emoji, getMeasuredWidth(), maxExpand, calculateHeaderExtraDiff(), avatarContainer, 1.0f);
                         canvas.restore();
                     }
-                }
-                if (iosGiftProfileColors != null && iosGiftProfileColors.headerFade != null) {
-                    final GradientDrawable fade = iosGiftProfileColors.headerFade;
-                    fade.setBounds(0, Math.max(0, y1 - dp(112)), getMeasuredWidth(), y1);
-                    fade.draw(canvas);
                 }
                 if (previousTransitionFragment != null) {
                     ActionBar actionBar = previousTransitionFragment.getActionBar();
@@ -2724,7 +2725,13 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 } else if (id == edit_contact) {
                     Bundle args = new Bundle();
                     args.putLong("user_id", userId);
-                    presentFragment(new ContactAddActivity(args, resourcesProvider));
+                    final TLRPC.User user = getMessagesController().getUser(userId);
+                    if (usesIosUserProfile() && user != null && getContactsController().contactsDict.get(userId) == null) {
+                        args.putBoolean("addContact", true);
+                        openAddToContact(user, args);
+                    } else {
+                        presentFragment(new ContactAddActivity(args, resourcesProvider));
+                    }
                 } else if (id == delete_contact) {
                     final TLRPC.User user = getMessagesController().getUser(userId);
                     if (user == null || getParentActivity() == null) {
@@ -4172,15 +4179,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
         if (usesIosUserProfile()) {
             editItem = menu.addItem(usesIosOwnProfile() ? edit_profile : edit_contact, getString(R.string.FreezgramProfileEditShort));
-            editItem.getTextView().setTypeface(app.freezgram.IosTypography.MEDIUM);
+            editItem.getTextView().setTypeface(app.freezgram.IosTypography.Profile.MEDIUM);
             editItem.getTextView().setMaxWidth(dp(92));
             editItem.getTextView().setEllipsize(TextUtils.TruncateAt.END);
             editItem.setContentDescription(getString(R.string.Edit));
-            if (!usesIosOwnProfile()) {
-                iosAddContactItem = menu.addItem(add_contact, getString(R.string.Add));
-                iosAddContactItem.getTextView().setTypeface(app.freezgram.IosTypography.MEDIUM);
-                iosAddContactItem.setContentDescription(getString(R.string.AddContact));
-            }
         } else if (myProfile) {
             editItem = menu.addItem(edit_profile, R.drawable.group_edit_profile);
             editItem.setContentDescription(LocaleController.getString(R.string.Edit));
@@ -5878,8 +5880,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         nameTextView.setPadding(0, AndroidUtilities.dp(6), 0, AndroidUtilities.dp(4));
         nameTextView.setTextSizePx(dp(17.5f));
         nameTextView.setGravity(Gravity.LEFT);
-        nameTextView.setTypeface(app.exteraless.appearance.AppearanceConfig.iosMode()
-                ? app.freezgram.IosTypography.SEMIBOLD : AndroidUtilities.bold());
+        nameTextView.setTypeface(usesIosUserProfile() ? app.freezgram.IosTypography.Profile.SEMIBOLD
+                : app.exteraless.appearance.AppearanceConfig.iosMode() ? app.freezgram.IosTypography.SEMIBOLD : AndroidUtilities.bold());
         nameTextView.setLeftDrawableTopPadding(-AndroidUtilities.dp(1.3f));
         nameTextView.setPivotX(0);
         nameTextView.setPivotY(0);
@@ -6265,7 +6267,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         // only the images of the header: its texts (the name, the status) and buttons are over the glass, not under it
         iBlur3Capture = (c, p) -> {
             final ViewGroup root = (ViewGroup) fragmentView;
-            if (iosGiftProfileColors != null && iosGiftProfileColors.headerFade != null) {
+            if (iosGiftProfileColors != null && iosGiftProfileColors.coverGradient != null) {
                 captureFillPaint.setColor(iosGiftProfileColors.background);
                 c.drawRect(p, captureFillPaint);
             }
@@ -6599,7 +6601,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     }
 
     private int getIosProfileCoverColor() {
-        if (iosGiftProfileColors != null && iosGiftProfileColors.headerFade != null) {
+        if (iosGiftProfileColors != null && iosGiftProfileColors.coverGradient != null) {
             return iosGiftProfileColors.background;
         }
         return topView != null && topView.hasColorById ? topView.color1 : getThemedColor(Theme.key_windowBackgroundGray);
@@ -6612,7 +6614,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         private int secondary;
         private int link;
         private int divider;
-        private GradientDrawable headerFade;
+        private int coverTop;
+        private GradientDrawable coverGradient;
 
         IosGiftProfileColors(Theme.ResourcesProvider base) {
             this.base = base;
@@ -6620,24 +6623,26 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         boolean setStatus(TLRPC.EmojiStatus status) {
             if (!(status instanceof TLRPC.TL_emojiStatusCollectible)) {
-                final boolean changed = headerFade != null;
-                headerFade = null;
+                final boolean changed = coverGradient != null;
+                coverGradient = null;
                 return changed;
             }
             final TLRPC.TL_emojiStatusCollectible gift = (TLRPC.TL_emojiStatusCollectible) status;
-            final int fill = limitLuminance(gift.edge_color | 0xff000000, .32);
-            final int cardColor = limitLuminance(ColorUtils.blendARGB(fill, Color.BLACK, .18f), .18);
+            final int fill = limitLuminance(gift.edge_color | 0xff000000, .37);
+            final int top = limitLuminance(ColorUtils.blendARGB(gift.center_color | 0xff000000, Color.BLACK, .07f), .36);
+            final int cardColor = limitLuminance(ColorUtils.blendARGB(fill, Color.BLACK, .14f), .205);
             final int linkColor = ColorUtils.blendARGB(gift.text_color | 0xff000000, Color.WHITE, .99f);
-            if (headerFade != null && background == fill && card == cardColor && link == linkColor) {
+            if (coverGradient != null && background == fill && coverTop == top && card == cardColor && link == linkColor) {
                 return false;
             }
             background = fill;
+            coverTop = top;
             card = cardColor;
             link = linkColor;
             secondary = ColorUtils.blendARGB(fill, Color.WHITE, .94f);
             divider = ColorUtils.blendARGB(card, Color.WHITE, .12f);
-            headerFade = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                    new int[] {background & 0x00ffffff, background});
+            coverGradient = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[] {top, ColorUtils.blendARGB(top, fill, .65f), fill, fill});
             return true;
         }
 
@@ -6650,7 +6655,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         @Override
         public int getColor(int key) {
-            if (headerFade != null) {
+            if (coverGradient != null) {
                 if (key == Theme.key_windowBackgroundGray) {
                     return background;
                 }
@@ -6699,7 +6704,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         @Override
         public boolean isDark() {
-            return headerFade != null || (base == null ? Theme.isCurrentThemeDark() : base.isDark());
+            return coverGradient != null || (base == null ? Theme.isCurrentThemeDark() : base.isDark());
         }
 
         @Override
@@ -8755,22 +8760,21 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         // the Save button of the reordering takes the right of the header
         final boolean profile = !mediaHeaderVisible && !(sharedMediaLayout != null && sharedMediaLayout.isReordering());
         final boolean photo = isPulledDown;
+        simpleActionBar.setRowTopOffset(profile && usesIosUserProfile() && (photo || iosProfileHeaderExpanded) ? dp(14) : 0);
         final boolean moreInProfileRow = iosProfileHeaderExpanded && !photo && actionsView != null && actionsView.hasIosMoreButton();
         final boolean iosContactEdit = usesIosUserProfile() && !myProfile
                 && getContactsController().contactsDict.get(userId) != null;
-        final boolean iosEdit = usesIosOwnProfile() && editItemVisible || iosContactEdit;
+        final boolean iosEdit = usesIosOwnProfile() && editItemVisible || iosContactEdit
+                || usesIosUserProfile() && !myProfile && addToContactsRow > 0;
         setHeaderItemShown(callItem, profile && !photo && callItemVisible, animated);
         setHeaderItemShown(videoCallItem, profile && !photo && videoCallItemVisible, animated);
         final boolean showEdit = usesIosUserProfile() ? iosEdit && (photo || iosProfileHeaderExpanded)
                 : !photo && editItemVisible && !moreInProfileRow;
-        final boolean showAddContact = iosAddContactItem != null && !iosContactEdit && addToContactsRow > 0
-                && (photo || iosProfileHeaderExpanded);
         setHeaderItemShown(editItem, profile && showEdit, animated);
-        setHeaderItemShown(iosAddContactItem, profile && showAddContact, animated);
         // the media's ⋮ takes the place of the profile's ⋮ (both the last in the pill): the same button, nothing to animate
         final boolean optionsSwap = sharedMediaLayout != null && sharedMediaLayout.hasSimpleOptions() && !sharedMediaLayout.isReordering();
         setHeaderItemShown(otherItem, profile && !moreInProfileRow
-                && !(photo && (showEdit || showAddContact) && actionsView != null && actionsView.hasIosMoreButton()), animated && !optionsSwap);
+                && !(photo && showEdit && actionsView != null && actionsView.hasIosMoreButton()), animated && !optionsSwap);
         if (sharedMediaLayout != null) {
             sharedMediaLayout.setSimpleMenuItemsAllowed(mediaHeaderVisible, animated, animated && !optionsSwap);
         }
@@ -14438,6 +14442,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             return dontApplyPeerColor(color, false);
                         }
                     };
+                    if (usesIosUserProfile()) {
+                        textDetailCell.textView.setTypeface(app.freezgram.IosTypography.Profile.REGULAR);
+                        textDetailCell.valueTextView.setTypeface(app.freezgram.IosTypography.Profile.REGULAR);
+                    }
                     textDetailCell.setContentDescriptionValueFirst(true);
                     view = textDetailCell;
                     break;
@@ -14470,6 +14478,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             return dontApplyPeerColor(color, false);
                         }
                     };
+                    if (usesIosUserProfile()) {
+                        aboutLinkCell.setProfileTypeface(app.freezgram.IosTypography.Profile.REGULAR);
+                    }
                     break;
                 }
                 case VIEW_TYPE_TEXT: {

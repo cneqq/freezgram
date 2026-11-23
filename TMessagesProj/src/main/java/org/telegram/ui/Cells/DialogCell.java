@@ -193,14 +193,18 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         heightThreeLines = 82;
         avatarStart = 14;
         messagePaddingStart = 80;
+        setPreviewTypefaces(app.freezgram.IosTypography.SEMIBOLD, app.freezgram.IosTypography.REGULAR);
+        iosNamePaint.setTextSize(dp(17));
+        iosMessagePaint.setTextSize(dp(15));
+    }
+
+    public void setPreviewTypefaces(android.graphics.Typeface name, android.graphics.Typeface message) {
         iosNamePaint = new TextPaint();
         iosNamePaint.set(Theme.dialogs_namePaint[1]);
-        iosNamePaint.setTypeface(app.freezgram.IosTypography.SEMIBOLD);
-        iosNamePaint.setTextSize(dp(17));
+        iosNamePaint.setTypeface(name);
         iosMessagePaint = new TextPaint();
         iosMessagePaint.set(Theme.dialogs_messagePaint[1]);
-        iosMessagePaint.setTypeface(app.freezgram.IosTypography.REGULAR);
-        iosMessagePaint.setTextSize(dp(15));
+        iosMessagePaint.setTypeface(message);
     }
 
     private TextPaint rowNamePaint() {

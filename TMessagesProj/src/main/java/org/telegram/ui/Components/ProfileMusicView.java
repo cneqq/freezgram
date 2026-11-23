@@ -240,8 +240,8 @@ public class ProfileMusicView extends View {
 
     public void setText(CharSequence author, CharSequence title) {
         this.author = new Text(author, iosLayout ? 12 : 11,
-                iosLayout ? app.freezgram.IosTypography.SEMIBOLD : AndroidUtilities.bold());
-        this.title = new Text(title, iosLayout ? 12 : 11);
+                iosLayout ? app.freezgram.IosTypography.Profile.SEMIBOLD : AndroidUtilities.bold());
+        this.title = iosLayout ? new Text(title, 12, app.freezgram.IosTypography.Profile.REGULAR) : new Text(title, 11);
 
         setContentDescription(getString(R.string.AccDescrProfileMusic) + " " + author + title);
     }
@@ -274,7 +274,7 @@ public class ProfileMusicView extends View {
     public void updatePosition(float y, float newHeight) {
         if (trailingView != null) trailingView.updatePosition(y, newHeight);
         currentHeight = newHeight;
-        setTranslationY(iosLayout ? y + dp(5) : y - dp(12));
+        setTranslationY(iosLayout ? y + dp(17) : y - dp(12));
         invalidate();
     }
 

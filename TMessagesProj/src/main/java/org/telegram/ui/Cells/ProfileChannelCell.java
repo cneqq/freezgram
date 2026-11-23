@@ -98,10 +98,10 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
         subscribersView.setGravity(Gravity.LEFT);
         if (captionAboveCard) {
             headerView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
-            headerView.setTypeface(app.freezgram.IosTypography.MEDIUM);
+            headerView.setTypeface(app.freezgram.IosTypography.Profile.REGULAR);
             headerView.setSingleLine(true);
             headerView.setEllipsize(TextUtils.TruncateAt.END);
-            subscribersView.setTypeface(app.freezgram.IosTypography.REGULAR);
+            subscribersView.setTypeface(app.freezgram.IosTypography.Profile.REGULAR);
             subscribersView.setTextSize(dp(13));
             subscribersView.setGravity(LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT);
             subscribersView.setPadding(0, 0, 0, 0);
@@ -164,6 +164,7 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
         dialogCell.avatarStart = 15;
         dialogCell.messagePaddingStart = 83;
         if (captionAboveCard) {
+            dialogCell.setPreviewTypefaces(app.freezgram.IosTypography.Profile.SEMIBOLD, app.freezgram.IosTypography.Profile.REGULAR);
             iosPreviewCard = new FrameLayout(context);
             iosPreviewCard.addView(dialogCell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,
                     Gravity.TOP, 0, 6, 0, 6));

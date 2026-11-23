@@ -106,6 +106,7 @@ public class SimpleActionBar extends FrameLayout implements FactorAnimator.Targe
 
     private boolean occupyStatusBar = true;
     private int extraHeight;
+    private int rowTopOffset;
     private boolean animationsAllowed;
     private boolean attached;
 
@@ -517,7 +518,14 @@ public class SimpleActionBar extends FrameLayout implements FactorAnimator.Targe
     }
 
     private int getRowTop() {
-        return occupyStatusBar ? AndroidUtilities.statusBarHeight : 0;
+        return (occupyStatusBar ? AndroidUtilities.statusBarHeight : 0) + rowTopOffset;
+    }
+
+    public void setRowTopOffset(int offset) {
+        if (rowTopOffset != offset) {
+            rowTopOffset = offset;
+            requestLayout();
+        }
     }
 
     @Override

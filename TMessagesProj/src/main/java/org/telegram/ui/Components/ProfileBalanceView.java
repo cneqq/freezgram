@@ -36,7 +36,8 @@ public class ProfileBalanceView extends ProfileMusicView {
         super(context, resourcesProvider, iosLayout);
         gramIcon = context.getResources().getDrawable(R.drawable.profile_balance_gram).mutate();
         gramColorIcon = context.getResources().getDrawable(R.drawable.profile_balance_gram_color).mutate();
-        label = new Text(getString(R.string.StarsBalance) + ":", iosLayout ? 12 : 11);
+        label = iosLayout ? new Text(getString(R.string.StarsBalance) + ":", 12, app.freezgram.IosTypography.Profile.REGULAR)
+                : new Text(getString(R.string.StarsBalance) + ":", 11);
         chevronPaint.setStyle(Paint.Style.STROKE);
         chevronPaint.setStrokeCap(Paint.Cap.ROUND);
         chevronPaint.setStrokeJoin(Paint.Join.ROUND);
@@ -53,7 +54,7 @@ public class ProfileBalanceView extends ProfileMusicView {
         }
         final String formatted = balanceFormat.format(new BigDecimal(GramWallet.formatGramsBalance(nanograms, false)));
         amount = new Text(formatted, iosLayout ? 12 : 11,
-                iosLayout ? app.freezgram.IosTypography.SEMIBOLD : AndroidUtilities.bold());
+                iosLayout ? app.freezgram.IosTypography.Profile.SEMIBOLD : AndroidUtilities.bold());
         setContentDescription(getString(R.string.StarsBalance) + ": " + formatted);
         invalidate();
     }

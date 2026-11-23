@@ -44,7 +44,7 @@ import me.vkryl.core.reference.ReferenceList;
  */
 public final class ProfileButtonsGlass {
     public static int iosRimColor(int cover) {
-        return ColorUtils.blendARGB(cover | 0xff000000, Color.WHITE, .66f);
+        return ColorUtils.blendARGB(Theme.adaptHSV(cover | 0xff000000, .02f, .22f), Color.WHITE, .26f);
     }
 
     /** A diagonal highlight shared by the circular actions and the profile pills. */

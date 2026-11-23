@@ -20,6 +20,7 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
@@ -28,6 +29,7 @@ import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.StaticLayout;
+import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.style.ClickableSpan;
 import android.text.style.URLSpan;
@@ -76,6 +78,7 @@ import xyz.nextalone.nagram.NaConfig;
 public class AboutLinkCell extends FrameLayout implements Theme.Colorable {
 
     private StaticLayout textLayout;
+    private TextPaint aboutTextPaint;
     private String oldText;
     private int textX;
     private int textY;
@@ -205,11 +208,30 @@ public class AboutLinkCell extends FrameLayout implements Theme.Colorable {
         return color;
     }
 
+    public void setProfileTypeface(Typeface typeface) {
+        aboutTextPaint = new TextPaint(Theme.profile_aboutTextPaint);
+        aboutTextPaint.setTypeface(typeface);
+        valueTextView.setTypeface(typeface);
+        showMoreTextView.setTypeface(typeface);
+        updateColors();
+    }
+
+    private TextPaint getAboutTextPaint() {
+        return aboutTextPaint != null ? aboutTextPaint : Theme.profile_aboutTextPaint;
+    }
+
+    private void updateAboutTextColor() {
+        if (aboutTextPaint != null) {
+            aboutTextPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
+        }
+        getAboutTextPaint().linkColor = processColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider));
+    }
+
     private int lastRippleColor;
 
     @Override
     public void updateColors() {
-        Theme.profile_aboutTextPaint.linkColor = processColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider));
+        updateAboutTextColor();
         try {
             final int rippleColor = Theme.getColor(Theme.key_listSelector, resourcesProvider);
             if (rippleBackground != null && rippleColor != lastRippleColor) { // recoloring a RippleDrawable allocates a ColorStateList
@@ -334,7 +356,7 @@ public class AboutLinkCell extends FrameLayout implements Theme.Colorable {
         canvas.translate(0, textY = getTextTop());
 
         try {
-            Theme.profile_aboutTextPaint.linkColor = processColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider));
+            updateAboutTextColor();
             if (firstThreeLinesLayout == null || !shouldExpand) {
                 if (textLayout != null) {
                     textLayout.draw(canvas);
@@ -408,7 +430,7 @@ public class AboutLinkCell extends FrameLayout implements Theme.Colorable {
         stringBuilder = new SpannableStringBuilder(oldText);
         accessibilityText = null;
         MessageObject.addLinks(false, stringBuilder, false, false, !parseLinks);
-        Emoji.replaceEmoji(stringBuilder, Theme.profile_aboutTextPaint.getFontMetricsInt(), false);
+        Emoji.replaceEmoji(stringBuilder, getAboutTextPaint().getFontMetricsInt(), false);
         if (lastMaxWidth <= 0) {
             lastMaxWidth = AndroidUtilities.displaySize.x - dp(18 + 18);
         }
@@ -734,13 +756,13 @@ public class AboutLinkCell extends FrameLayout implements Theme.Colorable {
 
     private StaticLayout makeTextLayout(CharSequence string, int width) {
         if (Build.VERSION.SDK_INT >= 24) {
-            return StaticLayout.Builder.obtain(string, 0, string.length(), Theme.profile_aboutTextPaint, Math.max(1, width))
+            return StaticLayout.Builder.obtain(string, 0, string.length(), getAboutTextPaint(), Math.max(1, width))
                     .setBreakStrategy(StaticLayout.BREAK_STRATEGY_SIMPLE)
                     .setHyphenationFrequency(StaticLayout.HYPHENATION_FREQUENCY_NONE)
                     .setAlignment(LocaleController.isRTL ? StaticLayoutEx.ALIGN_RIGHT() : StaticLayoutEx.ALIGN_LEFT())
                     .build();
         } else {
-            return new StaticLayout(string, Theme.profile_aboutTextPaint, width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+            return new StaticLayout(string, getAboutTextPaint(), width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
         }
     }
 

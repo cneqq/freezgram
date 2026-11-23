@@ -25,6 +25,8 @@ import android.graphics.ColorFilter;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.CornerPathEffect;
+import android.graphics.LinearGradient;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathEffect;
@@ -32,6 +34,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.Layout;
@@ -3377,13 +3380,21 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             canvas.scale(S, S, giftButtonRect.centerX(), giftButtonRect.centerY());
 
             if (giftPremiumButtonLayout != null) {
-                Paint backgroundPaint = getThemedPaint(Theme.key_paint_chatActionBackgroundSelected);
-                canvas.drawRoundRect(giftButtonRect, dp(15), dp(15), backgroundPaint);
-                if (hasGradientService()) {
-                    canvas.drawRoundRect(giftButtonRect, dp(15), dp(15), getThemedPaint(Theme.key_paint_chatActionBackgroundDarken));
+                final boolean iosGift = usesIosOrdinaryGiftCard(currentMessageObject);
+                final float buttonRadius = iosGift ? giftButtonRect.height() / 2f : dp(15);
+                if (iosGift) {
+                    iosGiftPaint.setShader(null);
+                    iosGiftPaint.setColor(Theme.multAlpha(getThemedColor(Theme.key_chat_serviceText), .16f));
+                    canvas.drawRoundRect(giftButtonRect, buttonRadius, buttonRadius, iosGiftPaint);
+                } else {
+                    Paint backgroundPaint = getThemedPaint(Theme.key_paint_chatActionBackgroundSelected);
+                    canvas.drawRoundRect(giftButtonRect, buttonRadius, buttonRadius, backgroundPaint);
+                    if (hasGradientService()) {
+                        canvas.drawRoundRect(giftButtonRect, buttonRadius, buttonRadius, getThemedPaint(Theme.key_paint_chatActionBackgroundDarken));
+                    }
                 }
                 if (dimAmount > 0) {
-                    canvas.drawRoundRect(giftButtonRect, dp(15), dp(15), dimPaint);
+                    canvas.drawRoundRect(giftButtonRect, buttonRadius, buttonRadius, dimPaint);
                 }
 
                 if (getMessageObject().type == MessageObject.TYPE_GIFT_THEME_UPDATE || getMessageObject().type == MessageObject.TYPE_COMMUNITY_CHANGED || getMessageObject().type == MessageObject.TYPE_GIFT_OFFER) {
@@ -3396,7 +3407,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
 
                 if (getMessageObject().type != MessageObject.TYPE_GIFT_THEME_UPDATE && getMessageObject().type != MessageObject.TYPE_COMMUNITY_CHANGED&& getMessageObject().type != MessageObject.TYPE_GIFT_OFFER && getMessageObject().type != MessageObject.TYPE_SUGGEST_PHOTO && getMessageObject().type != MessageObject.TYPE_ACTION_WALLPAPER && getMessageObject().type != MessageObject.TYPE_STORY_MENTION) {
                     starsPath.rewind();
-                    starsPath.addRoundRect(giftButtonRect, dp(16), dp(16), Path.Direction.CW);
+                    starsPath.addRoundRect(giftButtonRect, iosGift ? buttonRadius : dp(16), iosGift ? buttonRadius : dp(16), Path.Direction.CW);
                     canvas.save();
                     canvas.clipPath(starsPath);
 
@@ -3893,7 +3904,13 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             backgroundRect.set(AndroidUtilities.rectTmp);
 
             final float radius = dp(usesIosOrdinaryGiftCard(messageObject) ? 24 : 20);
-            if (!drawServiceGlass(canvas, null, backgroundRect, radius, true, fromParent)) {
+            final boolean drewGiftSurface = drawServiceGlass(canvas, null, backgroundRect, radius, true, fromParent);
+            final int giftStyle = app.freezgram.GiftGlassStyle.style();
+            if (usesIosOrdinaryGiftCard(messageObject) && overrideBackground < 0
+                    && (giftStyle == app.freezgram.GiftGlassStyle.GLASS
+                    || giftStyle == app.freezgram.GiftGlassStyle.ORDINARY && !app.freezgram.GiftGlassStyle.customOrdinary())) {
+                drawIosGiftFill(canvas, backgroundRect, radius, drewGiftSurface);
+            } else if (!drewGiftSurface) {
                 boolean backgroundDrawn = false;
                 if (messageObject != null && (messageObject.type == MessageObject.TYPE_GIFT_OFFER || messageObject.type == MessageObject.TYPE_SHARING_OFFER)) {
                     if (botInlineButtons != null) {
@@ -3929,6 +3946,33 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
         return app.exteraless.appearance.AppearanceConfig.iosMode()
                 && messageObject != null && messageObject.messageOwner != null
                 && messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGift;
+    }
+
+    private final Paint iosGiftPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Matrix iosGiftGradientMatrix = new Matrix();
+    private LinearGradient iosGiftGradient;
+    private int iosGiftGradientBase;
+    private int iosGiftGradientAccent;
+
+    private void drawIosGiftFill(Canvas canvas, RectF bounds, float radius, boolean overGlass) {
+        final boolean lightText = ColorUtils.calculateLuminance(getThemedColor(Theme.key_chat_serviceText)) > .5;
+        final int base = getThemedColor(lightText ? Theme.key_actionBarDefaultSubmenuBackground : Theme.key_windowBackgroundWhite);
+        final int readableBase = ColorUtils.blendARGB(lightText ? 0xff1b1b23 : 0xfff5f2fa, base | 0xff000000, .38f);
+        final int accent = getThemedColor(Theme.key_chat_messageLinkIn) | 0xff000000;
+        if (iosGiftGradient == null || readableBase != iosGiftGradientBase || accent != iosGiftGradientAccent) {
+            iosGiftGradientBase = readableBase;
+            iosGiftGradientAccent = accent;
+            iosGiftGradient = new LinearGradient(0, 0, 1, 1,
+                    ColorUtils.blendARGB(readableBase, 0xff885367, .18f),
+                    ColorUtils.blendARGB(readableBase, accent, .10f), Shader.TileMode.CLAMP);
+        }
+        iosGiftGradientMatrix.setScale(bounds.width(), bounds.height());
+        iosGiftGradientMatrix.postTranslate(bounds.left, bounds.top);
+        iosGiftGradient.setLocalMatrix(iosGiftGradientMatrix);
+        iosGiftPaint.setShader(iosGiftGradient);
+        iosGiftPaint.setAlpha(overGlass ? 195 : 255);
+        final float cardRadius = app.freezgram.GiftGlassStyle.cornerRadius(radius);
+        canvas.drawRoundRect(bounds, cardRadius, cardRadius, iosGiftPaint);
     }
 
     private final Path backgroundPath2 = new Path();

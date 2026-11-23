@@ -11,7 +11,7 @@ import org.telegram.messenger.FileLog;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Outline;
+import android.graphics.Path;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.drawable.ColorDrawable;
@@ -25,7 +25,6 @@ import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
-import android.view.ViewOutlineProvider;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -359,14 +358,6 @@ public class SendGiftSheet extends BottomSheetWithRecyclerListView implements No
 
         chatView.addView(chatLinearLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL));
         if (iosGiftLayout) {
-            chatView.setOutlineProvider(new ViewOutlineProvider() {
-                @Override
-                public void getOutline(View view, Outline outline) {
-                    final int radius = dp(30);
-                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight() + radius, radius);
-                }
-            });
-            chatView.setClipToOutline(true);
             final ImageView close = new ImageView(context);
             close.setScaleType(ImageView.ScaleType.CENTER);
             close.setImageResource(R.drawable.freezgram_ios_close);
@@ -585,9 +576,12 @@ public class SendGiftSheet extends BottomSheetWithRecyclerListView implements No
         adapter.update(false);
         layoutManager.scrollToPositionWithOffset(adapter.getItemCount(), dp(200));
 
-        recyclerListView.setPadding(backgroundPaddingLeft, 0, backgroundPaddingLeft, dp(48 + 10 + 10 + (starGift != null && starGift.limited && limitContainerWrapper == null ? 30 + 10 : 0)));
+        recyclerListView.setPadding(backgroundPaddingLeft, 0, backgroundPaddingLeft, dp((iosGiftLayout ? 50 : 48) + 10 + 10 + (starGift != null && starGift.limited && limitContainerWrapper == null ? 30 + 10 : 0)));
         recyclerListView.addItemDecoration(new RecyclerView.ItemDecoration() {
             final PointF p = new PointF();
+            final Path wallpaperClip = new Path();
+            final float corner = dp(28);
+            final float[] wallpaperCorners = {corner, corner, corner, corner, 0, 0, 0, 0};
 
             @Override
             public void onDraw(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
@@ -606,11 +600,17 @@ public class SendGiftSheet extends BottomSheetWithRecyclerListView implements No
                     bottom = Math.max(bottom, p.y + messageEdit.getMeasuredHeight() + dp(12));
                 }
 
-                if (top < bottom && chatView.backgroundView != null) {
-                    final float s = (float) (bottom - top) / chatView.backgroundView.getHeight();
+                if (top < bottom && chatView.backgroundView != null && chatView.backgroundView.getHeight() > 0) {
+                    final float s = (bottom - top) / chatView.backgroundView.getHeight();
                     c.save();
                     // only within the chat preview: in landscape the scaled background is wider than the sheet
-                    c.clipRect(left, top, right, bottom);
+                    if (iosGiftLayout) {
+                        wallpaperClip.rewind();
+                        wallpaperClip.addRoundRect(left, top, right, bottom, wallpaperCorners, Path.Direction.CW);
+                        c.clipPath(wallpaperClip);
+                    } else {
+                        c.clipRect(left, top, right, bottom);
+                    }
                     c.translate(left, top);
                     c.scale(s, s);
                     chatView.backgroundView.draw(c);
@@ -1019,7 +1019,7 @@ public class SendGiftSheet extends BottomSheetWithRecyclerListView implements No
             } else {
                 items.add(UItem.asShadow(-5, null));
             }
-            items.add(privacyCard != null ? UItem.asCustom(-7, privacyCard)
+            items.add(privacyCard != null ? UItem.asCustom(-70, privacyCard)
                     : UItem.asCheck(1, getString(self ? R.string.Gift2HideSelf : R.string.Gift2Hide)).setChecked(anonymous));
             items.add(UItem.asShadow(-6, self ? getString(R.string.Gift2HideSelfInfo) : dialogId < 0 ? getString(R.string.Gift2HideChannelInfo) : formatString(R.string.Gift2HideInfo, name)));
 

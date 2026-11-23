@@ -2125,6 +2125,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
         private void useIosGiftControls() {
             iosGiftControls = true;
+            titleView[PAGE_INFO].setTextSize(TypedValue.COMPLEX_UNIT_DIP, 22);
             closeView.setLayoutParams(LayoutHelper.createFrame(44, 44, Gravity.START | Gravity.TOP, 16, 14, 16, 0));
             closeView.setScaleType(ImageView.ScaleType.CENTER);
             closeView.setImageResource(R.drawable.freezgram_ios_close);
@@ -2638,7 +2639,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             if (gift instanceof TL_stars.TL_starGiftUnique) {
                 backdrop[page] = findAttribute(gift.attributes, TL_stars.starGiftAttributeBackdrop.class);
                 setPattern(page, findAttribute(gift.attributes, TL_stars.starGiftAttributePattern.class), false);
-                subtitleView[page].setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
+                subtitleView[page].setTextSize(TypedValue.COMPLEX_UNIT_DIP, iosGiftControls ? 14 : 13);
                 buttonsLayout.setVisibility(withButtons ? View.VISIBLE : View.GONE);
                 buttons[2].setVisibility(View.VISIBLE);
                 if (withButtons) {
@@ -2698,7 +2699,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             } else {
                 backdrop[page] = null;
                 setPattern(page, null, false);
-                subtitleView[page].setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+                subtitleView[page].setTextSize(TypedValue.COMPLEX_UNIT_DIP, iosGiftControls ? 15 : 14);
                 hasRibbon = false;
                 buttonsLayout.setVisibility(View.GONE);
             }

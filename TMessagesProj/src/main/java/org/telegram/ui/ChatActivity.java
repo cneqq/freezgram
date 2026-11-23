@@ -34303,8 +34303,14 @@ public class ChatActivity extends BaseFragment implements
             // Гейт тот же, что в exteraGram: настройка + доступный блюр.
             // Флаг выключен или блюр недоступен -> ниже ничего не меняется, popup остаётся прежним.
             final boolean glassMenu = GlassMenuHelper.isEnabled(currentAccount, themeDelegate);
+            final boolean iosGiftMenu = app.exteraless.appearance.AppearanceConfig.iosMode()
+                    && selectedObject != null && selectedObject.isStarGiftAction();
             if (glassMenu) {
-                GlassMenuHelper.applyToPopup(scrimBlur3Factory, themeDelegate, popupLayout);
+                if (iosGiftMenu) {
+                    popupLayout.setBackground(GlassMenuHelper.createPanelBackground(scrimBlur3Factory, themeDelegate, popupLayout).setRadius(dp(25)));
+                } else {
+                    GlassMenuHelper.applyToPopup(scrimBlur3Factory, themeDelegate, popupLayout);
+                }
             }
             MessageSeenView messageSeenView = null;
 
@@ -34313,7 +34319,7 @@ public class ChatActivity extends BaseFragment implements
             if (!glassMenu) {
                 popupLayout.setBackground(scrimBlur3Factory.create(popupLayout, true)
                     .setColorProvider(BlurredBackgroundProviderImpl.messageMenuBackground(resourceProvider))
-                    .setRadius(dp(12))
+                    .setRadius(dp(iosGiftMenu ? 25 : 12))
                     .setPadding(dp(8)));
             }
 

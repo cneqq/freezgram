@@ -44,4 +44,10 @@
     <string name="FreezgramUnreadCountersGlass">Счётчики непрочитанных: стекло</string>
     <string name="FreezgramMessageDecorationsGlass">Ответы и время на стикерах: стекло</string>
     <string name="FreezgramIosChatListEdit">Изм.</string>
+    <string name="FreezgramIosEditPhoto">Изменить фотографию</string>
+    <string name="FreezgramIosEditNameInfo">Укажите имя и, если хотите, добавьте фотографию для Вашего профиля.</string>
+    <string name="FreezgramIosEditPhone">Номер</string>
+    <string name="FreezgramIosEditColors">Персональные цвета</string>
+    <string name="FreezgramIosEditChannel">Канал</string>
+    <string name="FreezgramIosEditAutomationOff">Выкл.</string>
 </resources>

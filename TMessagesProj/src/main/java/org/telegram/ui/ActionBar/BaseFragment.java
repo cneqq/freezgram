@@ -316,7 +316,7 @@ public abstract class BaseFragment {
             if (useFadeDrawableForActionBar() && header != null) {
                 header.setBackground(simpleGlass.createActionBarFadeDrawable(header));
             }
-            BaseFragmentSimpleGlass.setListViewParams(listViewForSimpleGlass, mSystemInsets.top, mSystemInsets.bottom, ActionBar.getCurrentActionBarHeight(), 0);
+            BaseFragmentSimpleGlass.setListViewParams(listViewForSimpleGlass, mSystemInsets.top, mSystemInsets.bottom, getSimpleGlassListHeaderHeight(), 0);
 
             if (drawEdgeNavigationBar()) {
                 navigationBarFadeView = new View(context);
@@ -333,6 +333,10 @@ public abstract class BaseFragment {
 
     protected boolean useFadeDrawableForActionBar() {
         return true;
+    }
+
+    protected int getSimpleGlassListHeaderHeight() {
+        return ActionBar.getCurrentActionBarHeight();
     }
 
     @CallSuper
@@ -1687,7 +1691,7 @@ public abstract class BaseFragment {
         final Insets insets = AndroidUtilities.getDefaultWindowInsets(windowInsets, false);
         mSystemInsets = insets;
         if (listViewForSimpleGlass != null) {
-            BaseFragmentSimpleGlass.setListViewParams(listViewForSimpleGlass, mSystemInsets.top, mSystemInsets.bottom, ActionBar.getCurrentActionBarHeight(), 0);
+            BaseFragmentSimpleGlass.setListViewParams(listViewForSimpleGlass, mSystemInsets.top, mSystemInsets.bottom, getSimpleGlassListHeaderHeight(), 0);
         }
         if (navigationBarFadeView != null) {
             final int visibility = mSystemInsets.bottom >= dp(40) ? View.VISIBLE : View.GONE;

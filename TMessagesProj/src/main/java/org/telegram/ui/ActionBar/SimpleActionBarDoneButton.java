@@ -22,7 +22,6 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.R;
 import org.telegram.ui.Components.CircularProgressDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
-import org.telegram.utils.settings.SharedSettings;
 
 import me.vkryl.android.animator.BoolAnimator;
 import me.vkryl.android.animator.FactorAnimator;
@@ -68,12 +67,12 @@ public class SimpleActionBarDoneButton extends View implements FactorAnimator.Ta
 
     private int accentColor, inactiveColor, contentColor, glassContentColor;
 
-    SimpleActionBarDoneButton(Context context, SimpleActionBar bar, int id, CharSequence text) {
+    SimpleActionBarDoneButton(Context context, SimpleActionBar bar, int id, CharSequence text, Style style, Shape shape) {
         super(context);
         this.parentBar = bar;
         this.id = id;
-        this.style = SharedSettings.headerDoneButtonStyle.get();
-        this.shape = SharedSettings.headerDoneButtonShape.get();
+        this.style = style;
+        this.shape = shape;
         this.text = text;
 
         checkDrawable = ContextCompat.getDrawable(context, R.drawable.ic_ab_done).mutate();

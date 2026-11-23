@@ -1,5 +1,7 @@
 package org.telegram.ui.ActionBar;
 
+import org.telegram.utils.settings.SharedSettings;
+
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.lerp;
 
@@ -892,8 +894,13 @@ public class SimpleActionBar extends FrameLayout implements FactorAnimator.Targe
      * A click on an active button calls the menu listener with {@code id}.
      */
     public SimpleActionBarDoneButton createDoneButton(int id, CharSequence text) {
+        return createDoneButton(id, text, SharedSettings.headerDoneButtonStyle.get(), SharedSettings.headerDoneButtonShape.get());
+    }
+
+    public SimpleActionBarDoneButton createDoneButton(int id, CharSequence text,
+                                                    SimpleActionBarDoneButton.Style style, SimpleActionBarDoneButton.Shape shape) {
         if (doneButton == null) {
-            doneButton = new SimpleActionBarDoneButton(getContext(), this, id, text);
+            doneButton = new SimpleActionBarDoneButton(getContext(), this, id, text, style, shape);
             addView(doneButton, indexOfChild(backButton), LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 46, Gravity.TOP | Gravity.RIGHT));
             applyFactors();
         }

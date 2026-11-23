@@ -44,4 +44,10 @@
     <string name="FreezgramUnreadCountersGlass">Unread counters: glass</string>
     <string name="FreezgramMessageDecorationsGlass">Replies and sticker timestamps: glass</string>
     <string name="FreezgramIosChatListEdit">Edit</string>
+    <string name="FreezgramIosEditPhoto">Change Photo</string>
+    <string name="FreezgramIosEditNameInfo">Enter your name and add a profile photo if you like.</string>
+    <string name="FreezgramIosEditPhone">Phone</string>
+    <string name="FreezgramIosEditColors">Personal Colors</string>
+    <string name="FreezgramIosEditChannel">Channel</string>
+    <string name="FreezgramIosEditAutomationOff">Off</string>
 </resources>

@@ -9,6 +9,7 @@ import static org.telegram.ui.Cells.TextCell.applyNewSpan;
 import static org.telegram.ui.Components.Premium.LimitReachedBottomSheet.TYPE_ACCOUNTS;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
@@ -16,6 +17,7 @@ import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -33,6 +35,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
+import org.telegram.messenger.utils.PhotoUtilities;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -49,8 +52,11 @@ import org.telegram.ui.Business.LocationActivity;
 import org.telegram.ui.Business.OpeningHoursActivity;
 import org.telegram.ui.Cells.EditTextCell;
 import org.telegram.ui.Components.AlertsCreator;
+import org.telegram.ui.Components.AvatarDrawable;
+import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.IconBackgroundColors;
+import org.telegram.ui.Components.ImageUpdater;
 import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
@@ -65,10 +71,17 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Objects;
 
+import app.exteraless.appearance.AppearanceConfig;
+import app.freezgram.IosTypography;
 import tw.nekomimi.nekogram.helpers.PasscodeHelper;
 
 public class UserInfoActivity extends UniversalFragment implements NotificationCenter.NotificationCenterDelegate {
 
+    private final boolean iosLayout = AppearanceConfig.iosMode();
+    private View photoHeader;
+    private BackupImageView profileAvatar;
+    private ImageUpdater photoUpdater;
+    private boolean photoUpdating;
     private EditTextCell firstNameEdit;
     private EditTextCell lastNameEdit;
     private EditTextCell bioEdit;
@@ -81,7 +94,7 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
 
     @Override
     protected CharSequence getTitle() {
-        return getString(R.string.EditAccountInfo2);
+        return iosLayout ? "" : getString(R.string.EditAccountInfo2);
     }
 
     private static final int done_button = 1;
@@ -107,7 +120,10 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
         getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
         getNotificationCenter().removeObserver(this, NotificationCenter.updatedChatbot);
         super.onFragmentDestroy();
-        if (!wasSaved) {
+        if (photoUpdater != null) {
+            photoUpdater.clear();
+        }
+        if (!iosLayout && !wasSaved && doneButton != null) {
             processDone(false);
         }
     }
@@ -251,16 +267,29 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
                 updateBioInfo();
             }
         };
-        bioEdit.setShowLimitWhenEmpty(true);
+        bioEdit.setShowLimitWhenEmpty(!iosLayout);
+        if (iosLayout) {
+            for (EditTextCell cell : new EditTextCell[]{firstNameEdit, lastNameEdit, bioEdit}) {
+                cell.editText.setTypeface(IosTypography.REGULAR);
+                cell.editText.setIncludeFontPadding(false);
+                cell.editText.setMinHeight(dp(50));
+            }
+            bioEdit.setShowLimitWhenNear(24);
+            photoHeader = createPhotoHeader(context);
+        }
         updateBioInfo();
         bioInfo = AndroidUtilities.replaceSingleTag(getString(R.string.EditProfileBioInfo2), this::openBioSettings);
 
         super.createView(context);
         this.listView = super.listView;
-        listView.setSections();
+        if (iosLayout) {
+            listView.setSections(dp(16), dp(22), false);
+        } else {
+            listView.setSections();
+        }
         listView.setSectionsDrawBackground(true);
         listView.setClipToPadding(false);
-        if (parentLayout != null && parentLayout.isRightLayout()) {
+        if (iosLayout || parentLayout != null && parentLayout.isRightLayout()) {
             simpleActionBar.setBackButtonImage(R.drawable.ic_ab_close);
         }
 
@@ -276,7 +305,10 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
             }
             }
         });
-        doneButton = simpleActionBar.createDoneButton(done_button, LocaleController.getString(R.string.Save));
+        doneButton = iosLayout
+                ? simpleActionBar.createDoneButton(done_button, getString(R.string.Save),
+                        SimpleActionBarDoneButton.Style.ACCENT, SimpleActionBarDoneButton.Shape.ICON)
+                : simpleActionBar.createDoneButton(done_button, getString(R.string.Save));
         checkDone(false);
 
         setValue();
@@ -284,9 +316,157 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
         return fragmentView;
     }
 
+    private View createPhotoHeader(Context context) {
+        FrameLayout header = new FrameLayout(context);
+        profileAvatar = new BackupImageView(context);
+        profileAvatar.setRoundRadius(dp(56));
+        header.addView(profileAvatar, LayoutHelper.createFrame(112, 112, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 3, 0, 0));
+        updateProfileAvatar();
+
+        TextView editPhoto = new TextView(context);
+        editPhoto.setText(getString(R.string.FreezgramIosEditPhoto));
+        editPhoto.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
+        editPhoto.setTypeface(IosTypography.REGULAR);
+        editPhoto.setGravity(Gravity.CENTER);
+        ThemeBind.textColor(editPhoto, Theme.key_windowBackgroundWhiteBlueText, resourceProvider);
+        header.addView(editPhoto, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 44, Gravity.BOTTOM, 16, 0, 16, 0));
+        editPhoto.setOnClickListener(v -> openProfilePhoto());
+        return header;
+    }
+
+    private void updateProfileAvatar() {
+        final TLRPC.User user = getUserConfig().getCurrentUser();
+        if (profileAvatar == null || user == null) return;
+        AvatarDrawable avatar = new AvatarDrawable();
+        avatar.setInfo(currentAccount, user);
+        profileAvatar.setForUserOrChat(user, avatar);
+    }
+
+    private void openProfilePhoto() {
+        final TLRPC.User user = getUserConfig().getCurrentUser();
+        if (user == null || photoUpdating || getParentActivity() == null
+                || (photoUpdater != null && photoUpdater.isUploadingImage())) return;
+        if (getMessagesController().isFrozen()) {
+            AccountFrozenAlert.show(currentAccount);
+            return;
+        }
+        AndroidUtilities.hideKeyboard(fragmentView.findFocus());
+        if (photoUpdater == null) {
+            photoUpdater = new ImageUpdater(true, ImageUpdater.FOR_TYPE_USER, true);
+            photoUpdater.parentFragment = this;
+            photoUpdater.setOpenWithFrontfaceCamera(true);
+            photoUpdater.setDelegate(new ImageUpdater.ImageUpdaterDelegate() {
+                @Override
+                public void didUploadFailed() {
+                    AndroidUtilities.runOnUIThread(() -> finishPhotoUpdate(false));
+                }
+
+                @Override
+                public void didUploadPhoto(TLRPC.InputFile photo, TLRPC.InputFile video, double timestamp,
+                        String videoPath, TLRPC.PhotoSize big, TLRPC.PhotoSize small, boolean isVideo, TLRPC.VideoSize markup) {
+                    if (photo == null && video == null && markup == null) return;
+                    AndroidUtilities.runOnUIThread(() -> uploadProfilePhoto(photo, video, timestamp, markup));
+                }
+            });
+        }
+        photoUpdater.openMenu(UserObject.hasPhoto(user), () -> getMessagesController().deleteUserPhoto(null), null, 0);
+    }
+
+    private void uploadProfilePhoto(TLRPC.InputFile photo, TLRPC.InputFile video, double timestamp, TLRPC.VideoSize markup) {
+        photoUpdating = true;
+        final TLRPC.TL_photos_uploadProfilePhoto request = new TLRPC.TL_photos_uploadProfilePhoto();
+        if (photo != null) {
+            request.file = photo;
+            request.flags |= 1;
+        }
+        if (video != null) {
+            request.video = video;
+            request.video_start_ts = timestamp;
+            request.flags |= 2 | 4;
+        }
+        if (markup != null) {
+            request.video_emoji_markup = markup;
+            request.flags |= 16;
+        }
+        getConnectionsManager().sendRequest(request, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+            final TLRPC.User user = getUserConfig().getCurrentUser();
+            if (!(response instanceof TLRPC.TL_photos_photo result) || result.photo == null || user == null) {
+                finishPhotoUpdate(false);
+                return;
+            }
+            getMessagesController().putUsers(result.users, false);
+            PhotoUtilities.applyPhotoToUser(result.photo, user, false);
+            getMessagesController().putUser(user, false);
+            getMessagesController().getDialogPhotos(user.id).addPhotoAtStart(result.photo);
+            getMessagesStorage().putUsersAndChats(new ArrayList<>(Collections.singletonList(user)), null, false, true);
+            TLRPC.UserFull full = getMessagesController().getUserFull(user.id);
+            if (full != null) {
+                full.profile_photo = result.photo;
+                getMessagesStorage().updateUserInfo(full, false);
+            }
+            getUserConfig().setCurrentUser(user);
+            getUserConfig().saveConfig(true);
+            finishPhotoUpdate(true);
+            getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_ALL);
+            getNotificationCenter().postNotificationName(NotificationCenter.mainUserInfoChanged);
+        }));
+    }
+
+    private void finishPhotoUpdate(boolean success) {
+        photoUpdating = false;
+        if (!success && getParentActivity() != null && fragmentView != null && fragmentView.isAttachedToWindow()) {
+            BulletinFactory.of(this).createErrorBulletin(getString(R.string.ErrorOccurred)).show();
+        }
+    }
+
+    @Override
+    public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
+        super.onActivityResultFragment(requestCode, resultCode, data);
+        if (photoUpdater != null) photoUpdater.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
+    public void onRequestPermissionsResultFragment(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResultFragment(requestCode, permissions, grantResults);
+        if (photoUpdater != null) photoUpdater.onRequestPermissionsResultFragment(requestCode, permissions, grantResults);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (photoUpdater != null) photoUpdater.onPause();
+    }
+
+    @Override
+    public boolean onBackPressed(boolean invoked) {
+        if (!super.onBackPressed(invoked)) return false;
+        if (!iosLayout || doneButton == null) return true;
+        if (doneButton.isLoading()) return false;
+        if (!valueSet || !hasChanges()) return true;
+        if (invoked && getContext() != null) {
+            showDialog(new AlertDialog.Builder(getContext(), resourceProvider)
+                    .setTitle(getString(R.string.DiscardChanges))
+                    .setMessage(getString(R.string.PhotoEditorDiscardAlert))
+                    .setNegativeButton(getString(R.string.Cancel), null)
+                    .setPositiveButton(getString(R.string.Discard), (dialog, which) -> finishFragment())
+                    .create());
+        }
+        return false;
+    }
+
     @Override
     protected RecyclerListView getListViewForSimpleGlass() {
         return listView;
+    }
+
+    @Override
+    protected int getSimpleGlassListHeaderHeight() {
+        return iosLayout ? dp(8) : super.getSimpleGlassListHeaderHeight();
+    }
+
+    @Override
+    protected boolean useFadeDrawableForActionBar() {
+        return !iosLayout && super.useFadeDrawableForActionBar();
     }
 
     private static final int BUTTON_BIRTHDAY = 1;
@@ -300,6 +480,7 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
     private static final int INFO_BIRTHDAY = 9;
     private static final int BUTTON_ADD_ACCOUNT = 10;
     private static final int BUTTON_LOGOUT = 11;
+    private static final int BUTTON_COLORS = 12;
 
     private final ArrayList<Integer> accountNumbers = new ArrayList<>();
     private void updateAccounts() {
@@ -347,30 +528,29 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
         numberRow = -1;
         updateAccounts();
 
-        items.add(UItem.asHeader(getString(R.string.EditProfileName)));
+        if (iosLayout) {
+            items.add(UItem.asCustomShadow(photoHeader, 164));
+        } else {
+            items.add(UItem.asHeader(getString(R.string.EditProfileName)));
+        }
         firstNameRow = items.size();
         items.add(UItem.asCustom(firstNameEdit));
         lastNameRow = items.size();
         items.add(UItem.asCustom(lastNameEdit));
-        items.add(UItem.asShadow(-1, null));
+        items.add(UItem.asShadow(-1, iosLayout ? getString(R.string.FreezgramIosEditNameInfo) : null));
         bioRow = items.size();
         items.add(UItem.asCustom(bioEdit));
         items.add(UItem.asShadow(bioInfo));
 
         final TLRPC.User user = getUserConfig().getCurrentUser();
-        items.add(UItem.asHeader(getString(R.string.EditAccountInfoHeader)));
-        if (user != null) {
-            numberRow = items.size();
-            items.add(SettingsActivity.SettingCell.Factory.of(INFO_PHONE, IconBackgroundColors.GREEN.top, IconBackgroundColors.GREEN.bottom, R.drawable.settings_calls, PhoneFormat.getInstance().format("+" + user.phone), getString(R.string.TapToChangePhone)));
-        }
-        usernameRow = items.size();
-        if (UserObject.getPublicUsername(user) != null) {
-            items.add(SettingsActivity.SettingCell.Factory.of(INFO_USERNAME, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.filled_chatlist_mention, "@" + UserObject.getPublicUsername(user), getString(R.string.Username)));
-        } else {
-            items.add(SettingsActivity.SettingCell.Factory.of(INFO_USERNAME, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.filled_chatlist_mention, getString(R.string.AddUsername), null));
-        }
+        if (!iosLayout) addAccountContactRows(items, user);
         birthdayRow = items.size();
-        if (birthday != null) {
+        if (iosLayout) {
+            items.add(SettingsActivity.SettingCell.Factory.of(INFO_BIRTHDAY,
+                    IconBackgroundColors.BLUE.top, IconBackgroundColors.BLUE.bottom, R.drawable.filled_birthday,
+                    getString(R.string.ContactBirthday), null,
+                    birthday == null ? getString(R.string.EditProfileChannelAdd) : birthdayString(birthday)));
+        } else if (birthday != null) {
             items.add(SettingsActivity.SettingCell.Factory.of(INFO_BIRTHDAY, IconBackgroundColors.BLUE.top, IconBackgroundColors.BLUE.bottom, R.drawable.filled_birthday, birthdayString(birthday), getString(R.string.ContactBirthday)));
         } else {
             items.add(SettingsActivity.SettingCell.Factory.of(INFO_BIRTHDAY, IconBackgroundColors.BLUE.top, IconBackgroundColors.BLUE.bottom, R.drawable.filled_birthday, getString(R.string.AddBirthday), null));
@@ -397,11 +577,17 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
         }
         items.add(UItem.asShadow(birthdayInfo));
 
+        if (iosLayout) {
+            addAccountContactRows(items, user);
+            items.add(SettingsActivity.SettingCell.Factory.of(BUTTON_COLORS,
+                    IconBackgroundColors.CYAN.top, IconBackgroundColors.CYAN.bottom,
+                    R.drawable.msg_colors_solar, getString(R.string.FreezgramIosEditColors)));
+        }
         channelRow = items.size();
         if (channel == null) {
-            items.add(SettingsActivity.SettingCell.Factory.of(BUTTON_CHANNEL, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.msg_filled_menu_channels, getString(R.string.EditProfileChannelTitle), null, getString(R.string.EditProfileChannelAdd)));
+            items.add(SettingsActivity.SettingCell.Factory.of(BUTTON_CHANNEL, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.msg_filled_menu_channels, getString(iosLayout ? R.string.FreezgramIosEditChannel : R.string.EditProfileChannelTitle), null, getString(R.string.EditProfileChannelAdd)));
         } else {
-            items.add(SettingsActivity.SettingCell.Factory.of(BUTTON_CHANNEL, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.msg_filled_menu_channels, getString(R.string.EditProfileChannelTitle), channel.title));
+            items.add(SettingsActivity.SettingCell.Factory.of(BUTTON_CHANNEL, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.msg_filled_menu_channels, getString(iosLayout ? R.string.FreezgramIosEditChannel : R.string.EditProfileChannelTitle), iosLayout ? null : channel.title, iosLayout ? channel.title : null));
         }
         if (hadHours) {
             items.add(SettingsActivity.SettingCell.Factory.of(BUTTON_HOURS, IconBackgroundColors.ORANGE_DEEP.top, IconBackgroundColors.ORANGE_DEEP.bottom, R.drawable.filled_premium_hours, getString(R.string.EditProfileHours)));
@@ -419,6 +605,9 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
                 }
             }
             items.add(SettingsActivity.SettingCell.Factory.of(BUTTON_AI, IconBackgroundColors.PURPLE.top, IconBackgroundColors.PURPLE.bottom, R.drawable.premium_ai_editor, getString(R.string.EditProfileChatAutomation), value));
+        } else if (iosLayout) {
+            items.add(SettingsActivity.SettingCell.Factory.of(BUTTON_AI, IconBackgroundColors.PURPLE.top, IconBackgroundColors.PURPLE.bottom,
+                    R.drawable.premium_ai_editor, getString(R.string.EditProfileChatAutomation), null, getString(R.string.FreezgramIosEditAutomationOff)));
         } else {
             items.add(SettingsActivity.SettingCell.Factory.of(BUTTON_AI, IconBackgroundColors.PURPLE.top, IconBackgroundColors.PURPLE.bottom, R.drawable.premium_ai_editor, applyNewSpan(getString(R.string.EditProfileChatAutomation))));
         }
@@ -452,6 +641,31 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
         logoutRow = items.size();
         items.add(InfoCell.Factory.of(BUTTON_LOGOUT, R.drawable.msg_leave, getString(R.string.LogOut), null, 0).red());
         items.add(UItem.asShadow(-4, null));
+    }
+
+    private void addAccountContactRows(ArrayList<UItem> items, TLRPC.User user) {
+        if (!iosLayout) items.add(UItem.asHeader(getString(R.string.EditAccountInfoHeader)));
+        if (user != null) {
+            numberRow = items.size();
+            String phone = PhoneFormat.getInstance().format("+" + user.phone);
+            items.add(SettingsActivity.SettingCell.Factory.of(INFO_PHONE, IconBackgroundColors.GREEN.top,
+                    IconBackgroundColors.GREEN.bottom, R.drawable.settings_calls,
+                    iosLayout ? getString(R.string.FreezgramIosEditPhone) : phone,
+                    iosLayout ? null : getString(R.string.TapToChangePhone), iosLayout ? phone : null));
+        }
+        usernameRow = items.size();
+        String username = UserObject.getPublicUsername(user);
+        if (iosLayout) {
+            items.add(SettingsActivity.SettingCell.Factory.of(INFO_USERNAME, IconBackgroundColors.PURPLE.top,
+                    IconBackgroundColors.PURPLE.bottom, R.drawable.filled_chatlist_mention, getString(R.string.Username),
+                    null, username == null ? getString(R.string.EditProfileChannelAdd) : "@" + username));
+        } else if (username != null) {
+            items.add(SettingsActivity.SettingCell.Factory.of(INFO_USERNAME, IconBackgroundColors.ORANGE.top,
+                    IconBackgroundColors.ORANGE.bottom, R.drawable.filled_chatlist_mention, "@" + username, getString(R.string.Username)));
+        } else {
+            items.add(SettingsActivity.SettingCell.Factory.of(INFO_USERNAME, IconBackgroundColors.ORANGE.top,
+                    IconBackgroundColors.ORANGE.bottom, R.drawable.filled_chatlist_mention, getString(R.string.AddUsername), null));
+        }
     }
 
     public static String birthdayString(TL_account.TL_birthday birthday) {
@@ -549,6 +763,8 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
             presentFragment(new OpeningHoursActivity());
         } else if (item.id == BUTTON_AI) {
             presentFragment(new ChatbotsActivity());
+        } else if (item.id == BUTTON_COLORS) {
+            presentFragment(new PeerColorActivity(0).startOnProfile());
         } else if (item.id == INFO_PHONE) {
             presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER));
         } else if (item.id == INFO_USERNAME) {
@@ -591,6 +807,7 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
         if (id == NotificationCenter.userInfoDidLoad) {
             setValue();
         } else if (id == NotificationCenter.updateInterfaces) {
+            updateProfileAvatar();
             if (listView != null) {
                 listView.adapter.update(true);
             }
@@ -611,6 +828,8 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
     @Override
     public void onResume() {
         super.onResume();
+        if (photoUpdater != null) photoUpdater.onResume();
+        updateProfileAvatar();
         channels.invalidate();
         channels.subscribe(() -> {
             if (listView != null) {
@@ -670,12 +889,12 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
         }
         hadHours = userFull.business_work_hours != null;
         hadLocation = userFull.business_location != null;
+        valueSet = true;
         checkDone(true);
 
         if (listView != null && listView.adapter != null) {
             listView.adapter.update(true);
         }
-        valueSet = true;
     }
 
     public boolean hasChanges() {
@@ -695,7 +914,7 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
     private void checkDone(boolean animated) {
         if (doneButton == null) return;
         final boolean hasChanges = hasChanges();
-        doneButton.setActive(hasChanges, animated);
+        doneButton.setActive(iosLayout ? valueSet && !TextUtils.isEmpty(firstNameEdit.getText()) : hasChanges, animated);
     }
 
     private boolean wasSaved = false;
@@ -709,10 +928,10 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
             return;
         }
 
-        doneButton.setLoading(true, true);
         TLRPC.User user = getUserConfig().getCurrentUser();
         TLRPC.UserFull userFull = getMessagesController().getUserFull(getUserConfig().getClientUserId());
         if (user == null || userFull == null) return;
+        doneButton.setLoading(true, true);
 
         ArrayList<TLObject> requests = new ArrayList<TLObject>();
 

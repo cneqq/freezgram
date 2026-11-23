@@ -74,17 +74,29 @@ public class StarGiftUniqueActionLayout {
     private float glassHighlightHeight = -1;
 
     private final app.freezgram.GiftGlassStyle.SoftCard softGiftBackground = new app.freezgram.GiftGlassStyle.SoftCard();
+    private int artworkSize() {
+        return app.exteraless.appearance.AppearanceConfig.iosMode() ? 124 : 110;
+    }
+
+    private int artworkTop() {
+        return app.exteraless.appearance.AppearanceConfig.iosMode() ? 14 : 10;
+    }
+
+    public float cardRadius() {
+        return dp(app.exteraless.appearance.AppearanceConfig.iosMode() ? 23 : 14);
+    }
+
     private void drawGiftBackground(Canvas canvas) {
         if (glassBackground && app.freezgram.GiftGlassStyle.style() == app.freezgram.GiftGlassStyle.SOFT) {
             if (hasColoredBackdrop()) canvas.drawPaint(backgroundPaint);
-            softGiftBackground.draw(canvas, backgroundRect, dp(14), resourcesProvider, 1f, hasColoredBackdrop());
+            softGiftBackground.draw(canvas, backgroundRect, cardRadius(), resourcesProvider, 1f, hasColoredBackdrop());
             return;
         }
         // Collectible backdrops are part of the gift: never replace them with wallpaper.
         if (!glassBackground || hasColoredBackdrop()) {
             if (!glassBackground && app.freezgram.GiftGlassStyle.style() == app.freezgram.GiftGlassStyle.ORDINARY
                     && app.freezgram.GiftGlassStyle.customOrdinary()) {
-                app.freezgram.GiftGlassStyle.drawOrdinary(canvas, backgroundRect, dp(14), backgroundPaint, null);
+                app.freezgram.GiftGlassStyle.drawOrdinary(canvas, backgroundRect, cardRadius(), backgroundPaint, null);
             } else canvas.drawPaint(backgroundPaint);
         }
         if (!glassBackground || !hasColoredBackdrop()) return;
@@ -103,7 +115,8 @@ public class StarGiftUniqueActionLayout {
         glassEdgePaint.setStrokeWidth(dp(1));
         glassEdgePaint.setColor(0x60FFFFFF);
         glassEdgePaint.setAlpha((int) (96 * app.exteraless.appearance.AppearanceConfig.giftGlassIntensity() / 100f));
-        canvas.drawRoundRect(glassEdgeRect, dp(13.5f), dp(13.5f), glassEdgePaint);
+        final float radius = cardRadius() - dp(.5f);
+        canvas.drawRoundRect(glassEdgeRect, radius, radius, glassEdgePaint);
     }
 
     private final Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -269,8 +282,8 @@ public class StarGiftUniqueActionLayout {
         }
         final String fromName = DialogObject.getShortName(from_id);
 
-        h += dp(10);
-        h += dp(110);
+        h += dp(artworkTop());
+        h += dp(artworkSize());
         h += dp(9.33f);
         if (repost) {
             title = new Text(gift.title, 14, AndroidUtilities.bold());
@@ -388,7 +401,7 @@ public class StarGiftUniqueActionLayout {
         if (!repost) {
             buttonY = h;
             buttonText = new Text(LocaleController.getString(R.string.Gift2UniqueView), 14, AndroidUtilities.bold());
-            h += (buttonHeight = dp(30));
+            h += (buttonHeight = dp(app.exteraless.appearance.AppearanceConfig.iosMode() ? 34 : 30));
             h += dp(11);
         } else {
             h += dp(10);
@@ -451,8 +464,8 @@ public class StarGiftUniqueActionLayout {
         final float w = width;
         float h = 0;
 
-        h += dp(10);
-        h += dp(110);
+        h += dp(artworkTop());
+        h += dp(artworkSize());
         h += dp(9.33f);
 
         final String fromName = DialogObject.getShortName(fromId);
@@ -508,7 +521,7 @@ public class StarGiftUniqueActionLayout {
         h += dp(11.66f);
         buttonY = h;
         buttonText = new Text(button, 14, AndroidUtilities.bold());
-        h += (buttonHeight = dp(30));
+        h += (buttonHeight = dp(app.exteraless.appearance.AppearanceConfig.iosMode() ? 34 : 30));
         h += dp(11);
         this.height = (int) h;
     }
@@ -565,7 +578,7 @@ public class StarGiftUniqueActionLayout {
             backgroundPaint.setShader(gradient);
         }
         backgroundPath.rewind();
-        float cardRadius = app.freezgram.GiftGlassStyle.style() == app.freezgram.GiftGlassStyle.GLASS ? dp(14) : app.freezgram.GiftGlassStyle.cornerRadius(dp(14));
+        float cardRadius = app.freezgram.GiftGlassStyle.style() == app.freezgram.GiftGlassStyle.GLASS ? cardRadius() : app.freezgram.GiftGlassStyle.cornerRadius(cardRadius());
         backgroundPath.addRoundRect(backgroundRect, cardRadius, cardRadius, Path.Direction.CW);
         canvas.save();
         float s = bounce.getScale(0.0125f);
@@ -575,14 +588,16 @@ public class StarGiftUniqueActionLayout {
         drawGiftBackground(canvas);
 
         canvas.save();
-        canvas.translate(cx, dp(10 + 55));
+        final int artworkSize = dp(artworkSize());
+        final int artworkTop = dp(artworkTop());
+        canvas.translate(cx, artworkTop + artworkSize / 2f);
         if (backdrop != null) {
             emoji.setColor(backdrop.pattern_color | 0xFF000000);
         }
         StarGiftPatterns.drawPattern(canvas, StarGiftPatterns.TYPE_ACTION, emoji, backgroundRect.width(), backgroundRect.height(), 1.0f, 1.1f);
         canvas.restore();
 
-        imageReceiver.setImageCoords(cx - dp(110) / 2.0f, dp(10), dp(110), dp(110));
+        imageReceiver.setImageCoords(cx - artworkSize / 2f, artworkTop, artworkSize, artworkSize);
         imageReceiver.draw(canvas);
 
         int text_color = Theme.multAlpha(0xFFFFFFFF, .60f);
@@ -616,11 +631,14 @@ public class StarGiftUniqueActionLayout {
         }
 
         if (!repost) {
-            buttonRect.set(cx - (buttonText.getCurrentWidth() + dp(30)) / 2, buttonY, cx + (buttonText.getCurrentWidth() + dp(30)) / 2, buttonY + buttonHeight);
+            final boolean iosGift = app.exteraless.appearance.AppearanceConfig.iosMode();
+            final float desiredHalfWidth = (buttonText.getCurrentWidth() + dp(iosGift ? 42 : 30)) / 2f;
+            final float buttonHalfWidth = iosGift ? Math.min(cx - dp(8), desiredHalfWidth) : desiredHalfWidth;
+            buttonRect.set(cx - buttonHalfWidth, buttonY, cx + buttonHalfWidth, buttonY + buttonHeight);
             buttonPath.rewind();
             buttonPath.addRoundRect(buttonRect, buttonHeight / 2, buttonHeight / 2, Path.Direction.CW);
 
-            buttonBackgroundPaint.setColor(Theme.multAlpha(0xFF000000, .13f));
+            buttonBackgroundPaint.setColor(iosGift ? 0x2BFFFFFF : 0x21000000);
 
             s = buttonBounce.getScale(0.075f);
             canvas.scale(s, s, buttonRect.centerX(), buttonRect.centerY());

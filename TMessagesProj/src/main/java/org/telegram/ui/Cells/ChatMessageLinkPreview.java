@@ -84,6 +84,7 @@ class ChatMessageLinkPreview {
     private LoadingDrawable instantButtonLoading;
     private Path instantLinkArrowPath;
     private Paint instantLinkArrowPaint;
+    private final Paint giftActionDivider = new Paint(Paint.ANTI_ALIAS_FLAG);
     boolean pressed;
     boolean gamePressed;
     ButtonBounce bounce;
@@ -773,7 +774,13 @@ class ChatMessageLinkPreview {
                     instantButtonLoading.draw(canvas);
                     cell.invalidate();
                 }
-                canvas.drawRoundRect(cell.instantButtonRect, dp(6), dp(6), Theme.chat_instantViewButtonPaint);
+                if (cell.usesIosGiftLinkPreview()) {
+                    giftActionDivider.setColor(Theme.multAlpha(Theme.chat_instantViewPaint.getColor(), .22f));
+                    canvas.drawRect(cell.instantButtonRect.left + dp(3), cell.instantButtonRect.top - dp(4),
+                            cell.instantButtonRect.right - dp(3), cell.instantButtonRect.top - dp(4) + 1, giftActionDivider);
+                } else {
+                    canvas.drawRoundRect(cell.instantButtonRect, dp(6), dp(6), Theme.chat_instantViewButtonPaint);
+                }
                 if (cell.drawInstantViewType == 0) {
                     cell.setDrawableBounds(instantDrawable, cell.instantTextLeftX + cell.instantTextX + linkX - dp(15), instantY + dp(11.5f), dp(9), dp(13));
                     instantDrawable.setAlpha((int) (0xFF * alpha));

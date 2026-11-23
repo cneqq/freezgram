@@ -12509,7 +12509,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     }
                 } else {
                     str = getString(R.string.OpenUniqueGift);
-                    if (app.exteraless.appearance.AppearanceConfig.iosMode()) {
+                    if (usesIosGiftLinkPreview()) {
                         str = str.toString().toUpperCase(LocaleController.getInstance().getCurrentLocale());
                     }
                 }
@@ -25215,6 +25215,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     private TL_stars.StarGift instantViewTypeIsGiftAuction;
+
+    boolean usesIosGiftLinkPreview() {
+        return drawInstantViewType == 26 && instantViewTypeIsGiftAuction == null
+                && app.exteraless.appearance.AppearanceConfig.iosMode();
+    }
 
 
 

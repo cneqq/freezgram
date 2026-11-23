@@ -449,14 +449,20 @@ public class GiftMessageBottomSheet extends BottomSheet {
         });
         containerView.addView(publicCheckboxButton, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 32, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL));
 
+        final boolean iosGiftLayout = app.exteraless.appearance.AppearanceConfig.iosMode();
+        final int closeSize = iosGiftLayout ? 42 : 56;
+        final int closeSurfaceSize = iosGiftLayout ? 42 : 32;
         closeButton = new ImageView(context);
         closeButton.setScaleType(ImageView.ScaleType.CENTER);
-        closeButton.setImageResource(R.drawable.ic_close_white);
+        closeButton.setImageResource(iosGiftLayout ? R.drawable.freezgram_ios_close : R.drawable.ic_close_white);
         closeButton.setBackground(Blur3Utils.wrapCenteredDrawable(
-            Theme.createServiceDrawable(AndroidUtilities.dp(16), closeButton, containerView, getThemedPaint(Theme.key_paint_chatActionBackground)),
-            dp(32), dp(32)));
+            Theme.createServiceDrawable(dp(closeSurfaceSize / 2f), closeButton, containerView, getThemedPaint(Theme.key_paint_chatActionBackground)),
+            dp(closeSurfaceSize), dp(closeSurfaceSize)));
+        closeButton.setContentDescription(LocaleController.getString(R.string.Close));
         closeButton.setOnClickListener(v -> dismiss());
-        containerView.addView(closeButton, LayoutHelper.createFrame(56, 56, Gravity.TOP | Gravity.RIGHT));
+        containerView.addView(closeButton, iosGiftLayout
+                ? LayoutHelper.createFrame(closeSize, closeSize, Gravity.TOP | Gravity.START, 16, 8, 16, 0)
+                : LayoutHelper.createFrame(closeSize, closeSize, Gravity.TOP | Gravity.RIGHT));
 
         ScaleStateListAnimator.apply(publicCheckboxButton, 0.05f, 1.2f);
         ScaleStateListAnimator.apply(closeButton);

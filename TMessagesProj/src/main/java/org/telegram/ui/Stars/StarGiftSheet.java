@@ -451,7 +451,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             }
         };
         infoLayout.setOrientation(LinearLayout.VERTICAL);
-        infoLayout.setPadding(backgroundPaddingLeft + dp(14), dp(16), backgroundPaddingLeft + dp(14), dp(12 + 48 + 8));
+        final int infoGutter = backgroundPaddingLeft + dp(iosGiftLayout ? 20 : 14);
+        infoLayout.setPadding(infoGutter, dp(16), infoGutter, dp(12 + (iosGiftLayout ? 50 : 48) + 8));
         container.addView(infoLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL_HORIZONTAL | Gravity.TOP));
 
         beforeTableTextView = new LinkSpanDrawable.LinksTextView(context, resourcesProvider);
@@ -466,7 +467,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
         tableView = new TableView(context, resourcesProvider);
         if (iosGiftLayout) {
-            tableView.setCornerRadius(dp(14));
+            tableView.useGiftCardStyle();
         }
 
         infoLayout.addView(tableView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, 12));
@@ -2144,6 +2145,14 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             return background;
         }
 
+        private int infoArtworkSize() {
+            return iosGiftControls ? 174 : 160;
+        }
+
+        private int infoArtworkShift() {
+            return iosGiftControls ? dp(20 + (infoArtworkSize() - 160) / 2f - 8) : 0;
+        }
+
         public void setShowOptions(boolean show) {
             showOptions = show;
             onSwitchPage(currentPage);
@@ -2569,7 +2578,15 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 subtitleView[i].setTextColor(i == 0 || i == 2 ? (backdrop[i] == null ? black : backdrop[i].text_color | 0xFF000000) : ColorUtils.blendARGB(backdrop[1] == null ? black : backdrop[1].text_color | 0xFF000000, backdrop[2] == null ? black : backdrop[2].text_color | 0xFF000000, toggleBackdrop));
 
                 boolean changed;
-                if (backdrop[i] != null) {
+                if (i == PAGE_INFO && iosGiftControls) {
+                    final int topMargin = dp(20 + infoArtworkSize() + (backdrop[0] != null ? 12 : 5));
+                    final int bottomPadding = dp(backdrop[0] != null ? 18 : 8);
+                    changed = layoutLayoutParams[i].topMargin != topMargin || layout[i].getPaddingBottom() != bottomPadding;
+                    if (changed) {
+                        layout[i].setPadding(0, 0, 0, bottomPadding);
+                        layoutLayoutParams[i].topMargin = topMargin;
+                    }
+                } else if (backdrop[i] != null) {
                     changed = dp(24 + 160) != layoutLayoutParams[i].topMargin || layout[i].getPaddingBottom() != dp(18);
                     if (changed) {
                         layout[i].setPadding(0, 0, 0, dp(18));
@@ -2597,10 +2614,11 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             imageView[0].setAlpha(Math.max(currentPage.at(PAGE_INFO, PAGE_WEAR), currentPage.at(PAGE_CRAFT)));
             imageView[1].setAlpha(p.at(1) * (1.0f - toggleBackdrop));
             imageView[2].setAlpha(p.at(1) * toggleBackdrop);
-            imageLayout.setScaleX(lerp(1.0f, wearImageScale, p.at(PAGE_WEAR)));
-            imageLayout.setScaleY(lerp(1.0f, wearImageScale, p.at(PAGE_WEAR)));
+            final float infoScale = (infoArtworkSize() / 160f - 1f) * p.at(PAGE_INFO);
+            imageLayout.setScaleX(lerp(1.0f, wearImageScale, p.at(PAGE_WEAR)) + infoScale);
+            imageLayout.setScaleY(lerp(1.0f, wearImageScale, p.at(PAGE_WEAR)) + infoScale);
             imageLayout.setTranslationX(wearImageTx * p.at(PAGE_WEAR));
-            imageLayout.setTranslationY(dp(16) * p.at(PAGE_UPGRADE) + wearImageTy * p.at(PAGE_WEAR));
+            imageLayout.setTranslationY(dp(16) * p.at(PAGE_UPGRADE) + wearImageTy * p.at(PAGE_WEAR) + infoArtworkShift() * p.at(PAGE_INFO));
             layout[2].setTranslationY(p.from != PAGE_WEAR || p.to != PAGE_WEAR ? -(layout[p.from == PAGE_WEAR ? p.to : p.from].getMeasuredHeight() - layout[2].getMeasuredHeight()) * (1.0f - p.at(PAGE_WEAR)) : 0);
             ribbon.setVisibility(hasRibbon && currentPage.contains(PAGE_INFO) ? View.VISIBLE : View.GONE);
             ribbon.setAlpha(currentPage.at(PAGE_INFO));
@@ -3116,7 +3134,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             canvas.clipRect(0, 0, getWidth(), height);
 
             final float cx = getWidth() / 2.0f;
-            final float cy = lerp(dp(8), dp(24), currentPage.at(PAGE_UPGRADE)) + dp(160 / 2);
+            final float cy = lerp(dp(8), dp(24), currentPage.at(PAGE_UPGRADE)) + dp(160 / 2) + infoArtworkShift() * currentPage.at(PAGE_INFO);
 
             final float infoBackdrop = currentPage.at(PAGE_INFO, PAGE_WEAR, PAGE_CRAFT);
             if (infoBackdrop > 0 && backdrop[0] != null) {
@@ -3286,7 +3304,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
         public float getRealHeight() {
             float h = 0;
-            h += (dp(backdrop[0] != null ? 24 : 10) + dp(160) + layout[0].getMeasuredHeight()) * currentPage.at(PAGE_INFO);
+            h += getInfoHeaderHeight() * currentPage.at(PAGE_INFO);
             h += (dp(backdrop[1] != null ? 24 : 10) + dp(160) + layout[1].getMeasuredHeight()) * currentPage.at(PAGE_UPGRADE);
             h += (dp(64) + layout[PAGE_WEAR].getMeasuredHeight()) * currentPage.at(PAGE_WEAR);
             h += (dp(backdrop[0] != null ? 24 : 10) + dp(160) + layout[PAGE_CRAFT].getMeasuredHeight()) * currentPage.at(PAGE_CRAFT);
@@ -3294,9 +3312,14 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             return h;
         }
 
+        private int getInfoHeaderHeight() {
+            return (iosGiftControls ? layoutLayoutParams[PAGE_INFO].topMargin
+                    : dp(backdrop[0] != null ? 24 : 10) + dp(160)) + layout[PAGE_INFO].getMeasuredHeight();
+        }
+
         public int getFinalHeight() {
             if (currentPage.to(PAGE_INFO)) {
-                return dp(backdrop[0] != null ? 24 : 10) + dp(160) + layout[0].getMeasuredHeight();
+                return getInfoHeaderHeight();
             }
             if (currentPage.to(PAGE_UPGRADE)) {
                 return dp(backdrop[1] != null ? 24 : 10) + dp(160) + layout[1].getMeasuredHeight();

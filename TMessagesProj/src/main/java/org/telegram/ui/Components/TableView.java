@@ -68,11 +68,18 @@ public class TableView extends TableLayout implements Theme.Colorable {
     private final float w = Math.max(1, dp(.66f));
     private final float hw = w / 2f;
 
+    private boolean giftCardStyle;
     private float cornerRadius = dp(10);
 
-    public void setCornerRadius(float cornerRadius) {
-        this.cornerRadius = cornerRadius;
-        invalidate();
+    public void useGiftCardStyle() {
+        giftCardStyle = true;
+        cornerRadius = dp(15);
+    }
+
+    private void setCellPadding(View cell) {
+        int horizontal = dp(giftCardStyle ? 12 : 12.66f);
+        int vertical = dp(giftCardStyle ? 11 : 9.33f);
+        cell.setPadding(horizontal, vertical, horizontal, vertical);
     }
 
     public TableView(Context context, Theme.ResourcesProvider resourcesProvider) {
@@ -516,10 +523,15 @@ public class TableView extends TableLayout implements Theme.Colorable {
             this.table = table;
             this.resourcesProvider = table.resourcesProvider;
 
-            setPadding(dp(12.66f), dp(9.33f), dp(12.66f), dp(9.33f));
+            table.setCellPadding(this);
             ThemeBind.textColor(this, Theme.key_windowBackgroundWhiteBlackText, resourcesProvider);
-            setTypeface(AndroidUtilities.bold());
-            setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+            if (table.giftCardStyle) {
+                setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
+                setMaxWidth(dp(114));
+            } else {
+                setTypeface(AndroidUtilities.bold());
+            }
+            setTextSize(TypedValue.COMPLEX_UNIT_DIP, table.giftCardStyle ? 15 : 14);
             setText(title);
         }
 
@@ -571,7 +583,7 @@ public class TableView extends TableLayout implements Theme.Colorable {
 
             setWillNotDraw(false);
             if (!unpadded) {
-                setPadding(dp(12.66f), dp(9.33f), dp(12.66f), dp(9.33f));
+                table.setCellPadding(this);
             }
             addView(content, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         }
@@ -627,7 +639,7 @@ public class TableView extends TableLayout implements Theme.Colorable {
 
             setWillNotDraw(false);
             if (!unpadded) {
-                setPadding(dp(12.66f), dp(9.33f), dp(12.66f), dp(9.33f));
+                table.setCellPadding(this);
             }
             addView(content, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         }

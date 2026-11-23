@@ -3865,11 +3865,12 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                 backgroundRect = new RectF();
             }
             backgroundRect.set(AndroidUtilities.rectTmp);
-            if (!drawServiceGlass(canvas, null, backgroundRect, dp(16), true, fromParent)) {
-                canvas.drawRoundRect(backgroundRect, dp(16), dp(16), backgroundPaint);
+            final float radius = app.exteraless.appearance.AppearanceConfig.iosMode() ? starGiftLayout.cardRadius() + dp(4) : dp(16);
+            if (!drawServiceGlass(canvas, null, backgroundRect, radius, true, fromParent)) {
+                canvas.drawRoundRect(backgroundRect, radius, radius, backgroundPaint);
 
                 if (hasGradientService()) {
-                    canvas.drawRoundRect(backgroundRect, dp(16), dp(16), darkenBackgroundPaint);
+                    canvas.drawRoundRect(backgroundRect, radius, radius, darkenBackgroundPaint);
                 }
             }
         } else if (birthdayLayout != null) {

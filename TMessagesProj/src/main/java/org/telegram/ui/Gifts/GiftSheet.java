@@ -163,6 +163,7 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
 
     private final StarsIntroActivity.StarsBalanceView balanceView;
     private final FrameLayout topView;
+    private final TextView iosCatalogTitle;
     private final FrameLayout premiumHeaderView;
     private final LinearLayout starsHeaderView;
     private final ExtendedGridLayoutManager layoutManager;
@@ -247,12 +248,13 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
         // Gift Premium header
         premiumHeaderView = new FrameLayout(context);
 
+        final boolean iosGiftLayout = app.exteraless.appearance.AppearanceConfig.iosMode();
         topView = new FrameLayout(context) {
             @Override
             protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
                 super.onMeasure(
                     MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY),
-                    MeasureSpec.makeMeasureSpec(dp(120), MeasureSpec.EXACTLY)
+                    MeasureSpec.makeMeasureSpec(dp(iosGiftLayout ? 66 : 120), MeasureSpec.EXACTLY)
                 );
             }
         };
@@ -265,13 +267,41 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
         avatarImageView.setRoundRadius(dp(42));
         topView.addView(avatarImageView, LayoutHelper.createFrame(84, 84, Gravity.CENTER, 0, 15, 0, 17));
         ScaleStateListAnimator.apply(avatarImageView);
-        avatarImageView.setOnClickListener(v -> {
+        final View.OnClickListener openProfile = v -> {
             BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
             if (lastFragment == null) return;
             dismiss();
             lastFragment.presentFragment(ProfileActivity.of(dialogId));
-        });
-        topView.addView(balanceView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.RIGHT | Gravity.TOP, 0, -3, -10, 0));
+        };
+        avatarImageView.setOnClickListener(openProfile);
+        if (iosGiftLayout) {
+            avatarImageView.setVisibility(View.GONE);
+            particlesView.setVisibility(View.GONE);
+            final ImageView close = new ImageView(context);
+            close.setScaleType(ImageView.ScaleType.CENTER);
+            close.setImageResource(R.drawable.freezgram_ios_close);
+            ThemeBind.colorFilter(close, Theme.key_dialogIcon, resourcesProvider, PorterDuff.Mode.SRC_IN);
+            close.setBackground(Theme.createRoundRectDrawable(dp(21),
+                    Theme.multAlpha(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider), .09f)));
+            close.setContentDescription(getString(R.string.Close));
+            close.setOnClickListener(v -> dismiss());
+            ScaleStateListAnimator.apply(close);
+            topView.addView(close, LayoutHelper.createFrame(42, 42, Gravity.START | Gravity.CENTER_VERTICAL, 16, 0, 16, 0));
+
+            iosCatalogTitle = new TextView(context);
+            iosCatalogTitle.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
+            iosCatalogTitle.setTypeface(AndroidUtilities.bold());
+            ThemeBind.textColor(iosCatalogTitle, Theme.key_dialogTextBlack, resourcesProvider);
+            iosCatalogTitle.setGravity(Gravity.CENTER);
+            iosCatalogTitle.setMaxLines(2);
+            iosCatalogTitle.setEllipsize(TextUtils.TruncateAt.END);
+            iosCatalogTitle.setOnClickListener(openProfile);
+            topView.addView(iosCatalogTitle, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 86, 0, 86, 0));
+            topView.addView(balanceView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.END | Gravity.CENTER_VERTICAL, 8, 0, 8, 0));
+        } else {
+            iosCatalogTitle = null;
+            topView.addView(balanceView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.RIGHT | Gravity.TOP, 0, -3, -10, 0));
+        }
 
         final LinearLayout bottomView = new LinearLayout(context);
         bottomView.setOrientation(LinearLayout.VERTICAL);
@@ -295,6 +325,7 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
         bottomView.addView(subtitleView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 4, 4, 4, 12));
 
         titleView.setText(getString(R.string.Gift2Premium));
+        if (iosGiftLayout) titleView.setVisibility(View.GONE);
         subtitleView.setText(TextUtils.concat(
             AndroidUtilities.replaceTags(formatString(R.string.Gift2PremiumInfo, name)),
             " ",
@@ -929,7 +960,11 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
 
     public void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
         boolean pushedTopView = false;
-        if (!self && dialogId >= 0 && !(userSettings != null && userSettings.disallow_premium_gifts)) {
+        final boolean showPremium = !self && dialogId >= 0 && !(userSettings != null && userSettings.disallow_premium_gifts);
+        if (iosCatalogTitle != null) {
+            iosCatalogTitle.setText(showPremium ? getString(R.string.Gift2Premium) : getTitle());
+        }
+        if (showPremium) {
             items.add(UItem.asCustom(topView));
             pushedTopView = true;
             items.add(UItem.asCustom(premiumHeaderView));
@@ -2222,6 +2257,9 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
             @Override
             public void bindView(View view, UItem item, boolean divider, UniversalAdapter adapter, UniversalRecyclerView listView) {
                 final GiftCell cell = (GiftCell) view;
+                final boolean iosPremiumCard = item.object instanceof GiftPremiumBottomSheet.GiftTier
+                        && app.exteraless.appearance.AppearanceConfig.iosMode();
+                cell.cardBackground.setRoundRadius(dp(iosPremiumCard ? 17 : 11));
                 boolean animated = false;
                 if (item.object instanceof GiftPremiumBottomSheet.GiftTier) {
                     animated = cell.setPremiumGift((GiftPremiumBottomSheet.GiftTier) item.object);

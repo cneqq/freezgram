@@ -29,6 +29,10 @@ import org.telegram.ui.Components.blur3.utils.NinePatchBuilder;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import app.exteraless.appearance.AppearanceConfig;
+
+import static org.telegram.messenger.AndroidUtilities.dpf2;
+
 public class MessageDrawable extends Drawable {
 
     private Shader gradientShader;
@@ -67,6 +71,7 @@ public class MessageDrawable extends Drawable {
     public Integer overrideColor = null;
     public boolean shadow = true;
     private int[] currentShadowDrawableRadius = new int[]{-1, -1, -1, -1};
+    private final int[] shadowDrawableTailStyle = new int[4];
     private Bitmap[] shadowDrawableBitmap = new Bitmap[4];
     private Drawable[] shadowDrawable = new Drawable[4];
     private int[] shadowDrawableColor = new int[]{0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff};
@@ -84,7 +89,11 @@ public class MessageDrawable extends Drawable {
             {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff},
             {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}
     };
-    private boolean[][] backgroundDrawableNoTail = new boolean[4][4];
+    private final int[][] backgroundDrawableTailStyle = new int[4][4];
+
+    private static final int TAIL_DEFAULT = 0;
+    private static final int TAIL_HIDDEN = 1;
+    private static final int TAIL_IOS = 2;
 
     public static final int TYPE_TEXT = 0;
     public static final int TYPE_MEDIA = 1;
@@ -390,8 +399,8 @@ public class MessageDrawable extends Drawable {
 
         boolean drawWithShadow = shadow && gradientShader == null && !isSelected && !isCrossfadeBackground && !isCompact();
         int shadowColor = getColor(isOut ? Theme.key_chat_outBubbleShadow : Theme.key_chat_inBubbleShadow);
-        boolean noTail = oeRemoveMessageTail();
-        if (lastDrawWithShadow != drawWithShadow || currentBackgroundDrawableRadius[idx2][idx] != newRad || (drawWithShadow && shadowDrawableColor[idx] != shadowColor) || backgroundDrawableColor[idx2][idx] != color || backgroundDrawableNoTail[idx2][idx] != noTail) {
+        final int tailStyle = getTailStyle();
+        if (lastDrawWithShadow != drawWithShadow || currentBackgroundDrawableRadius[idx2][idx] != newRad || (drawWithShadow && shadowDrawableColor[idx] != shadowColor) || backgroundDrawableColor[idx2][idx] != color || backgroundDrawableTailStyle[idx2][idx] != tailStyle) {
             backupRect.set(getBounds());
             renderingBackgroundCache = true;
             try {
@@ -433,7 +442,7 @@ public class MessageDrawable extends Drawable {
                     shadowDrawableColor[idx] = shadowColor;
                 }
                 backgroundDrawableColor[idx2][idx] = color;
-                backgroundDrawableNoTail[idx2][idx] = noTail;
+                backgroundDrawableTailStyle[idx2][idx] = tailStyle;
             } catch (Throwable ignore) {
 
             } finally {
@@ -494,7 +503,8 @@ public class MessageDrawable extends Drawable {
             idx = 0;
         }
         boolean forceSetColor = false;
-        if (currentShadowDrawableRadius[idx] != newRad) {
+        final int tailStyle = getTailStyle();
+        if (currentShadowDrawableRadius[idx] != newRad || shadowDrawableTailStyle[idx] != tailStyle) {
             try {
                 Bitmap bitmap = Bitmap.createBitmap(dp(50), dp(40), Bitmap.Config.ARGB_8888);
                 Canvas canvas = new Canvas(bitmap);
@@ -526,6 +536,7 @@ public class MessageDrawable extends Drawable {
                 shadowDrawableBitmap[idx] = bitmap;
                 shadowDrawable[idx] = new NinePatchDrawable(bitmap, getByteBuffer(bitmap.getWidth() / 2 - 1, bitmap.getWidth() / 2 + 1, bitmap.getHeight() / 2 - 1, bitmap.getHeight() / 2 + 1, centralColorHint).array(), new Rect(), null);
                 currentShadowDrawableRadius[idx] = newRad;
+                shadowDrawableTailStyle[idx] = tailStyle;
                 forceSetColor = true;
                 if (previousBitmap != null) {
                     previousBitmap.recycle();
@@ -640,15 +651,16 @@ public class MessageDrawable extends Drawable {
         }
         Path path;
         boolean invalidatePath;
+        final int tailStyle = getTailStyle();
         if (pathDrawCacheParams != null) {
             path = pathDrawCacheParams.path;
-            invalidatePath = pathDrawCacheParams.invalidatePath(bounds, drawFullBottom, drawFullTop);
+            invalidatePath = pathDrawCacheParams.invalidatePath(bounds, drawFullBottom, drawFullTop, tailStyle);
         } else {
             path = this.path;
             invalidatePath = true;
         }
         if (invalidatePath || overrideRoundRadius != 0) {
-            generatePath(path, bounds, padding, rad, smallRad, nearRad, top, drawFullBottom, drawFullTop, paintToUse != null);
+            generatePath(path, bounds, padding, rad, smallRad, nearRad, top, drawFullBottom, drawFullTop, paintToUse != null, tailStyle);
         }
 
         canvas.drawPath(path, p);
@@ -693,32 +705,35 @@ public class MessageDrawable extends Drawable {
         }
         Path path;
         boolean invalidatePath;
+        final int tailStyle = getTailStyle();
         if (pathDrawCacheParams != null) {
             path = pathDrawCacheParams.path;
-            invalidatePath = pathDrawCacheParams.invalidatePath(bounds, drawFullBottom, drawFullTop);
+            invalidatePath = pathDrawCacheParams.invalidatePath(bounds, drawFullBottom, drawFullTop, tailStyle);
         } else {
             path = this.path;
             invalidatePath = true;
         }
         if (invalidatePath || overrideRoundRadius != 0) {
-            generatePath(path, bounds, padding, rad, smallRad, nearRad, top, drawFullBottom, drawFullTop, true);
+            generatePath(path, bounds, padding, rad, smallRad, nearRad, top, drawFullBottom, drawFullTop, true, tailStyle);
         }
         return path;
     }
 
-    private void generatePath(Path path, Rect bounds, int padding, int rad, int smallRad, int nearRad, int top, boolean drawFullBottom, boolean drawFullTop, boolean customPaint) {
+    private void generatePath(Path path, Rect bounds, int padding, int rad, int smallRad, int nearRad, int top, boolean drawFullBottom, boolean drawFullTop, boolean customPaint, int tailStyle) {
         path.rewind();
         int heightHalf = (bounds.height() - padding) >> 1;
         if (rad > heightHalf) {
             rad = heightHalf;
         }
-        final boolean oeNoTail = oeRemoveMessageTail();
+        final boolean noTail = tailStyle == TAIL_HIDDEN;
         if (isOut) {
             // LEFT-BOTTOM <- RIGHT-BOTTOM
             if (drawFullBubble || currentType == TYPE_PREVIEW || customPaint || drawFullBottom) {
                 int radToUse = botButtonsBottom ? nearRad : rad;
-                if (currentType == TYPE_MEDIA || oeNoTail) {
+                if (currentType == TYPE_MEDIA || noTail) {
                     path.moveTo(bounds.right - dp(8) - radToUse, bounds.bottom - padding);
+                } else if (tailStyle == TAIL_IOS) {
+                    path.moveTo(bounds.right - dp(8) - dpf2(8.5f), bounds.bottom - padding);
                 } else {
                     path.moveTo(bounds.right - dp(2.6f), bounds.bottom - padding);
                 }
@@ -769,15 +784,17 @@ public class MessageDrawable extends Drawable {
                 }
             } else {
                 if (drawFullBubble || currentType == TYPE_PREVIEW || customPaint || drawFullBottom) {
-                    if (oeNoTail) {
+                    if (noTail) {
                         int radToUse = isBottomNear || botButtonsBottom ? nearRad : rad;
                         path.lineTo(bounds.right - dp(8), bounds.bottom - padding - radToUse);
                         rect.set(bounds.right - dp(8) - radToUse * 2, bounds.bottom - padding - radToUse * 2, bounds.right - dp(8), bounds.bottom - padding);
                         path.arcTo(rect, 0, 90, false);
+                    } else if (tailStyle == TAIL_IOS) {
+                        appendIosTail(path, bounds.right - dp(8), bounds.bottom - padding, bounds.height() - 2 * padding, 1);
                     } else {
-                    path.lineTo(bounds.right - dp(8), bounds.bottom - padding - smallRad - dp(3));
-                    rect.set(bounds.right - dp(8), bounds.bottom - padding - smallRad * 2 - dp(9), bounds.right - dp(7) + smallRad * 2, bounds.bottom - padding - dp(1));
-                    path.arcTo(rect, 180, -83, false);
+                        path.lineTo(bounds.right - dp(8), bounds.bottom - padding - smallRad - dp(3));
+                        rect.set(bounds.right - dp(8), bounds.bottom - padding - smallRad * 2 - dp(9), bounds.right - dp(7) + smallRad * 2, bounds.bottom - padding - dp(1));
+                        path.arcTo(rect, 180, -83, false);
                     }
                 } else {
                     path.lineTo(bounds.right - dp(8), top - topY + currentBackgroundHeight);
@@ -787,8 +804,10 @@ public class MessageDrawable extends Drawable {
             if (drawFullBubble || currentType == TYPE_PREVIEW || customPaint || drawFullBottom) {
                 int radToUse = botButtonsBottom ? nearRad : rad;
 
-                if (currentType == TYPE_MEDIA || oeNoTail) {
+                if (currentType == TYPE_MEDIA || noTail) {
                     path.moveTo(bounds.left + dp(8) + radToUse, bounds.bottom - padding);
+                } else if (tailStyle == TAIL_IOS) {
+                    path.moveTo(bounds.left + dp(8) + dpf2(8.5f), bounds.bottom - padding);
                 } else {
                     path.moveTo(bounds.left + dp(2.6f), bounds.bottom - padding);
                 }
@@ -833,15 +852,17 @@ public class MessageDrawable extends Drawable {
                 }
             } else {
                 if (drawFullBubble || currentType == TYPE_PREVIEW || customPaint || drawFullBottom) {
-                    if (oeNoTail) {
+                    if (noTail) {
                         int radToUse = isBottomNear || botButtonsBottom ? nearRad : rad;
                         path.lineTo(bounds.left + dp(8), bounds.bottom - padding - radToUse);
                         rect.set(bounds.left + dp(8), bounds.bottom - padding - radToUse * 2, bounds.left + dp(8) + radToUse * 2, bounds.bottom - padding);
                         path.arcTo(rect, 180, -90, false);
+                    } else if (tailStyle == TAIL_IOS) {
+                        appendIosTail(path, bounds.left + dp(8), bounds.bottom - padding, bounds.height() - 2 * padding, -1);
                     } else {
-                    path.lineTo(bounds.left + dp(8), bounds.bottom - padding - smallRad - dp(3));
-                    rect.set(bounds.left + dp(7) - smallRad * 2, bounds.bottom - padding - smallRad * 2 - dp(9), bounds.left + dp(8), bounds.bottom - padding - dp(1));
-                    path.arcTo(rect, 0, 83, false);
+                        path.lineTo(bounds.left + dp(8), bounds.bottom - padding - smallRad - dp(3));
+                        rect.set(bounds.left + dp(7) - smallRad * 2, bounds.bottom - padding - smallRad * 2 - dp(9), bounds.left + dp(8), bounds.bottom - padding - dp(1));
+                        path.arcTo(rect, 0, 83, false);
                     }
                 } else {
                     path.lineTo(bounds.left + dp(8), top - topY + currentBackgroundHeight);
@@ -849,6 +870,20 @@ public class MessageDrawable extends Drawable {
             }
         }
         path.close();
+    }
+
+    private static void appendIosTail(Path path, float edge, float bottom, int bodyHeight, int direction) {
+        final float height = Math.max(0f, Math.min(bodyHeight, dpf2(12)));
+        final float tip = edge + direction * dpf2(5.1f);
+        path.lineTo(edge, bottom - height);
+        path.cubicTo(edge, bottom - height * .48f,
+                edge + direction * dpf2(1.8f), bottom - height * .17f,
+                tip, bottom - height * .06f);
+        path.quadTo(tip + direction * dpf2(.65f), bottom,
+                tip - direction * dpf2(.5f), bottom);
+        path.cubicTo(edge + direction * dpf2(.75f), bottom,
+                edge - direction * dpf2(3.5f), bottom,
+                edge - direction * dpf2(8.5f), bottom);
     }
 
     public void setDrawFullBubble(boolean drawFullBuble) {
@@ -917,18 +952,26 @@ public class MessageDrawable extends Drawable {
         }
     }
 
+    private int getTailStyle() {
+        if (currentType == TYPE_MEDIA || oeRemoveMessageTail()) {
+            return TAIL_HIDDEN;
+        }
+        if (!AppearanceConfig.iosMode() || isCompact()) {
+            return TAIL_DEFAULT;
+        }
+        return isBottomNear || botButtonsBottom ? TAIL_HIDDEN : TAIL_IOS;
+    }
+
     public static class PathDrawParams {
         Path path = new Path();
         Rect lastRect = new Rect();
         boolean lastDrawFullTop;
         boolean lastDrawFullBottom;
-        /** openExtera: чтобы кэш пути сбрасывался при переключении «убрать хвостик». */
-        boolean lastNoTail = oeRemoveMessageTail();
+        int lastTailStyle = TAIL_DEFAULT;
 
-        public boolean invalidatePath(Rect bounds, boolean drawFullBottom, boolean drawFullTop) {
-            boolean oeNoTail = oeRemoveMessageTail();
-            boolean invalidate = lastNoTail != oeNoTail || lastRect.isEmpty() || lastRect.top != bounds.top || lastRect.bottom != bounds.bottom || lastRect.right != bounds.right || lastRect.left != bounds.left || lastDrawFullTop != drawFullTop || lastDrawFullBottom != drawFullBottom || !drawFullTop || !drawFullBottom;
-            lastNoTail = oeNoTail;
+        private boolean invalidatePath(Rect bounds, boolean drawFullBottom, boolean drawFullTop, int tailStyle) {
+            boolean invalidate = lastTailStyle != tailStyle || lastRect.isEmpty() || lastRect.top != bounds.top || lastRect.bottom != bounds.bottom || lastRect.right != bounds.right || lastRect.left != bounds.left || lastDrawFullTop != drawFullTop || lastDrawFullBottom != drawFullBottom || !drawFullTop || !drawFullBottom;
+            lastTailStyle = tailStyle;
             lastDrawFullTop = drawFullTop;
             lastDrawFullBottom = drawFullBottom;
             lastRect.set(bounds);

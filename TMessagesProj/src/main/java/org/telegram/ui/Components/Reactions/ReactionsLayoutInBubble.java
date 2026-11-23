@@ -344,6 +344,11 @@ public class ReactionsLayoutInBubble {
     }
 
     private final ArrayList<Integer> reactionLineWidths = new ArrayList<>();
+
+    public boolean isTagLayout() {
+        return !reactionButtons.isEmpty() && reactionButtons.get(0).isTag;
+    }
+
     public void measure(int availableWidth, int gravity) {
         height = 0;
         width = 0;
@@ -352,12 +357,17 @@ public class ReactionsLayoutInBubble {
         if (isEmpty) {
             return;
         }
-        this.availableWidth = availableWidth;
         reactionLineWidths.clear();
         int maxWidth = 0;
         int currentX = 0;
         int currentY = 0;
         int lineOffset = 0;
+        final boolean iosMedia = parentView instanceof ChatMessageCell
+                && ((ChatMessageCell) parentView).usesIosMediaReactionCapsule();
+        if (iosMedia) {
+            availableWidth = Math.max(availableWidth, dp(92));
+        }
+        this.availableWidth = availableWidth;
         for (int i = 0; i < reactionButtons.size(); i++) {
             ReactionButton button = reactionButtons.get(i);
             if (button.isSmall) {
@@ -371,6 +381,19 @@ public class ReactionsLayoutInBubble {
                 } else if (button.counterDrawable != null && button.count > 1) {
                     button.width += button.counterDrawable.getCurrentWidth() + dp(8);
                 }
+            } else if (iosMedia) {
+                button.height = dp(30);
+                button.width = dp(42);
+                if (button.avatarsDrawable != null && !button.users.isEmpty()) {
+                    button.avatarsDrawable.setSize(dp(24));
+                    button.avatarsDrawable.setStepFactor(.5f);
+                    button.avatarsDrawable.height = button.height;
+                    button.width += dp(26) + dp(12) * Math.min(2, button.users.size() - 1);
+                } else if (button.hasName) {
+                    button.width += button.textDrawable.getAnimateToWidth() + dp(2);
+                } else if (button.counterDrawable.getCurrentWidth() > 0) {
+                    button.width += button.counterDrawable.getCurrentWidth() + dp(2);
+                }
             } else {
                 button.width = (int) (dp(8) + dp(20) + dp(button.animatedEmojiDrawable != null ? 6 : 4));
                 if (button.avatarsDrawable != null && button.users.size() > 0) {
@@ -378,6 +401,8 @@ public class ReactionsLayoutInBubble {
                     int c1 = 1;
                     int c2 = button.users.size() > 1 ? button.users.size() - 1 : 0;
                     button.width += dp(2) + c1 * dp(20) + c2 * dp(20) * 0.8f + dp(1);
+                    button.avatarsDrawable.setSize(dp(20));
+                    button.avatarsDrawable.setStepFactor(.8f);
                     button.avatarsDrawable.height = dp(26);
                 } else if (button.hasName) {
                     button.width += button.textDrawable.getAnimateToWidth() + dp(8);
@@ -389,7 +414,7 @@ public class ReactionsLayoutInBubble {
                 button.height = dp(26);
             }
 
-            if (currentX + button.width > availableWidth) {
+            if (currentX + button.width > availableWidth && (!iosMedia || currentX > 0)) {
                 reactionLineWidths.add(currentX);
                 currentX = 0;
                 currentY += button.height + dp(4);
@@ -414,6 +439,7 @@ public class ReactionsLayoutInBubble {
                         reactionButtons.get(k).x += thisLineOffset;
                     }
                     fromP = i;
+                    startY = reactionButtons.get(i).y;
                 }
             }
             int last = reactionButtons.size() - 1;
@@ -434,7 +460,7 @@ public class ReactionsLayoutInBubble {
         } else {
             width = maxWidth;
         }
-        height = currentY + (reactionButtons.size() == 0 ? 0 : dp(26));
+        height = currentY + (reactionButtons.isEmpty() ? 0 : dp(iosMedia ? 30 : 26));
         drawServiceShaderBackground = 0f;
     }
 
@@ -789,6 +815,7 @@ public class ReactionsLayoutInBubble {
     }
 
     public static class ReactionButton {
+        private static final Paint iosMediaRim = new Paint(Paint.ANTI_ALIAS_FLAG);
 
         private final TLRPC.ReactionCount reactionCount;
         private final boolean isSmall;
@@ -1026,6 +1053,8 @@ public class ReactionsLayoutInBubble {
         }
 
         public void draw(Canvas canvas, float x, float y, float progress, float alpha, boolean drawOverlayScrim, boolean scrimProgressDirection, float scrimProgress) {
+            final boolean iosMedia = !isSmall && !isTag && !paid && parentView instanceof ChatMessageCell
+                    && ((ChatMessageCell) parentView).usesIosMediaReactionCapsule();
             wasDrawn = true;
             ImageReceiver imageReceiver = animatedEmojiDrawable != null ? animatedEmojiDrawable.getImageReceiver() : this.imageReceiver;
             if (isSmall && imageReceiver != null) {
@@ -1082,6 +1111,12 @@ public class ReactionsLayoutInBubble {
                 serviceTextColor = textColor;
                 serviceBackgroundColor = backgroundColor;
             }
+            if (iosMedia) {
+                final boolean dark = resourcesProvider != null ? resourcesProvider.isDark() : Theme.isCurrentThemeDark();
+                final int plate = dark ? 0xcc292831 : 0xe6ffffff;
+                serviceBackgroundColor = choosen ? ColorUtils.blendARGB(plate, backgroundColor, .36f) : plate;
+                serviceTextColor = dark ? Color.WHITE : 0xff222125;
+            }
             if (drawBgOnlyIfChosen) {
                 backgroundColor = 0;
                 serviceBackgroundColor = 0;
@@ -1119,7 +1154,7 @@ public class ReactionsLayoutInBubble {
             boolean restore = false;
             int w = width;
             if (scrimProgress > 0 && !isTag && scrimPreviewCounterDrawable != null && avatarsDrawable == null) {
-                w = (int) (dp(8) + dp(20) + dp(animatedEmojiDrawable != null ? 6 : 4) + scrimPreviewCounterDrawable.getCurrentWidth() + dp(8));
+                w = (int) ((iosMedia ? dp(44) : dp(8) + dp(20) + dp(animatedEmojiDrawable != null ? 6 : 4) + dp(8)) + scrimPreviewCounterDrawable.getCurrentWidth());
                 scrimPreviewCounterDrawable.setTextColor(lastDrawnTextColor);
             } else if (progress != 1f && animationType == ANIMATION_TYPE_MOVE) {
                 w = (int) (width * progress + animateFromWidth * (1f - progress));
@@ -1130,7 +1165,7 @@ public class ReactionsLayoutInBubble {
                 canvas.save();
                 canvas.scale(bounceScale, bounceScale, x + w / 2f, y + height / 2f);
             }
-            float rad = app.exteraless.appearance.AppearanceConfig.getAvatarCorners((float) height);
+            float rad = iosMedia ? height / 2f : app.exteraless.appearance.AppearanceConfig.getAvatarCorners((float) height);
             if (getDrawServiceShaderBackground() > 0 && !drawBgOnlyIfChosen) {
                 Paint paint1 = Theme.getThemePaint(Theme.key_paint_chatActionBackground, resourcesProvider);
                 Paint paint2 = Theme.getThemePaint(Theme.key_paint_chatActionBackgroundDarken, resourcesProvider);
@@ -1158,6 +1193,13 @@ public class ReactionsLayoutInBubble {
             }
             final boolean particlesEnabled = particles != null && LiteMode.isEnabled(LiteMode.FLAG_ANIMATED_EMOJI_REACTIONS);
             drawRoundRect(canvas, AndroidUtilities.rectTmp, rad, paint);
+            if (iosMedia && !drawBgOnlyIfChosen) {
+                iosMediaRim.setColor(Theme.multAlpha(0x45ffffff, alpha));
+                iosMediaRim.setStyle(Paint.Style.STROKE);
+                iosMediaRim.setStrokeWidth(1f);
+                canvas.drawRoundRect(x + .5f, y + .5f, x + w - .5f, y + height - .5f,
+                        rad - .5f, rad - .5f, iosMediaRim);
+            }
             if (isTag && drawTagDot()) {
                 Paint paint;
                 if (cutTagCircle) {
@@ -1178,6 +1220,10 @@ public class ReactionsLayoutInBubble {
                 if (paid) {
                     size = dp(22);
                     X = dp(4);
+                } else if (iosMedia) {
+                    size = dp(20);
+                    X = dp(11);
+                    imageReceiver.setRoundRadius(0);
                 } else if (animatedEmojiDrawable != null) {
                     size = dp(24);
                     X = dp(6);
@@ -1196,27 +1242,29 @@ public class ReactionsLayoutInBubble {
             }
 
             float tx = 0;
+            final int labelOffset = iosMedia ? dp(33) : dp(hasName && !drawTagDot() ? 10 : (hasName ? 9 : 8)) + dp(20) + dp(2);
             if (textDrawable != null && textDrawable.isNotEmpty() > 0) {
                 canvas.save();
-                canvas.translate(x + dp(hasName && !drawTagDot() ? 10 : (hasName ? 9 : 8)) + dp(20) + dp(2), y);
+                canvas.translate(x + labelOffset, y);
                 textDrawable.setBounds(0, 0, width, height);
                 textDrawable.draw(canvas);
                 textDrawable.setAlpha((int) (0xFF * alpha));
                 canvas.restore();
                 tx = textDrawable.getCurrentWidth() + dp(4) * textDrawable.isNotEmpty();
             }
+            final int counterOffsetX = labelOffset + (!iosMedia && animatedEmojiDrawable != null ? dp(5) - dp(2) : 0);
             if (scrimProgress > 0.0f && !isTag && scrimPreviewCounterDrawable != null && avatarsDrawable == null) {
                 // counterDrawable centers short counts in a box of at least dp(12), match it to avoid a jump
                 final float counterOffset = Math.max(0, (dp(12) - scrimPreviewCounterDrawable.getCurrentWidth()) / 2f);
                 canvas.save();
-                canvas.translate(x + dp(hasName && !drawTagDot() ? 10 : (hasName ? 9 : 8)) + dp(20) + dp(animatedEmojiDrawable != null ? 5 : 2) + counterOffset, y - dp(1));
+                canvas.translate(x + counterOffsetX + counterOffset, y - dp(1));
                 scrimPreviewCounterDrawable.setBounds(0, 0, width, height);
                 scrimPreviewCounterDrawable.draw(canvas);
                 scrimPreviewCounterDrawable.setAlpha((int) (0xFF * alpha));
                 canvas.restore();
             } else if (counterDrawable != null && drawCounter()) {
                 canvas.save();
-                canvas.translate(x + dp(hasName && !drawTagDot() ? 10 : (hasName ? 9 : 8)) + dp(20) + dp(animatedEmojiDrawable != null ? 5 : 2) + tx + (paid ? -dp(1) : 0), y);
+                canvas.translate(x + counterOffsetX + tx + (paid ? -dp(1) : 0), y + (iosMedia ? dp(2) : 0));
                 counterDrawable.draw(canvas);
                 canvas.restore();
             }
@@ -1224,7 +1272,7 @@ public class ReactionsLayoutInBubble {
             if (!isTag) {
                 if (avatarsDrawable != null) {
                     canvas.save();
-                    canvas.translate(x + dp(10) + dp(20) + dp(2), y);
+                    canvas.translate(x + (iosMedia ? dp(35) : dp(10) + dp(20) + dp(2)), y);
                     avatarsDrawable.setAlpha(alpha);
                     avatarsDrawable.setTransitionProgress(progress);
                     avatarsDrawable.onDraw(canvas);

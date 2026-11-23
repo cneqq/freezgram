@@ -9877,7 +9877,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     if (!reactionsLayoutInBubble.isSmall) {
                         boolean useBackgroundWidth = backgroundWidth - dp(24) > widthForCaption;
                         int maxWidth = Math.max(backgroundWidth - dp(36), widthForCaption);
-                        reactionsLayoutInBubble.measure(maxWidth, Gravity.LEFT);
+                        reactionsLayoutInBubble.measure(maxWidth,
+                                usesIosMediaReactionCapsule() && messageObject.isOutOwner() ? Gravity.RIGHT : Gravity.LEFT);
                         if (!reactionsLayoutInBubble.isEmpty) {
                             if (isRoundVideo) {
                                 reactionsLayoutInBubble.drawServiceShaderBackground = 1f - getVideoTranscriptionProgress();
@@ -14011,6 +14012,18 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return;
         }
         if (!reactionsLayoutInBubble.isEmpty && (currentPosition == null || ((currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) && !reactionsLayoutInBubble.isSmall) {
+            if (usesIosMediaReactionCapsule()) {
+                if (currentMessageObject.isOutOwner()) {
+                    // Grouped reactions belong to the bottom-left cell even though the row
+                    // extends to the far edge of the outgoing album.
+                    final int right = currentPosition == null ? Math.round(photoImage.getImageX2()) : layoutWidth - dp(9);
+                    reactionsLayoutInBubble.x = right - reactionsLayoutInBubble.width - dp(2);
+                } else {
+                    reactionsLayoutInBubble.x = Math.round(photoImage.getImageX()) + dp(2);
+                }
+                reactionsLayoutInBubble.y = Math.round(getPhotoBottom()) + dp(4);
+                return;
+            }
             if (currentMessageObject.type == MessageObject.TYPE_EMOJIS || currentMessageObject.isAnimatedEmoji() || currentMessageObject.isAnyKindOfSticker()) {
                 if (currentMessageObject.isOutOwner()) {
                     reactionsLayoutInBubble.x = getMeasuredWidth() - reactionsLayoutInBubble.width - dp(16);//AndroidUtilities.displaySize.x - maxWidth - dp(17);
@@ -18416,6 +18429,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         Drawable currentBackgroundShadowDrawable;
         int additionalTop = 0;
         int additionalBottom = 0;
+        final int detachedReactionHeight = usesIosMediaReactionCapsule() ? reactionsLayoutInBubble.totalHeight : 0;
         boolean forceMediaByGroup = currentPosition != null && (currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) == 0 && currentMessagesGroup.isDocuments && !drawPinnedBottom;
         if (currentMessageObject.isOutOwner()) {
             if (transitionParams.changePinnedBottomProgress >= 1 && !mediaBackground && !drawPinnedBottom && !forceMediaByGroup) {
@@ -18474,7 +18488,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 offsetBottom = dp(2);
             }
             backgroundDrawableTop = additionalTop + (drawPinnedTop ? 0 : dp(1));
-            int backgroundHeight = layoutHeight - offsetBottom + additionalBottom;
+            int backgroundHeight = layoutHeight - offsetBottom + additionalBottom - detachedReactionHeight;
             backgroundDrawableBottom = backgroundDrawableTop + backgroundHeight;
 
             if (!mediaBackground) {
@@ -18557,7 +18571,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 offsetBottom = dp(2);
             }
             backgroundDrawableTop = additionalTop + (drawPinnedTop ? 0 : dp(1));
-            int backgroundHeight = layoutHeight - offsetBottom + additionalBottom;
+            int backgroundHeight = layoutHeight - offsetBottom + additionalBottom - detachedReactionHeight;
             backgroundDrawableBottom = backgroundDrawableTop + backgroundHeight;
 
             if (!mediaBackground) {
@@ -22210,9 +22224,21 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return shouldDrawTimeOnMediaIgnoringCompact();
     }
 
+    public boolean usesIosMediaReactionCapsule() {
+        if (currentMessageObject == null || !mediaBackground || captionLayout != null || hasFactCheck() || isCompactLayout()
+                || drawCommentButton || reactionsLayoutInBubble.isEmpty || reactionsLayoutInBubble.isSmall
+                || reactionsLayoutInBubble.hasPaidReaction || reactionsLayoutInBubble.isTagLayout()
+                || (currentMessagesGroup != null && currentMessagesGroup.captionMessage != null)
+                || !app.exteraless.appearance.AppearanceConfig.iosMode()) {
+            return false;
+        }
+        final int type = currentMessageObject.type;
+        return type == MessageObject.TYPE_PHOTO || type == MessageObject.TYPE_VIDEO || type == MessageObject.TYPE_GIF;
+    }
+
     private boolean shouldDrawTimeOnMediaIgnoringCompact() {
         if (widgetTimeOver()) return true;
-        return mediaBackground && (captionLayout == null || captionAbove) && (reactionsLayoutInBubble.isEmpty || reactionsLayoutInBubble.isSmall || currentMessageObject != null && (currentMessageObject.isAnyKindOfSticker() || currentMessageObject.isRoundVideo())) || currentMessageObject != null && currentMessageObject.type == MessageObject.TYPE_PAID_MEDIA/* || isMedia && drawCommentButton && !isRepliesChat*/;
+        return usesIosMediaReactionCapsule() || mediaBackground && (captionLayout == null || captionAbove) && (reactionsLayoutInBubble.isEmpty || reactionsLayoutInBubble.isSmall || currentMessageObject != null && (currentMessageObject.isAnyKindOfSticker() || currentMessageObject.isRoundVideo())) || currentMessageObject != null && currentMessageObject.type == MessageObject.TYPE_PAID_MEDIA/* || isMedia && drawCommentButton && !isRepliesChat*/;
     }
 
     public void drawTime(Canvas canvas, float alpha, boolean fromParent) {

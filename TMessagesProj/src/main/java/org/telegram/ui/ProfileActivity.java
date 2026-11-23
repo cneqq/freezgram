@@ -1441,7 +1441,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             if (actionsView != null) {
                 actionsView.setActionsColor(btnColor, hasColorById);
                 if (usesIosUserProfile()) {
-                    actionsView.setIosCoverColor(getIosProfileCoverColor());
+                    actionsView.setIosCoverColor(getIosProfileCoverColor(),
+                            hasColorById ? Color.WHITE : getThemedColor(Theme.key_windowBackgroundWhiteBlueIcon));
                 }
             }
             if (musicView != null) {
@@ -6630,7 +6631,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             final TLRPC.TL_emojiStatusCollectible gift = (TLRPC.TL_emojiStatusCollectible) status;
             final int fill = limitLuminance(gift.edge_color | 0xff000000, .37);
             final int top = limitLuminance(ColorUtils.blendARGB(gift.center_color | 0xff000000, Color.BLACK, .07f), .36);
-            final int cardColor = limitLuminance(ColorUtils.blendARGB(fill, Color.BLACK, .14f), .205);
+            final int cardColor = limitLuminance(ColorUtils.blendARGB(fill, Color.BLACK, .16f), .245);
             final int linkColor = ColorUtils.blendARGB(gift.text_color | 0xff000000, Color.WHITE, .99f);
             if (coverGradient != null && background == fill && coverTop == top && card == cardColor && link == linkColor) {
                 return false;
@@ -6642,7 +6643,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             secondary = ColorUtils.blendARGB(fill, Color.WHITE, .94f);
             divider = ColorUtils.blendARGB(card, Color.WHITE, .12f);
             coverGradient = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                    new int[] {top, ColorUtils.blendARGB(top, fill, .65f), fill, fill});
+                    new int[] {top, ColorUtils.blendARGB(top, fill, .18f),
+                            ColorUtils.blendARGB(top, fill, .57f), fill});
             return true;
         }
 

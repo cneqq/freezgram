@@ -44,7 +44,12 @@ import me.vkryl.core.reference.ReferenceList;
  */
 public final class ProfileButtonsGlass {
     public static int iosRimColor(int cover) {
-        return ColorUtils.blendARGB(Theme.adaptHSV(cover | 0xff000000, .02f, .22f), Color.WHITE, .26f);
+        return ColorUtils.blendARGB(Theme.adaptHSV(cover | 0xff000000, .04f, .28f), Color.WHITE, .17f);
+    }
+
+    public static int iosSurfaceTint(boolean dark) {
+        // The Freezgram capture already includes the cover shading, so use a lighter layer on top.
+        return dark ? 0x29000000 : 0x45ffffff;
     }
 
     /** A diagonal highlight shared by the circular actions and the profile pills. */
@@ -59,7 +64,7 @@ public final class ProfileButtonsGlass {
             if (gradient == null || rim != color) {
                 color = rim;
                 gradient = new LinearGradient(0f, 0f, 1f, 1f,
-                        new int[] {Theme.multAlpha(rim, .88f), Theme.multAlpha(rim, .20f), Theme.multAlpha(rim, .68f)},
+                        new int[] {rim, Theme.multAlpha(rim, .24f), Theme.multAlpha(rim, .86f)},
                         new float[] {0f, .55f, 1f}, Shader.TileMode.CLAMP);
                 paint.setShader(gradient);
             }
@@ -67,7 +72,7 @@ public final class ProfileButtonsGlass {
             matrix.postTranslate(bounds.left, bounds.top);
             gradient.setLocalMatrix(matrix);
             paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(AndroidUtilities.dpf2(.8f));
+            paint.setStrokeWidth(AndroidUtilities.dpf2(.9f));
             paint.setAlpha(Math.round(255 * alpha));
             final float inset = paint.getStrokeWidth() / 2f;
             radius = Math.max(0f, radius - inset);

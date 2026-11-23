@@ -187,6 +187,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     public int addForumHeightForTags = 11;
     private TextPaint iosNamePaint;
     private TextPaint iosMessagePaint;
+    private TextPaint profilePreviewTimePaint;
 
     public void useIosLayout() {
         useForceThreeLines = true;
@@ -198,7 +199,13 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         iosMessagePaint.setTextSize(dp(15));
     }
 
-    public void setPreviewTypefaces(android.graphics.Typeface name, android.graphics.Typeface message) {
+    public void useIosProfilePreview() {
+        setPreviewTypefaces(app.freezgram.IosTypography.Profile.SEMIBOLD, app.freezgram.IosTypography.Profile.REGULAR);
+        profilePreviewTimePaint = new TextPaint(Theme.dialogs_timePaint);
+        profilePreviewTimePaint.setTypeface(app.freezgram.IosTypography.Profile.REGULAR);
+    }
+
+    private void setPreviewTypefaces(android.graphics.Typeface name, android.graphics.Typeface message) {
         iosNamePaint = new TextPaint();
         iosNamePaint.set(Theme.dialogs_namePaint[1]);
         iosNamePaint.setTypeface(name);
@@ -5284,6 +5291,10 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     }
 
     private TextPaint getTimeTextPaint() {
+        if (profilePreviewTimePaint != null) {
+            profilePreviewTimePaint.setColor(Theme.getColor(Theme.key_chats_date, resourcesProvider));
+            return profilePreviewTimePaint;
+        }
         return drawCount ? (isCounterMuted() ? Theme.dialogs_timePaintBold : Theme.dialogs_timePaintBoldAccent) : Theme.dialogs_timePaint;
     }
 

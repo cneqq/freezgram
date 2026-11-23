@@ -456,7 +456,7 @@ public class ProfileMusicView extends View {
 
         if (iosLayout) {
             final float radius = rect.height() / 2f;
-            iosFill.setColor(Theme.multAlpha(0x21000000, alpha));
+            iosFill.setColor(Theme.multAlpha(ProfileButtonsGlass.iosSurfaceTint(Theme.isCurrentThemeDark()), alpha));
             canvas.drawRoundRect(rect, radius, radius, iosFill);
             iosRim.draw(canvas, rect, radius, iosCoverColor, alpha);
         }

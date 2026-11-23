@@ -125,7 +125,7 @@ public class ProfileActionsView extends View {
     private int color = 0;
     private int iosCoverColor;
     private int iosActionTint;
-    private boolean iosActionUsesWhiteIcon;
+    private int iosActionIconColor = Color.WHITE;
     private boolean iosDarkTheme;
     private final Paint iosActionPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final ProfileButtonsGlass.IosRim iosActionRim = new ProfileButtonsGlass.IosRim();
@@ -215,27 +215,19 @@ public class ProfileActionsView extends View {
         }
     }
 
-    public void setIosCoverColor(int color) {
+    public void setIosCoverColor(int color, int iconColor) {
         if (!usesRoundIosActions()) {
             return;
         }
         final int cover = color | 0xff000000;
         final boolean dark = Theme.isCurrentThemeDark();
-        if (iosCoverColor == cover && iosDarkTheme == dark) {
+        if (iosCoverColor == cover && iosDarkTheme == dark && iosActionIconColor == iconColor) {
             return;
         }
         iosCoverColor = cover;
         iosDarkTheme = dark;
-        final int shade = 0x19000000;
-        final int highlight = dark ? 0x28ffffff : 0x42ffffff;
-        final int preferred = dark ? shade : highlight;
-        final int alternate = dark ? highlight : shade;
-        final int preferredFill = ColorUtils.compositeColors(preferred, cover);
-        final int alternateFill = ColorUtils.compositeColors(alternate, cover);
-        final double contrast = ColorUtils.calculateContrast(preferredFill, cover);
-        final boolean useAlternate = contrast < 1.25 && ColorUtils.calculateContrast(alternateFill, cover) > contrast;
-        iosActionTint = useAlternate ? alternate : preferred;
-        iosActionUsesWhiteIcon = ColorUtils.calculateLuminance(useAlternate ? alternateFill : preferredFill) <= .25;
+        iosActionIconColor = iconColor;
+        iosActionTint = ProfileButtonsGlass.iosSurfaceTint(dark);
         invalidate();
     }
 
@@ -292,11 +284,11 @@ public class ProfileActionsView extends View {
     }
 
     private float getItemInset() {
-        return usesRoundIosActions() ? Math.min(dpf2(34), getMeasuredWidth() * .085f) : xpadding;
+        return usesRoundIosActions() ? Math.min(dpf2(36), getMeasuredWidth() * .09f) : xpadding;
     }
 
     private float getItemGap() {
-        return usesRoundIosActions() ? dpf2(7) : xpadding / 2f;
+        return usesRoundIosActions() ? dpf2(8) : xpadding / 2f;
     }
 
     private boolean usesRoundIosActions() {
@@ -476,12 +468,12 @@ public class ProfileActionsView extends View {
 
         final boolean isButtonColorLight = isButtonColorLight();
         // over the photo the buttons are the dimmed photo on every Android (see ProfileButtonsGlass): white icons there
-        final boolean tintedCircle = usesRoundIosActions() && iosActionTint != 0;
+        final boolean iosCircle = usesRoundIosActions();
         final float originalWhite = !isButtonColorLight ? 1 : MathUtils.clamp((parentExpanded - 0.75f) / 0.25f, 0, 1);
-        final float useFilledWhiteIcon = tintedCircle ? (iosActionUsesWhiteIcon ? 1f : 0f)
-                : usesRoundIosActions() && parentExpanded >= .75f ? 1f : originalWhite;
+        final float filledIcon = iosCircle ? 1f : originalWhite;
 
-        final int iconColor = ColorUtils.blendARGB(Color.BLACK, Color.WHITE, useFilledWhiteIcon);
+        final int iconColor = iosCircle ? (parentExpanded >= .75f ? Color.WHITE : iosActionIconColor)
+                : ColorUtils.blendARGB(Color.BLACK, Color.WHITE, originalWhite);
         final int textColor = ColorUtils.blendARGB(Color.BLACK, Color.WHITE, originalWhite);
         if (lastColorFilter == null || lastColorFilterColor != iconColor) {
             lastColorFilterColor = iconColor;
@@ -531,8 +523,8 @@ public class ProfileActionsView extends View {
             canvas.scale(action.iconScale, action.iconScale, action.bounds.centerX(), action.bounds.centerY());
         }
         if (!isAnimatingCallAction || action.key != KEY_CALL) {
-            final float outlineAlpha = (1f - useFilledWhiteIcon) * alpha;
-            final float filledAlpha = useFilledWhiteIcon * alpha;
+            final float outlineAlpha = (1f - filledIcon) * alpha;
+            final float filledAlpha = filledIcon * alpha;
             if (action.drawableAnimated != null) {
                 if (action.key == KEY_NOTIFICATION) {
                     drawActionDrawable(canvas, action.drawableOutline, outlineAlpha);

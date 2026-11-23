@@ -164,7 +164,7 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
         dialogCell.avatarStart = 15;
         dialogCell.messagePaddingStart = 83;
         if (captionAboveCard) {
-            dialogCell.setPreviewTypefaces(app.freezgram.IosTypography.Profile.SEMIBOLD, app.freezgram.IosTypography.Profile.REGULAR);
+            dialogCell.useIosProfilePreview();
             iosPreviewCard = new FrameLayout(context);
             iosPreviewCard.addView(dialogCell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,
                     Gravity.TOP, 0, 6, 0, 6));

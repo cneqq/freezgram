@@ -8251,7 +8251,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
                     if (documentAttachType != DOCUMENT_ATTACH_TYPE_MUSIC && documentAttachType != DOCUMENT_ATTACH_TYPE_AUDIO && documentAttachType != DOCUMENT_ATTACH_TYPE_DOCUMENT) {
                         if (stargift != null) {
-                            final int size = dp(220);
+                            final boolean iosGiftPreview = app.exteraless.appearance.AppearanceConfig.iosMode()
+                                    && "telegram_nft".equals(webpageType);
+                            final int sizeDp = iosGiftPreview
+                                    ? Math.max(1, Math.min(236, (int) (linkPreviewMaxWidth / AndroidUtilities.density)))
+                                    : 220;
+                            final int size = dp(sizeDp);
                             drawImageButton = false;
                             drawPhotoImage = true;
                             if (linkPreviewHeight != 0) {
@@ -8262,10 +8267,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             linkPreviewHeight += size;
                             maxChildWidth = Math.max(maxChildWidth, size + additinalWidth);
                             photoImage.setImageCoords(0, 0, size, size);
-                            currentPhotoFilter = "220_220";
-                            currentPhotoFilterThumb = "220_220_b";
+                            currentPhotoFilter = sizeDp + "_" + sizeDp;
+                            currentPhotoFilterThumb = currentPhotoFilter + "_b";
 
-                            StarGiftSheet.StarGiftDrawableIcon starGiftDrawableIcon = new StarGiftSheet.StarGiftDrawableIcon(this, stargift, 220, 1.0f).setRounding(dp(12)).setPatternsType(StarGiftPatterns.TYPE_LINK_PREVIEW);
+                            StarGiftSheet.StarGiftDrawableIcon starGiftDrawableIcon = new StarGiftSheet.StarGiftDrawableIcon(this, stargift, sizeDp, 1.0f)
+                                    .setRounding(dp(iosGiftPreview ? 5 : 12)).setPatternsType(StarGiftPatterns.TYPE_LINK_PREVIEW);
                             if (starGiftAuction != null) {
                                 starGiftDrawableIcon.setGradient(starGiftAuction.center_color, starGiftAuction.edge_color);
                                 starGiftDrawableIcon.setAuctionStateTextColor(starGiftAuction.text_color);
@@ -12503,6 +12509,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     }
                 } else {
                     str = getString(R.string.OpenUniqueGift);
+                    if (app.exteraless.appearance.AppearanceConfig.iosMode()) {
+                        str = str.toString().toUpperCase(LocaleController.getInstance().getCurrentLocale());
+                    }
                 }
             } else if (drawInstantViewType == 27)  {
                 str = getString(R.string.JoinCall).toUpperCase();

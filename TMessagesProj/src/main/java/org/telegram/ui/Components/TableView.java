@@ -68,6 +68,13 @@ public class TableView extends TableLayout implements Theme.Colorable {
     private final float w = Math.max(1, dp(.66f));
     private final float hw = w / 2f;
 
+    private float cornerRadius = dp(10);
+
+    public void setCornerRadius(float cornerRadius) {
+        this.cornerRadius = cornerRadius;
+        invalidate();
+    }
+
     public TableView(Context context, Theme.ResourcesProvider resourcesProvider) {
         super(context);
         this.resourcesProvider = resourcesProvider;
@@ -529,7 +536,7 @@ public class TableView extends TableLayout implements Theme.Colorable {
         @Override
         protected void onDraw(Canvas canvas) {
             if (first || last) {
-                final float r = dp(10);
+                final float r = table.cornerRadius;
                 table.radii[0] = table.radii[1] = first ? r : 0; // top left
                 table.radii[2] = table.radii[3] = 0; // top right
                 table.radii[4] = table.radii[5] = 0; // bottom right
@@ -586,7 +593,7 @@ public class TableView extends TableLayout implements Theme.Colorable {
         @Override
         protected void onDraw(Canvas canvas) {
             if (first || last) {
-                final float r = dp(10);
+                final float r = table.cornerRadius;
                 table.radii[0] = table.radii[1] = first ? r : 0; // top left
                 table.radii[2] = table.radii[3] = first ? r : 0; // top right
                 table.radii[4] = table.radii[5] = last ? r : 0; // bottom right
@@ -647,7 +654,7 @@ public class TableView extends TableLayout implements Theme.Colorable {
         @Override
         protected void onDraw(Canvas canvas) {
             if (first || last) {
-                final float r = dp(10);
+                final float r = table.cornerRadius;
                 table.radii[0] = table.radii[1] = first && left ? r : 0; // top left
                 table.radii[2] = table.radii[3] = first && right ? r : 0; // top right
                 table.radii[4] = table.radii[5] = last && right ? r : 0; // bottom right

@@ -11,6 +11,7 @@ import org.telegram.messenger.FileLog;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Outline;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.drawable.ColorDrawable;
@@ -24,7 +25,9 @@ import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewOutlineProvider;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -63,6 +66,7 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeBind;
 import org.telegram.ui.Cells.ChatActionCell;
 import org.telegram.ui.Cells.EditEmojiTextCell;
+import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.BottomSheetWithRecyclerListView;
@@ -115,6 +119,9 @@ public class SendGiftSheet extends BottomSheetWithRecyclerListView implements No
 
     private final SizeNotifierFrameLayout chatView;
     private final LinearLayout chatLinearLayout;
+    private final boolean iosGiftLayout = app.exteraless.appearance.AppearanceConfig.iosMode();
+    private FrameLayout privacyCard;
+    private TextCheckCell privacySwitch;
 
     private final long send_paid_messages_stars;
 //    private final ChatActionCell payActionCell;
@@ -347,20 +354,53 @@ public class SendGiftSheet extends BottomSheetWithRecyclerListView implements No
 
         messageObject = new MessageObject(currentAccount, message, false, false);
         actionCell.setMessageObject(messageObject, true);
-        chatLinearLayout.addView(actionCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL, 0, send_paid_messages_stars > 0 ? 0 : 8, 0, 8));
+        final int previewTopPadding = iosGiftLayout ? 54 : send_paid_messages_stars > 0 ? 0 : 8;
+        chatLinearLayout.addView(actionCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL, 0, previewTopPadding, 0, 8));
 
         chatView.addView(chatLinearLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL));
+        if (iosGiftLayout) {
+            chatView.setOutlineProvider(new ViewOutlineProvider() {
+                @Override
+                public void getOutline(View view, Outline outline) {
+                    final int radius = dp(30);
+                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight() + radius, radius);
+                }
+            });
+            chatView.setClipToOutline(true);
+            final ImageView close = new ImageView(context);
+            close.setScaleType(ImageView.ScaleType.CENTER);
+            close.setImageResource(R.drawable.freezgram_ios_close);
+            close.setColorFilter(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
+            close.setBackground(Theme.createRoundRectDrawable(dp(21), Theme.getColor(Theme.key_dialogBackground, resourcesProvider)));
+            close.setContentDescription(getString(R.string.Close));
+            close.setOnClickListener(v -> dismiss());
+            chatView.addView(close, LayoutHelper.createFrame(42, 42, Gravity.TOP | Gravity.START, 16, 10, 16, 0));
 
-        messageEdit = new EditEmojiTextCell(context, (SizeNotifierFrameLayout) containerView, getString(starGift != null ? R.string.Gift2Message : R.string.Gift2MessageOptional), true, MessagesController.getInstance(currentAccount).stargiftsMessageLengthMax, EditTextEmoji.STYLE_GIFT, resourcesProvider) {
+            if (starGift != null) {
+                privacyCard = new FrameLayout(context);
+                privacySwitch = new TextCheckCell(context, 16, true, resourcesProvider);
+                privacySwitch.setTextAndCheck(getString(self ? R.string.Gift2HideSelf : R.string.Gift2Hide), anonymous, false);
+                privacySwitch.setBackground(Theme.createRoundRectDrawable(dp(24), Theme.getColor(Theme.key_windowBackgroundGray, resourcesProvider)));
+                privacySwitch.setOnClickListener(v -> toggleAnonymous());
+                privacyCard.addView(privacySwitch, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,
+                        Gravity.TOP, 24, 6, 24, 0));
+            }
+        }
+
+        messageEdit = new EditEmojiTextCell(context, (SizeNotifierFrameLayout) containerView, getString(iosGiftLayout || starGift == null ? R.string.Gift2MessageOptional : R.string.Gift2Message), true, MessagesController.getInstance(currentAccount).stargiftsMessageLengthMax, EditTextEmoji.STYLE_GIFT, resourcesProvider) {
             @Override
             protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-                setPadding(dp(16), 0, dp(12), 0);
+                setPadding(dp(iosGiftLayout ? 30 : 16), 0, dp(iosGiftLayout ? 24 : 12), 0);
                 super.onMeasure(widthMeasureSpec, heightMeasureSpec);
             }
 
             @Override
             protected void dispatchDraw(@NonNull Canvas canvas) {
-                msgDrawable.setBounds(dp(10), 0, getMeasuredWidth() - dp(10), getMeasuredHeight());
+                final int margin = dp(iosGiftLayout ? 22 : 10);
+                if (iosGiftLayout) {
+                    msgDrawable.setRadius(getMeasuredHeight() * .5f);
+                }
+                msgDrawable.setBounds(margin, 0, getMeasuredWidth() - margin, getMeasuredHeight());
                 msgDrawable.draw(canvas);
                 super.dispatchDraw(canvas);
             }
@@ -508,7 +548,9 @@ public class SendGiftSheet extends BottomSheetWithRecyclerListView implements No
         button = new ButtonWithCounterView(context, resourcesProvider);
         button.setRound();
         setButtonText(false);
-        buttonContainer.addView(button, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, Gravity.FILL, 10, 10, 10, 10));
+        final int sendButtonMargin = iosGiftLayout ? 28 : 10;
+        buttonContainer.addView(button, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, iosGiftLayout ? 50 : 48,
+                Gravity.FILL, sendButtonMargin, 10, sendButtonMargin, 10));
         button.setOnClickListener(v -> {
             if (button.isLoading()) return;
 
@@ -581,13 +623,7 @@ public class SendGiftSheet extends BottomSheetWithRecyclerListView implements No
             final UItem item = adapter.getItem(reverseLayout ? position : position - 1);
             if (item == null) return;
             if (item.id == 1) {
-                anonymous = !anonymous;
-                if (action instanceof TLRPC.TL_messageActionStarGift) {
-                    ((TLRPC.TL_messageActionStarGift) action).name_hidden = anonymous;
-                }
-                messageObject.updateMessageText();
-                actionCell.setMessageObject(messageObject, true);
-                adapter.update(true);
+                toggleAnonymous();
             } else if (item.id == 2) {
                 if (forceUpgrade || forceNotUpgrade) {
                     AndroidUtilities.shakeViewSpring(view, shakeDp = -shakeDp);
@@ -952,6 +988,19 @@ public class SendGiftSheet extends BottomSheetWithRecyclerListView implements No
         return adapter;
     }
 
+    private void toggleAnonymous() {
+        anonymous = !anonymous;
+        if (action instanceof TLRPC.TL_messageActionStarGift) {
+            ((TLRPC.TL_messageActionStarGift) action).name_hidden = anonymous;
+        }
+        if (privacySwitch != null) {
+            privacySwitch.setChecked(anonymous);
+        }
+        messageObject.updateMessageText();
+        actionCell.setMessageObject(messageObject, true);
+        adapter.update(true);
+    }
+
     public void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
         final long paidMessagesStarsPrice = MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(dialogId);
         items.add(UItem.asCustom(-1, chatView));
@@ -970,7 +1019,8 @@ public class SendGiftSheet extends BottomSheetWithRecyclerListView implements No
             } else {
                 items.add(UItem.asShadow(-5, null));
             }
-            items.add(UItem.asCheck(1, getString(self ? R.string.Gift2HideSelf : R.string.Gift2Hide)).setChecked(anonymous));
+            items.add(privacyCard != null ? UItem.asCustom(-7, privacyCard)
+                    : UItem.asCheck(1, getString(self ? R.string.Gift2HideSelf : R.string.Gift2Hide)).setChecked(anonymous));
             items.add(UItem.asShadow(-6, self ? getString(R.string.Gift2HideSelfInfo) : dialogId < 0 ? getString(R.string.Gift2HideChannelInfo) : formatString(R.string.Gift2HideInfo, name)));
 
             if (limitContainerWrapper != null) {

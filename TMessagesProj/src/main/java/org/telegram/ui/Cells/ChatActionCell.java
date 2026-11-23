@@ -1934,7 +1934,12 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             if (!AndroidUtilities.isTablet() && (messageObject.type == MessageObject.TYPE_GIFT_PREMIUM || messageObject.type == MessageObject.TYPE_GIFT_STARS || isMessageActionSuggestedPostApproval()) || messageObject.type == MessageObject.TYPE_SHARING_OFFER) {
                 giftRectSize = (int) (giftRectSize * 1.2f);
             }
-            stickerSize = giftRectSize - dp(106);
+            if (usesIosOrdinaryGiftCard(messageObject)) {
+                giftRectSize = Math.min(giftRectSize, Math.round(MeasureSpec.getSize(widthMeasureSpec) * .56f));
+                stickerSize = Math.min(dp(118), Math.round(giftRectSize * .54f));
+            } else {
+                stickerSize = giftRectSize - dp(106);
+            }
             if (messageObject.type == MessageObject.TYPE_GIFT_THEME_UPDATE) {
                 giftRectSize = Math.min(giftRectSize, dp(192));
                 stickerSize = dp(78);
@@ -3887,7 +3892,8 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             }
             backgroundRect.set(AndroidUtilities.rectTmp);
 
-            if (!drawServiceGlass(canvas, null, backgroundRect, dp(20), true, fromParent)) {
+            final float radius = dp(usesIosOrdinaryGiftCard(messageObject) ? 24 : 20);
+            if (!drawServiceGlass(canvas, null, backgroundRect, radius, true, fromParent)) {
                 boolean backgroundDrawn = false;
                 if (messageObject != null && (messageObject.type == MessageObject.TYPE_GIFT_OFFER || messageObject.type == MessageObject.TYPE_SHARING_OFFER)) {
                     if (botInlineButtons != null) {
@@ -3904,10 +3910,10 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                 }
 
                 if (!backgroundDrawn) {
-                    canvas.drawRoundRect(backgroundRect, dp(20), dp(20), backgroundPaint);
+                    canvas.drawRoundRect(backgroundRect, radius, radius, backgroundPaint);
 
                     if (hasGradientService()) {
-                        canvas.drawRoundRect(backgroundRect, dp(20), dp(20), darkenBackgroundPaint);
+                        canvas.drawRoundRect(backgroundRect, radius, radius, darkenBackgroundPaint);
                     }
                 }
             }
@@ -3917,6 +3923,12 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             backgroundPaint.setAlpha(oldAlpha);
             darkenBackgroundPaint.setAlpha(oldAlpha2);
         }
+    }
+
+    private static boolean usesIosOrdinaryGiftCard(MessageObject messageObject) {
+        return app.exteraless.appearance.AppearanceConfig.iosMode()
+                && messageObject != null && messageObject.messageOwner != null
+                && messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGift;
     }
 
     private final Path backgroundPath2 = new Path();

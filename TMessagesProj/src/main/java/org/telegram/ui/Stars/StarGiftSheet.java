@@ -52,6 +52,7 @@ import android.graphics.RadialGradient;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.OvalShape;
 import android.os.Build;
@@ -206,6 +207,7 @@ import java.util.Map;
 import tw.nekomimi.nekogram.NekoConfig;
 
 public class StarGiftSheet extends BottomSheetWithRecyclerListView implements NotificationCenter.NotificationCenterDelegate {
+    private final boolean iosGiftLayout = app.exteraless.appearance.AppearanceConfig.iosMode();
 
     private final long dialogId;
     private ContainerView container;
@@ -463,6 +465,9 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         beforeTableTextView.setVisibility(View.GONE);
 
         tableView = new TableView(context, resourcesProvider);
+        if (iosGiftLayout) {
+            tableView.setCornerRadius(dp(14));
+        }
 
         infoLayout.addView(tableView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, 12));
 
@@ -615,6 +620,9 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         craftLayout.setAlpha(0.0f);
 
         topView = new TopView(context, resourcesProvider, this::onBackPressed, this::onMenuPressed, v -> openCrafting(true), this::onTransferClick, this::onWearPressed, this::onSharePressed, this::onResellPressed, this::onUpdatePriceClick);
+        if (iosGiftLayout) {
+            topView.useIosGiftControls();
+        }
         topView.craftTopView.helpButton.setOnClickListener(v -> {
             if (v.getAlpha() < 1) return;
             openCraftInfo();
@@ -634,11 +642,12 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         button = new ButtonWithCounterView(context, resourcesProvider).setRound();
         button.setText(getString(R.string.OK), false);
         button.setSubText(null, false);
-        final FrameLayout.LayoutParams buttonLayoutParams = LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.FILL, 0, 12, 0, 12);
-        buttonLayoutParams.leftMargin = backgroundPaddingLeft + dp(14);
-        buttonLayoutParams.rightMargin = backgroundPaddingLeft + dp(14);
+        final int buttonHeight = iosGiftLayout ? 50 : 48;
+        final int buttonMargin = backgroundPaddingLeft + dp(iosGiftLayout ? 28 : 14);
+        final FrameLayout.LayoutParams buttonLayoutParams = LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, buttonHeight, Gravity.FILL, 0, 12, 0, 12);
+        buttonLayoutParams.leftMargin = buttonLayoutParams.rightMargin = buttonMargin;
         buttonContainer.addView(button, buttonLayoutParams);
-        container.addView(buttonContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 12 + 48 + 12, Gravity.BOTTOM | Gravity.FILL_HORIZONTAL));
+        container.addView(buttonContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 12 + buttonHeight + 12, Gravity.BOTTOM | Gravity.FILL_HORIZONTAL));
 
         underButtonContainer = new FrameLayout(context);
         ThemeBind.backgroundColor(underButtonContainer, Theme.key_dialogBackground, resourcesProvider);
@@ -1155,6 +1164,9 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             .setOnTopOfScrim()
             .setDimAlpha(0)
             .translate(containerLocation[0] + backgroundPaddingLeft, -dp(2));
+        if (iosGiftLayout) {
+            options.setRoundRadius(24).setMinWidth(212);
+        }
         showSimpleMenu(btn, options);
     }
 
@@ -1720,15 +1732,18 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             canvas.save();
 
             final float top = top();
-            final float r = dp(12);
-            rect.set(backgroundPaddingLeft, top, getWidth() - backgroundPaddingLeft, getHeight() + r);
+            final boolean floating = iosGiftLayout && currentPage.is(PAGE_INFO);
+            final float r = dp(floating ? 30 : 12);
+            final float left = backgroundPaddingLeft + (floating ? dp(5) : 0);
+            final float bottom = floating ? getHeight() - Math.max(getPaddingBottom(), dp(5)) : getHeight() + r;
+            rect.set(left, top, getWidth() - left, Math.max(top, bottom));
             backgroundPaint.setColor(getThemedColor(Theme.key_dialogBackground));
             path.rewind();
             path.addRoundRect(rect, r, r, Path.Direction.CW);
             canvas.drawPath(path, backgroundPaint);
 
             super.dispatchDraw(canvas);
-            if (getPaddingBottom() > 0 && buttonContainer.getVisibility() == View.VISIBLE && buttonContainer.getAlpha() > 0) {
+            if (!floating && getPaddingBottom() > 0 && buttonContainer.getVisibility() == View.VISIBLE && buttonContainer.getAlpha() > 0) {
                 backgroundPaint.setAlpha((int) (0xFF * buttonContainer.getAlpha()));
                 canvas.drawRect(backgroundPaddingLeft, getHeight() - getPaddingBottom(), getWidth() - backgroundPaddingLeft, getHeight(), backgroundPaint);
                 backgroundPaint.setAlpha(0xFF);
@@ -2106,6 +2121,27 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         public final ImageView optionsView;
         private boolean showOptions;
         private Boolean optionsViewLight;
+        private boolean iosGiftControls;
+
+        private void useIosGiftControls() {
+            iosGiftControls = true;
+            closeView.setLayoutParams(LayoutHelper.createFrame(44, 44, Gravity.START | Gravity.TOP, 16, 14, 16, 0));
+            closeView.setScaleType(ImageView.ScaleType.CENTER);
+            closeView.setImageResource(R.drawable.freezgram_ios_close);
+            closeView.setContentDescription(getString(R.string.Close));
+            optionsView.setLayoutParams(LayoutHelper.createFrame(44, 44, Gravity.END | Gravity.TOP, 16, 14, 16, 0));
+            optionsView.setImageResource(R.drawable.baseline_more_horiz_24);
+            optionsView.setContentDescription(getString(R.string.AccDescrMoreOptions));
+        }
+
+        private Drawable giftControlBackground(boolean overGift) {
+            final int foreground = overGift ? Color.WHITE : Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider);
+            final GradientDrawable background = new GradientDrawable();
+            background.setShape(GradientDrawable.OVAL);
+            background.setColor(Theme.multAlpha(foreground, overGift ? .19f : .05f));
+            background.setStroke(dp(1), Theme.multAlpha(foreground, overGift ? .33f : .14f));
+            return background;
+        }
 
         public void setShowOptions(boolean show) {
             showOptions = show;
@@ -2497,15 +2533,22 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 layout[i].setAlpha(alpha);
                 layout[i].setVisibility(alpha > 0 ? VISIBLE : INVISIBLE);
             }
-            closeView.setAlpha(Math.max(backdrop[0] != null ? p.at(PAGE_WEAR) : 0.0f, backdrop[1] != null ? p.at(PAGE_UPGRADE) : 0.0f));
-            closeView.setVisibility(backdrop[0] != null && p.to == PAGE_WEAR || backdrop[1] != null && p.to == PAGE_UPGRADE ? View.VISIBLE : View.GONE);
+            final float closeAlpha = Math.max(backdrop[0] != null ? p.at(PAGE_WEAR) : 0.0f, backdrop[1] != null ? p.at(PAGE_UPGRADE) : 0.0f);
+            closeView.setAlpha(iosGiftControls ? Math.max(closeAlpha, p.at(PAGE_INFO)) : closeAlpha);
+            closeView.setVisibility(iosGiftControls && p.to == PAGE_INFO || backdrop[0] != null && p.to == PAGE_WEAR || backdrop[1] != null && p.to == PAGE_UPGRADE ? View.VISIBLE : View.GONE);
             final boolean hasOptions = backdrop[0] != null || showOptions;
             optionsView.setAlpha(lerp(false, hasOptions, p.at(PAGE_INFO)));
             optionsView.setVisibility(hasOptions && p.to == PAGE_INFO ? View.VISIBLE : View.GONE);
-            final boolean optionsLight = backdrop[0] != null;
+            final boolean optionsLight = iosGiftControls ? backdrop[p.to == PAGE_UPGRADE ? 1 : 0] != null : backdrop[0] != null;
             if (optionsViewLight == null || optionsViewLight != optionsLight) {
                 optionsViewLight = optionsLight;
-                if (optionsLight) {
+                if (iosGiftControls) {
+                    final int foreground = optionsLight ? Color.WHITE : Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider);
+                    closeView.setColorFilter(foreground);
+                    optionsView.setColorFilter(foreground);
+                    closeView.setBackground(giftControlBackground(optionsLight));
+                    optionsView.setBackground(giftControlBackground(optionsLight));
+                } else if (optionsLight) {
                     optionsView.clearColorFilter();
                     optionsView.setBackground(Theme.createSelectorDrawable(0x20ffffff, Theme.RIPPLE_MASK_CIRCLE_20DP));
                 } else {

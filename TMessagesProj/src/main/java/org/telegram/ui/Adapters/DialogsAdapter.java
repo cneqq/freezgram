@@ -560,6 +560,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         updateItemList();
         ArrayList<ItemInternal> newItems = new ArrayList<>(itemInternals);
         itemInternals = oldItems;
+        final boolean iosChatList = parentFragment != null && parentFragment.usesIosRootChatList();
 
         DiffUtil.Callback callback = new DiffUtil.Callback() {
             @Override
@@ -579,7 +580,8 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
 
             @Override
             public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-                return oldItems.get(oldItemPosition).viewType == newItems.get(newItemPosition).viewType;
+                return oldItems.get(oldItemPosition).viewType == newItems.get(newItemPosition).viewType
+                        && (!iosChatList || getIosDivider(oldItems, oldItemPosition) == getIosDivider(newItems, newItemPosition));
             }
         };
         if (itemInternals.size() < 50 || !ALLOW_UPDATE_IN_BACKGROUND) {
@@ -611,6 +613,21 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             });
         }
 
+    }
+
+    private enum IosDivider {
+        NONE, INSET, PINNED_BOUNDARY
+    }
+
+    private static IosDivider getIosDivider(ArrayList<ItemInternal> items, int index) {
+        if (index + 1 >= items.size()) return IosDivider.NONE;
+        final ItemInternal current = items.get(index);
+        final ItemInternal next = items.get(index + 1);
+        if (current.viewType != VIEW_TYPE_DIALOG || next.viewType != VIEW_TYPE_DIALOG
+                || current.isFolder || next.isFolder) {
+            return IosDivider.NONE;
+        }
+        return current.pinned && !next.pinned ? IosDivider.PINNED_BOUNDARY : IosDivider.INSET;
     }
 
     @Override
@@ -694,6 +711,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                     DialogCell dialogCell = new DialogCell(parentFragment, mContext, true, false, currentAccount, null);
                     if (parentFragment != null && parentFragment.usesIosListLayout()) {
                         dialogCell.useIosLayout();
+                        if (viewType == VIEW_TYPE_DIALOG && parentFragment.usesIosRootChatList()) {
+                            dialogCell.useIosChatListSurface();
+                        }
                     }
                     if (showOpenBotButton()) {
                         dialogCell.allowBotOpenButton(true, this::onOpenBot);
@@ -1031,8 +1051,10 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 } else {
                     DialogCell cell = (DialogCell) holder.itemView;
                     cell.isHiddenInCommunity = communityId != 0 && ChatObject.isHiddenInCommunity(currentAccount, dialog.id);
-                    cell.useSeparator = false; // nextDialog != null;
-                    cell.fullSeparator = false; // dialog.pinned && nextDialog != null && !nextDialog.pinned;
+                    final IosDivider iosDivider = parentFragment != null && parentFragment.usesIosRootChatList()
+                            ? getIosDivider(itemInternals, i) : IosDivider.NONE;
+                    cell.useSeparator = iosDivider != IosDivider.NONE;
+                    cell.fullSeparator = iosDivider == IosDivider.PINNED_BOUNDARY;
                     if (dialogsType == DialogsActivity.DIALOGS_TYPE_DEFAULT) {
                         if (AndroidUtilities.isTablet()) {
                             cell.setDialogSelected(dialog.id == openedDialogId);

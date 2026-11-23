@@ -189,6 +189,8 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     private TextPaint iosMessagePaint;
     private TextPaint profilePreviewTimePaint;
     private boolean iosChatListRow;
+    private boolean iosChatListSurface;
+    private final Paint iosSeparatorPaint = new Paint();
 
     public void useIosLayout() {
         iosChatListRow = true;
@@ -202,6 +204,14 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         profilePreviewTimePaint = new TextPaint(Theme.dialogs_timePaint);
         profilePreviewTimePaint.setTypeface(app.freezgram.IosTypography.REGULAR);
         profilePreviewTimePaint.setTextSize(dp(13));
+    }
+
+    public void useIosChatListSurface() {
+        iosChatListSurface = true;
+    }
+
+    public boolean hasIosPinnedBackground() {
+        return iosChatListSurface && getIsPinned() && !isDialogFolder();
     }
 
     public void useIosProfilePreview() {
@@ -4372,7 +4382,11 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             Theme.dialogs_pinnedPaint.setAlpha((int) (Theme.dialogs_pinnedPaint.getAlpha() * (1f - rightFragmentOpenedProgress)));
             // canvas.drawRect(-xOffset, 0, getMeasuredWidth(), getMeasuredHeight() - translateY, Theme.dialogs_pinnedPaint);
         } else if (getIsPinned() || drawPinBackground) {
-            if (iosChatListRow && !isSelected) {
+            if (hasIosPinnedBackground() && !isSelected) {
+                Theme.dialogs_pinnedPaint.setColor(app.freezgram.IosChatListColors.pinnedBackground(resourcesProvider));
+                Theme.dialogs_pinnedPaint.setAlpha((int) (255 * (1f - rightFragmentOpenedProgress)));
+                canvas.drawRect(-xOffset, 0, getMeasuredWidth(), getMeasuredHeight() - translateY, Theme.dialogs_pinnedPaint);
+            } else if (iosChatListRow && !iosChatListSurface && !isSelected) {
                 final int base = Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider);
                 final int foreground = Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider);
                 Theme.dialogs_pinnedPaint.setColor(ColorUtils.blendARGB(base, foreground, Theme.isCurrentThemeDark() ? .075f : .045f));
@@ -5189,19 +5203,27 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             }
 
             if (rightFragmentOpenedProgress != 1) {
-                int alpha = Theme.dividerPaint.getAlpha();
+                final Paint separatorPaint = iosChatListSurface ? iosSeparatorPaint : Theme.dividerPaint;
+                if (iosChatListSurface) {
+                    separatorPaint.setColor(app.freezgram.IosChatListColors.separator(resourcesProvider, hasIosPinnedBackground() && !fullSeparator));
+                }
+                int alpha = separatorPaint.getAlpha();
                 if (rightFragmentOpenedProgress != 0) {
-                    Theme.dividerPaint.setAlpha((int) (alpha * (1f - rightFragmentOpenedProgress)));
+                    separatorPaint.setAlpha((int) (alpha * (1f - rightFragmentOpenedProgress)));
                 }
                 float y = getMeasuredHeight() - 1 - rightFragmentOffset * rightFragmentOpenedProgress;
                 final int edge = iosChatListRow && left != 0 ? dp(16) : 0;
-                if (LocaleController.isRTL) {
-                    canvas.drawLine(edge, y, getMeasuredWidth() - left, y, Theme.dividerPaint);
+                if (iosChatListSurface) {
+                    final float start = LocaleController.isRTL ? edge : left;
+                    final float end = getMeasuredWidth() - (LocaleController.isRTL ? left : edge);
+                    canvas.drawRect(start, y, end, y + 1, separatorPaint);
+                } else if (LocaleController.isRTL) {
+                    canvas.drawLine(edge, y, getMeasuredWidth() - left, y, separatorPaint);
                 } else {
-                    canvas.drawLine(left, y, getMeasuredWidth() - edge, y, Theme.dividerPaint);
+                    canvas.drawLine(left, y, getMeasuredWidth() - edge, y, separatorPaint);
                 }
                 if (rightFragmentOpenedProgress != 0) {
-                    Theme.dividerPaint.setAlpha(alpha);
+                    separatorPaint.setAlpha(alpha);
                 }
             }
         }

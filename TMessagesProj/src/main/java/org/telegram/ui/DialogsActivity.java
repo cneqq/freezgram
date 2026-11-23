@@ -938,6 +938,39 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
 
         private Rect blurBounds = new Rect();
+        private final Paint iosChatListBackgroundPaint = new Paint();
+        private float iosChatListHeaderBottom;
+
+        private void drawIosChatListHeader(Canvas canvas, float headerBottom) {
+            if (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE) {
+                headerBottom = Math.max(headerBottom, filterTabsView.getY() + filterTabsView.getMeasuredHeight());
+            }
+            iosChatListHeaderBottom = headerBottom;
+            float pinnedCoverage = 0f;
+            for (ViewPage page : viewPages) {
+                if (page == null || page.listView == null || page.getVisibility() != View.VISIBLE) continue;
+                final float pageOverlap = MathUtils.clamp(1f - Math.abs(page.getX()) / Math.max(1f, getWidth()), 0f, 1f);
+                if (pageOverlap == 0f) continue;
+                final DialogsRecyclerView list = page.listView;
+                final float listY = page.getY() + list.getY();
+                float pinnedTop = Float.POSITIVE_INFINITY;
+                float pinnedBottom = Float.NEGATIVE_INFINITY;
+                for (int i = 0; i < list.getChildCount(); i++) {
+                    View child = list.getChildAt(i);
+                    if (!(child instanceof DialogCell cell) || !cell.hasIosPinnedBackground() || cell.getAlpha() == 0f) continue;
+                    final float rowTop = listY + cell.getY();
+                    pinnedTop = Math.min(pinnedTop, rowTop);
+                    pinnedBottom = Math.max(pinnedBottom, rowTop + cell.getHeight());
+                }
+                final float proximity = 1f - MathUtils.clamp((pinnedTop - headerBottom) / dp(16), 0f, 1f);
+                final float visibleHeight = MathUtils.clamp((pinnedBottom - headerBottom) / dp(28), 0f, 1f);
+                pinnedCoverage += proximity * visibleHeight * pageOverlap * page.getAlpha();
+            }
+            final int listColor = app.freezgram.IosChatListColors.background(resourceProvider);
+            final int pinnedColor = app.freezgram.IosChatListColors.pinnedBackground(resourceProvider);
+            iosChatListBackgroundPaint.setColor(ColorUtils.blendARGB(listColor, pinnedColor, Math.min(1f, pinnedCoverage)));
+            canvas.drawRect(0, 0, getWidth(), headerBottom, iosChatListBackgroundPaint);
+        }
 
         @Override
         protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
@@ -1015,6 +1048,14 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         @Override
         protected void dispatchDraw(Canvas canvas) {
             glassEngine.invalidate();
+            final boolean iosChatList = usesIosRootChatList() && !inPreviewMode;
+            final boolean iosListHeader = iosChatList && searchAnimationProgress == 0f
+                    && progressToActionMode == 0f && getRightSlidingProgress() == 0f;
+            if (iosChatList) {
+                canvas.drawColor(ColorUtils.blendARGB(app.freezgram.IosChatListColors.background(resourceProvider),
+                        getThemedColor(Theme.key_windowBackgroundWhite), searchAnimationProgress));
+            }
+            iosChatListHeaderBottom = 0f;
             if (invalidateScrollY && (rightSlidingDialogContainer == null || !rightSlidingDialogContainer.hasFragment()) && progressToActionMode == 0) {
                 invalidateScrollY = false;
                 int firstItemPosition = hasHiddenArchive() && viewPages[0].dialogsType == DIALOGS_TYPE_DEFAULT ? 1 : 0;
@@ -1093,7 +1134,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         fragmentSearchField.setTranslationY(top + actionBarHeight - (actionBar.getHeight() + (filterTabsView != null ? filterTabsView.getMeasuredHeight() : 0)) + getSearchFieldAdditionOffset());
                     }
                 }
-            } else if (!inPreviewMode) {
+            } else if (!inPreviewMode && !iosListHeader) {
                 if (progressToActionMode > 0) {
                     actionBarSearchPaint.setColor(getThemedColor(Theme.key_windowBackgroundWhite));
                     blurBounds.set(0, Math.max(0, top), getMeasuredWidth(), top + actionBarHeight - dp(2 * searchAnimationProgress));
@@ -1148,8 +1189,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
             updateContextViewPosition();
             updateStoriesViewAlpha(storiesAlpha);
+            if (iosListHeader) {
+                drawIosChatListHeader(canvas, Math.max(top + actionBarHeight, actionBar.getY() + actionBar.getHeight()));
+            }
             super.dispatchDraw(canvas);
-            drawHeaderShadow(canvas, top + actionBarHeight);
+            if (!iosListHeader) drawHeaderShadow(canvas, top + actionBarHeight);
 
             /*if (fragmentContextView != null && fragmentContextView.isCallStyle()) {
                 canvas.save();
@@ -1181,7 +1225,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
             }
             if (!hasMainTabs && communityId == 0) {
-                AndroidUtilities.drawNavigationBarProtection(canvas, this, getThemedColor(Theme.key_windowBackgroundWhite), navigationBarHeight);
+                AndroidUtilities.drawNavigationBarProtection(canvas, this, iosListHeader
+                        ? app.freezgram.IosChatListColors.background(resourceProvider)
+                        : getThemedColor(Theme.key_windowBackgroundWhite), navigationBarHeight);
             }
             wasDrawn = true;
         }
@@ -4275,6 +4321,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         final PointF tmpPoint = new PointF();
         iBlur3Capture = (canvas, position) -> {
             final int searchViewAlpha = searchViewPager != null ? (int) (searchViewPager.getAlpha() * 255) : 0;
+            if (contentView.iosChatListHeaderBottom > 0f) {
+                canvas.save();
+                canvas.clipRect(position);
+                canvas.drawRect(0, 0, contentView.getWidth(), contentView.iosChatListHeaderBottom, contentView.iosChatListBackgroundPaint);
+                canvas.restore();
+            }
 
             for (ViewPage viewPage : viewPages) {
                 if (viewPage != null && viewPage.getVisibility() == View.VISIBLE && viewPage.getAlpha() > 0f) {
@@ -4752,6 +4804,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
                 @Override
                 public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                    if (dy != 0 && usesIosRootChatList() && fragmentView != null) {
+                        fragmentView.invalidate();
+                    }
                     if (contentView != null) {
                         contentView.updateBlurContent();
                     }

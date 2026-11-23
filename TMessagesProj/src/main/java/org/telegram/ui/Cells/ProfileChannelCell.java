@@ -84,7 +84,8 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
         headerView = new TextView(context);
         headerView.setTypeface(AndroidUtilities.bold());
         headerView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-        headerView.setText(LocaleController.getString(R.string.ProfileChannel));
+        final String channelLabel = LocaleController.getString(R.string.ProfileChannel);
+        headerView.setText(captionAboveCard ? channelLabel.toUpperCase(LocaleController.getInstance().getCurrentLocale()) : channelLabel);
         headerLayout.addView(headerView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP));
 
         subscribersView = new ClickableAnimatedTextView(context);
@@ -251,10 +252,14 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
         }
 
         if (channel != null) {
-            int[] result = new int[1];
-            boolean ignoreShort = AndroidUtilities.isAccessibilityScreenReaderEnabled();
-            String shortNumber = ignoreShort ? String.valueOf(result[0] = channel.participants_count) : LocaleController.formatShortNumber(channel.participants_count, result);
-            subscribersView.setText(LocaleController.formatPluralString("Subscribers", result[0]).replace(String.format("%d", result[0]), shortNumber), true);
+            if (captionAboveCard) {
+                subscribersView.setText(LocaleController.formatPluralStringSpaced("Subscribers", channel.participants_count), true);
+            } else {
+                int[] result = new int[1];
+                boolean ignoreShort = AndroidUtilities.isAccessibilityScreenReaderEnabled();
+                String shortNumber = ignoreShort ? String.valueOf(result[0] = channel.participants_count) : LocaleController.formatShortNumber(channel.participants_count, result);
+                subscribersView.setText(LocaleController.formatPluralString("Subscribers", result[0]).replace(String.format("%d", result[0]), shortNumber), true);
+            }
 
             if (loading = (messageObjects == null || messageObjects.isEmpty())) {
                 dialogCell.setDialog(-channel.id, null, 0, false, animated);

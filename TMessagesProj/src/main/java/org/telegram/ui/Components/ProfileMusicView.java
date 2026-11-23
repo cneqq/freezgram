@@ -77,6 +77,7 @@ public class ProfileMusicView extends View {
     }
 
     private final Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint iosPillStroke = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path clipPath = new Path();
 
     private final ButtonBounce bounce = new ButtonBounce(this);
@@ -85,6 +86,8 @@ public class ProfileMusicView extends View {
         super(context);
         this.resourcesProvider = resourcesProvider;
         this.iosLayout = iosLayout;
+        iosPillStroke.setStyle(Paint.Style.STROKE);
+        iosPillStroke.setStrokeWidth(dpf2(.8f));
 
         icon = context.getResources().getDrawable(R.drawable.files_music).mutate();
 
@@ -167,6 +170,14 @@ public class ProfileMusicView extends View {
     public void setMusicDocument(TLRPC.Document document) {
         CharSequence author = getAuthor(document);
         CharSequence title = getTitle(document);
+        if (iosLayout) {
+            if (TextUtils.isEmpty(title)) {
+                title = TextUtils.isEmpty(author) ? getString(R.string.AudioUnknownTitle) : author;
+                author = "";
+            }
+            setText(title, TextUtils.isEmpty(author) ? "" : " – " + author);
+            return;
+        }
         if (TextUtils.isEmpty(author)) {
             if (TextUtils.isEmpty(title)) {
                 author = getString(R.string.AudioUnknownArtist);
@@ -224,7 +235,7 @@ public class ProfileMusicView extends View {
                 iosLayout ? app.freezgram.IosTypography.SEMIBOLD : AndroidUtilities.bold());
         this.title = new Text(title, iosLayout ? 12 : 11);
 
-        setContentDescription(getString(R.string.AccDescrProfileMusic) + " " + author + " — " + title);
+        setContentDescription(getString(R.string.AccDescrProfileMusic) + " " + author + title);
     }
 
     /** The pill's glass, like the action buttons'; without it the pill is filled with their color. */
@@ -384,7 +395,7 @@ public class ProfileMusicView extends View {
             left = getWidth() - left - containerWidth;
         }
         final int top = iosLayout ? 0 : dp(10);
-        rect.set(left, top, left + containerWidth, top + dp(iosLayout ? 28 : 17) * alpha);
+        rect.set(left, top, left + containerWidth, top + dp(iosLayout ? 26 : 17) * alpha);
         canvas.save();
         canvas.scale(scale, scale, rect.centerX(), getContentCenterY());
 
@@ -408,7 +419,7 @@ public class ProfileMusicView extends View {
                 if (radialGradient == null || radialGradientWidth != rect.width()) {
                     radialGradientWidth = rect.width();
                     radialGradient = new RadialGradient(
-                        rect.width() / 2f, dp(iosLayout ? 28 : 17) / 2f, rect.width() * 0.65f,
+                        rect.width() / 2f, dp(iosLayout ? 26 : 17) / 2f, rect.width() * 0.65f,
                         Theme.multAlpha(buttonColor, 0.8f), buttonColor,
                         Shader.TileMode.CLAMP
                     );
@@ -421,6 +432,13 @@ public class ProfileMusicView extends View {
             }
         }
 
+        if (iosLayout) {
+            iosPillStroke.setColor(Theme.multAlpha(0x62ffffff, alpha));
+            final float inset = iosPillStroke.getStrokeWidth() / 2f;
+            final float radius = Math.max(0, rect.height() / 2f - inset);
+            canvas.drawRoundRect(rect.left + inset, rect.top + inset, rect.right - inset, rect.bottom - inset,
+                    radius, radius, iosPillStroke);
+        }
         clipPath.rewind();
         clipPath.addRoundRect(rect, rect.height() / 2f, rect.height() / 2f, Path.Direction.CW);
 

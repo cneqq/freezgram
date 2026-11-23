@@ -128,6 +128,7 @@ public class ProfileActionsView extends View {
     private boolean iosActionUsesWhiteIcon;
     private boolean iosDarkTheme;
     private final Paint iosActionPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint iosActionStroke = new Paint(Paint.ANTI_ALIAS_FLAG);
     private boolean hasColorById;
     private RadialGradient radialGradient;
     private final Matrix matrix = new Matrix();
@@ -141,6 +142,8 @@ public class ProfileActionsView extends View {
 
         paint.setColor(Color.BLACK);
         paint.setAlpha(40);
+        iosActionStroke.setStyle(Paint.Style.STROKE);
+        iosActionStroke.setStrokeWidth(dpf2(.8f));
 
         xpadding = dpf2(iosLayout ? 16 : 14);
         ypadding = dpf2(iosLayout ? 16 : 12);
@@ -224,16 +227,16 @@ public class ProfileActionsView extends View {
         }
         iosCoverColor = cover;
         iosDarkTheme = dark;
-        final int shade = 0x60000000;
-        final int highlight = dark ? 0x4affffff : 0x59ffffff;
+        final int shade = 0x33000000;
+        final int highlight = dark ? 0x28ffffff : 0x42ffffff;
         final int preferred = dark ? shade : highlight;
         final int alternate = dark ? highlight : shade;
         final int preferredFill = ColorUtils.compositeColors(preferred, cover);
         final int alternateFill = ColorUtils.compositeColors(alternate, cover);
         final double contrast = ColorUtils.calculateContrast(preferredFill, cover);
-        final boolean useAlternate = contrast < 1.55 && ColorUtils.calculateContrast(alternateFill, cover) > contrast;
+        final boolean useAlternate = contrast < 1.25 && ColorUtils.calculateContrast(alternateFill, cover) > contrast;
         iosActionTint = useAlternate ? alternate : preferred;
-        iosActionUsesWhiteIcon = ColorUtils.calculateLuminance(useAlternate ? alternateFill : preferredFill) <= .179;
+        iosActionUsesWhiteIcon = ColorUtils.calculateLuminance(useAlternate ? alternateFill : preferredFill) <= .25;
         invalidate();
     }
 
@@ -281,14 +284,20 @@ public class ProfileActionsView extends View {
     }
 
     private float getItemWidth() {
-        int w = getMeasuredWidth();
-        float betweenPadding = xpadding / 2f;
-        return (w - betweenPadding * (activeCount - 1) - xpadding * 2f) / activeCount;
+        return (getMeasuredWidth() - getItemGap() * (activeCount - 1) - getItemInset() * 2f) / activeCount;
     }
 
     private float getItemLeft(int index, float width) {
-        float distance = xpadding + index * (width + xpadding / 2f);
+        float distance = getItemInset() + index * (width + getItemGap());
         return iosLayout && org.telegram.messenger.LocaleController.isRTL ? getMeasuredWidth() - distance - width : distance;
+    }
+
+    private float getItemInset() {
+        return usesRoundIosActions() ? Math.min(dpf2(34), getMeasuredWidth() * .085f) : xpadding;
+    }
+
+    private float getItemGap() {
+        return usesRoundIosActions() ? dpf2(7) : xpadding / 2f;
     }
 
     private boolean usesRoundIosActions() {
@@ -298,7 +307,7 @@ public class ProfileActionsView extends View {
     private void getActionBackgroundBounds(RectF row, RectF bounds) {
         bounds.set(row);
         if (usesRoundIosActions()) {
-            final float diameter = Math.max(0, Math.min(dp(54), Math.min(row.width(), row.height() - dp(20))));
+            final float diameter = Math.max(0, Math.min(dp(56), Math.min(row.width(), row.height() - dp(20))));
             final float left = row.centerX() - diameter / 2f;
             bounds.set(left, row.top, left + diameter, row.top + diameter);
         }
@@ -378,9 +387,10 @@ public class ProfileActionsView extends View {
                     drawGlass(canvas, AndroidUtilities.rectTmp, radius, alpha);
                 }
                 // Apply the tint over the sampled glass so a flat cover still shows the circular button.
-                final int tint = parentExpanded >= .75f ? 0x66000000 : iosActionTint;
-                iosActionPaint.setColor(Theme.multAlpha(tint, alpha));
+                iosActionPaint.setColor(Theme.multAlpha(iosActionTint, alpha));
                 canvas.drawCircle(centerX, centerY, radius, iosActionPaint);
+                iosActionStroke.setColor(Theme.multAlpha(0x66ffffff, alpha));
+                canvas.drawCircle(centerX, centerY, Math.max(0, radius - iosActionStroke.getStrokeWidth() / 2f), iosActionStroke);
                 continue;
             }
             if (glassFactory != null) {
@@ -469,7 +479,7 @@ public class ProfileActionsView extends View {
 
         final boolean isButtonColorLight = isButtonColorLight();
         // over the photo the buttons are the dimmed photo on every Android (see ProfileButtonsGlass): white icons there
-        final boolean tintedCircle = usesRoundIosActions() && iosActionTint != 0 && parentExpanded < .75f;
+        final boolean tintedCircle = usesRoundIosActions() && iosActionTint != 0;
         final float originalWhite = !isButtonColorLight ? 1 : MathUtils.clamp((parentExpanded - 0.75f) / 0.25f, 0, 1);
         final float useFilledWhiteIcon = tintedCircle ? (iosActionUsesWhiteIcon ? 1f : 0f)
                 : usesRoundIosActions() && parentExpanded >= .75f ? 1f : originalWhite;

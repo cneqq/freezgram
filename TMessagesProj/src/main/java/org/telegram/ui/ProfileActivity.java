@@ -1700,9 +1700,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             }
 
             topOverlayGradient.draw(canvas);
-            bottomOverlayGradient.draw(canvas);
             canvas.drawRect(topOverlayRect, backgroundPaint);
-            canvas.drawRect(bottomOverlayRect, backgroundPaint);
+            if (iosExpandedPhotoFade == null) {
+                bottomOverlayGradient.draw(canvas);
+                canvas.drawRect(bottomOverlayRect, backgroundPaint);
+            }
 
             int count = avatarsViewPager.getRealCount();
             selectedPosition = avatarsViewPager.getRealPosition();
@@ -4167,8 +4169,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             callItem = menu.addItem(call_item, R.drawable.call);
             callItem.setContentDescription(LocaleController.getString(R.string.Call));
         }
-        if (usesIosOwnProfile()) {
-            editItem = menu.addItem(edit_profile, getString(R.string.Edit));
+        if (usesIosUserProfile()) {
+            editItem = menu.addItem(usesIosOwnProfile() ? edit_profile : edit_contact, getString(R.string.Edit));
             editItem.getTextView().setTypeface(app.freezgram.IosTypography.MEDIUM);
             editItem.getTextView().setMaxWidth(dp(92));
             editItem.getTextView().setEllipsize(TextUtils.TruncateAt.END);
@@ -6559,7 +6561,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
     private int getHeaderOnlyExtraHeight() {
         if (usesIosUserProfile()) {
-            return dp(132);
+            return dp(176);
         }
         if (getActionsExtraHeight() == 0) {
             return dp(168f);
@@ -6595,24 +6597,27 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 return changed;
             }
             final TLRPC.TL_emojiStatusCollectible gift = (TLRPC.TL_emojiStatusCollectible) status;
-            int fill = ColorUtils.blendARGB(0xff252528, gift.edge_color | 0xff000000, .8f);
-            // Keep secondary text legible even for gifts with a nearly white outer color.
-            while (ColorUtils.calculateLuminance(fill) > .12) {
-                fill = ColorUtils.blendARGB(fill, Color.BLACK, .10f);
-            }
-            final int cardColor = ColorUtils.blendARGB(fill, 0xff1b1b20, .22f);
-            final int linkColor = ColorUtils.blendARGB(gift.text_color | 0xff000000, Color.WHITE, .87f);
+            final int fill = limitLuminance(gift.edge_color | 0xff000000, .32);
+            final int cardColor = limitLuminance(ColorUtils.blendARGB(fill, Color.BLACK, .18f), .18);
+            final int linkColor = ColorUtils.blendARGB(gift.text_color | 0xff000000, Color.WHITE, .99f);
             if (headerFade != null && background == fill && card == cardColor && link == linkColor) {
                 return false;
             }
             background = fill;
             card = cardColor;
             link = linkColor;
-            secondary = ColorUtils.blendARGB(fill, Color.WHITE, .88f);
+            secondary = ColorUtils.blendARGB(fill, Color.WHITE, .94f);
             divider = ColorUtils.blendARGB(card, Color.WHITE, .12f);
             headerFade = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                     new int[] {background & 0x00ffffff, background});
             return true;
+        }
+
+        private static int limitLuminance(int color, double maxLuminance) {
+            while (ColorUtils.calculateLuminance(color) > maxLuminance) {
+                color = ColorUtils.blendARGB(color, Color.BLACK, .06f);
+            }
+            return color;
         }
 
         @Override
@@ -6636,7 +6641,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (key == Theme.key_windowBackgroundWhiteBlueText || key == Theme.key_windowBackgroundWhiteBlueText2
                         || key == Theme.key_windowBackgroundWhiteBlueText4 || key == Theme.key_windowBackgroundWhiteBlueHeader
                         || key == Theme.key_windowBackgroundWhiteBlueIcon || key == Theme.key_windowBackgroundWhiteLinkText
-                        || key == Theme.key_windowBackgroundWhiteValueText) {
+                        || key == Theme.key_windowBackgroundWhiteValueText || key == Theme.key_chat_messageLinkIn) {
                     return link;
                 }
                 if (key == Theme.key_divider) {
@@ -6681,13 +6686,13 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
     private int getProfileActionRowHeight() {
         if (usesIosUserProfile() && !myProfile) {
-            return dp(92);
+            return dp(104);
         }
         return dp(app.exteraless.appearance.AppearanceConfig.iosMode() ? 80 : 74);
     }
 
     private int getExpandedProfileAvatarSize() {
-        return usesIosUserProfile() ? 100 : 96;
+        return usesIosUserProfile() ? 124 : 96;
     }
 
     private float getExpandedProfileNameScale() {
@@ -6695,7 +6700,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     }
 
     private float getProfilePortraitTopOffset() {
-        return usesIosUserProfile() ? dp(22) - ActionBar.getCurrentActionBarHeight() + dp(21) : 0f;
+        return usesIosUserProfile() ? dp(29) - ActionBar.getCurrentActionBarHeight() + dp(21) : 0f;
     }
 
     private int getActionsExtraHeight(boolean withPills) {
@@ -6717,7 +6722,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     }
 
     private int getExpandedPhotoHeaderHeight() {
-        return listView.getMeasuredWidth() + getActionsExtraHeight() + (usesIosUserProfile() ? dp(36) : 0);
+        return listView.getMeasuredWidth() + getActionsExtraHeight() + (usesIosUserProfile() ? dp(44) : 0);
     }
 
     private float getExpandedPhotoNameX() {
@@ -8716,13 +8721,18 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         final boolean profile = !mediaHeaderVisible && !(sharedMediaLayout != null && sharedMediaLayout.isReordering());
         final boolean photo = isPulledDown;
         final boolean moreInProfileRow = iosProfileHeaderExpanded && !photo && actionsView != null && actionsView.hasIosMoreButton();
+        final boolean iosContactEdit = usesIosUserProfile() && !myProfile
+                && getContactsController().contactsDict.get(userId) != null;
+        final boolean iosEdit = usesIosOwnProfile() && editItemVisible || iosContactEdit;
         setHeaderItemShown(callItem, profile && !photo && callItemVisible, animated);
         setHeaderItemShown(videoCallItem, profile && !photo && videoCallItemVisible, animated);
-        setHeaderItemShown(editItem, profile && !photo && editItemVisible && !moreInProfileRow
-                && (!usesIosOwnProfile() || iosProfileHeaderExpanded), animated);
+        final boolean showEdit = usesIosUserProfile() ? iosEdit && (photo || iosProfileHeaderExpanded)
+                : !photo && editItemVisible && !moreInProfileRow;
+        setHeaderItemShown(editItem, profile && showEdit, animated);
         // the media's ⋮ takes the place of the profile's ⋮ (both the last in the pill): the same button, nothing to animate
         final boolean optionsSwap = sharedMediaLayout != null && sharedMediaLayout.hasSimpleOptions() && !sharedMediaLayout.isReordering();
-        setHeaderItemShown(otherItem, profile && !moreInProfileRow, animated && !optionsSwap);
+        setHeaderItemShown(otherItem, profile && !moreInProfileRow
+                && !(photo && showEdit && actionsView != null && actionsView.hasIosMoreButton()), animated && !optionsSwap);
         if (sharedMediaLayout != null) {
             sharedMediaLayout.setSimpleMenuItemsAllowed(mediaHeaderVisible, animated, animated && !optionsSwap);
         }
@@ -9527,7 +9537,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     ViewGroup.LayoutParams params = avatarsViewPager.getLayoutParams();
                     int oldHeight = params.height;
                     params.width = listView.getMeasuredWidth();
-                    params.height = /*hasActions && avatarsViewPager.getAlpha() <= 0f ? params.width + getActionsExtraHeight() :*/ (int) (h + newTop);
+                    final int height = (int) (h + newTop);
+                    params.height = usesIosUserProfile() ? Math.min(height, getExpandedPhotoHeaderHeight() - dp(20)) : height;
                     if (oldHeight != params.height) {
                         avatarsViewPager.requestLayout();
                     }

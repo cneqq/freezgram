@@ -12,6 +12,7 @@ import android.graphics.drawable.Drawable;
 
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Wallet.GramWallet;
@@ -47,6 +48,9 @@ public class ProfileBalanceView extends ProfileMusicView {
     }
 
     public void setBalance(long nanograms) {
+        if (iosLayout) {
+            balanceFormat.setDecimalFormatSymbols(DecimalFormatSymbols.getInstance(LocaleController.getInstance().getCurrentLocale()));
+        }
         final String formatted = balanceFormat.format(new BigDecimal(GramWallet.formatGramsBalance(nanograms, false)));
         amount = new Text(formatted, iosLayout ? 12 : 11,
                 iosLayout ? app.freezgram.IosTypography.SEMIBOLD : AndroidUtilities.bold());

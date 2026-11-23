@@ -1,9 +1,12 @@
 package org.telegram.ui.Components;
 
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
+import android.graphics.LinearGradient;
+import android.graphics.Matrix;
 import android.graphics.RadialGradient;
 import android.graphics.RectF;
 import android.graphics.Shader;
@@ -13,6 +16,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.ui.ActionBar.Theme;
@@ -39,6 +43,39 @@ import me.vkryl.core.reference.ReferenceList;
  * Without a capture (before Android 12) the photo under them is darkened as the capture has it, without the blur.
  */
 public final class ProfileButtonsGlass {
+    public static int iosRimColor(int cover) {
+        return ColorUtils.blendARGB(cover | 0xff000000, Color.WHITE, .66f);
+    }
+
+    /** A diagonal highlight shared by the circular actions and the profile pills. */
+    public static final class IosRim {
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Matrix matrix = new Matrix();
+        private LinearGradient gradient;
+        private int color;
+
+        public void draw(Canvas canvas, RectF bounds, float radius, int cover, float alpha) {
+            final int rim = iosRimColor(cover);
+            if (gradient == null || rim != color) {
+                color = rim;
+                gradient = new LinearGradient(0f, 0f, 1f, 1f,
+                        new int[] {Theme.multAlpha(rim, .88f), Theme.multAlpha(rim, .20f), Theme.multAlpha(rim, .68f)},
+                        new float[] {0f, .55f, 1f}, Shader.TileMode.CLAMP);
+                paint.setShader(gradient);
+            }
+            matrix.setScale(bounds.width(), bounds.height());
+            matrix.postTranslate(bounds.left, bounds.top);
+            gradient.setLocalMatrix(matrix);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(AndroidUtilities.dpf2(.8f));
+            paint.setAlpha(Math.round(255 * alpha));
+            final float inset = paint.getStrokeWidth() / 2f;
+            radius = Math.max(0f, radius - inset);
+            canvas.drawRoundRect(bounds.left + inset, bounds.top + inset, bounds.right - inset,
+                    bounds.bottom - inset, radius, radius, paint);
+        }
+    }
+
     /** What the photo under the buttons goes through, as the blur of the photo under the action buttons had it. */
     private static final float PHOTO_SATURATION = .65f;
     private static final float PHOTO_BRIGHTNESS = .5f;

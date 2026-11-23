@@ -77,7 +77,9 @@ public class ProfileMusicView extends View {
     }
 
     private final Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint iosPillStroke = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final ProfileButtonsGlass.IosRim iosRim = new ProfileButtonsGlass.IosRim();
+    private final Paint iosFill = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private int iosCoverColor = Color.GRAY;
     private final Path clipPath = new Path();
 
     private final ButtonBounce bounce = new ButtonBounce(this);
@@ -86,8 +88,6 @@ public class ProfileMusicView extends View {
         super(context);
         this.resourcesProvider = resourcesProvider;
         this.iosLayout = iosLayout;
-        iosPillStroke.setStyle(Paint.Style.STROKE);
-        iosPillStroke.setStrokeWidth(dpf2(.8f));
 
         icon = context.getResources().getDrawable(R.drawable.files_music).mutate();
 
@@ -141,6 +141,14 @@ public class ProfileMusicView extends View {
         radialGradient = null;
         backgroundPaint.setColor(color);
         checkTextColor();
+    }
+
+    public void setIosCoverColor(int color) {
+        if (trailingView != null) trailingView.setIosCoverColor(color);
+        if (iosCoverColor != color) {
+            iosCoverColor = color;
+            invalidate();
+        }
     }
 
     private boolean isButtonColorLight() {
@@ -312,7 +320,7 @@ public class ProfileMusicView extends View {
     }
 
     protected int getPillHorizontalPadding() {
-        return dp(iosLayout ? 10 : 8);
+        return dp(iosLayout ? 12 : 8);
     }
 
     protected float getContentCenterY() {
@@ -320,27 +328,40 @@ public class ProfileMusicView extends View {
     }
 
     protected float getContentWidth(float maxWidth) {
-        final float textWidth = Math.max(0, maxWidth - 2 * getPillHorizontalPadding() - dp(16.6f) - dp(8));
+        final int arrowWidth = iosLayout ? 0 : dp(8);
+        final float textWidth = Math.max(0, maxWidth - 2 * getPillHorizontalPadding() - dp(16.6f) - arrowWidth);
         final float authorWidth = iosLayout
                 ? Math.max(textWidth * .45f, textWidth - title.getCurrentWidth()) : textWidth / 2f;
         this.author.ellipsize(authorWidth);
         this.title.ellipsize(Math.max(0, textWidth - this.author.getWidth()));
-        return dp(16.6f) + this.author.getWidth() + this.title.getWidth() + dp(8);
+        return dp(16.6f) + this.author.getWidth() + this.title.getWidth() + arrowWidth;
     }
 
     protected void drawContent(Canvas canvas, float alpha) {
         final float cy = getContentCenterY();
 
-        final int iconSz = dp(13);
-        final int iconTop = Math.round(cy - iconSz / 2f);
-        icon.setBounds(0, iconTop, iconSz, iconTop + iconSz);
-        icon.setAlpha(Math.round(255 * alpha));
-        icon.draw(canvas);
+        if (iosLayout) {
+            iconPaint.setStrokeCap(Paint.Cap.ROUND);
+            iconPaint.setStrokeWidth(dpf2(1.6f));
+            iconPaint.setAlpha(Math.round(255 * alpha));
+            canvas.drawLine(dpf2(2), cy - dp(5), dpf2(2), cy + dp(5), iconPaint);
+            canvas.drawLine(dpf2(6), cy - dp(3), dpf2(6), cy + dp(3), iconPaint);
+            canvas.drawLine(dpf2(10), cy - dpf2(1.5f), dpf2(10), cy + dpf2(1.5f), iconPaint);
+        } else {
+            final int iconSz = dp(13);
+            final int iconTop = Math.round(cy - iconSz / 2f);
+            icon.setBounds(0, iconTop, iconSz, iconTop + iconSz);
+            icon.setAlpha(Math.round(255 * alpha));
+            icon.draw(canvas);
+        }
 
         canvas.translate(dp(16.6f), 0);
         this.author.draw(canvas, 0, cy, textColor, alpha);
         canvas.translate(this.author.getWidth(), 0);
-        this.title.draw(canvas, 0, cy, textColor, 0.85f * alpha);
+        this.title.draw(canvas, 0, cy, textColor, (iosLayout ? .73f : .85f) * alpha);
+        if (iosLayout) {
+            return;
+        }
         canvas.translate(this.title.getWidth(), 0);
 
         arrowPaint.setStrokeWidth(dpf2(1.16f));
@@ -355,7 +376,8 @@ public class ProfileMusicView extends View {
     }
 
     private float getPillWidth(float maxWidth) {
-        return 2 * getPillHorizontalPadding() + getContentWidth(maxWidth);
+        final float width = 2 * getPillHorizontalPadding() + getContentWidth(maxWidth);
+        return iosLayout && hasVisibleCompanion() ? Math.min(maxWidth, Math.max(width, dp(leadingView == null ? 154 : 140))) : width;
     }
 
     @Override
@@ -433,18 +455,18 @@ public class ProfileMusicView extends View {
         }
 
         if (iosLayout) {
-            iosPillStroke.setColor(Theme.multAlpha(0x62ffffff, alpha));
-            final float inset = iosPillStroke.getStrokeWidth() / 2f;
-            final float radius = Math.max(0, rect.height() / 2f - inset);
-            canvas.drawRoundRect(rect.left + inset, rect.top + inset, rect.right - inset, rect.bottom - inset,
-                    radius, radius, iosPillStroke);
+            final float radius = rect.height() / 2f;
+            iosFill.setColor(Theme.multAlpha(0x21000000, alpha));
+            canvas.drawRoundRect(rect, radius, radius, iosFill);
+            iosRim.draw(canvas, rect, radius, iosCoverColor, alpha);
         }
         clipPath.rewind();
         clipPath.addRoundRect(rect, rect.height() / 2f, rect.height() / 2f, Path.Direction.CW);
 
         canvas.save();
         canvas.clipPath(clipPath);
-        canvas.translate(rect.left + getPillHorizontalPadding(), 0);
+        final float contentInset = iosLayout ? (containerWidth - getContentWidth(containerWidth)) / 2f : getPillHorizontalPadding();
+        canvas.translate(rect.left + contentInset, 0);
         drawContent(canvas, alpha);
 
         canvas.restore();

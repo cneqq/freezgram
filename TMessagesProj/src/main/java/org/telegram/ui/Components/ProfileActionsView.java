@@ -128,7 +128,8 @@ public class ProfileActionsView extends View {
     private boolean iosActionUsesWhiteIcon;
     private boolean iosDarkTheme;
     private final Paint iosActionPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint iosActionStroke = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final ProfileButtonsGlass.IosRim iosActionRim = new ProfileButtonsGlass.IosRim();
+    private final RectF iosActionBounds = new RectF();
     private boolean hasColorById;
     private RadialGradient radialGradient;
     private final Matrix matrix = new Matrix();
@@ -142,8 +143,6 @@ public class ProfileActionsView extends View {
 
         paint.setColor(Color.BLACK);
         paint.setAlpha(40);
-        iosActionStroke.setStyle(Paint.Style.STROKE);
-        iosActionStroke.setStrokeWidth(dpf2(.8f));
 
         xpadding = dpf2(iosLayout ? 16 : 14);
         ypadding = dpf2(iosLayout ? 16 : 12);
@@ -227,7 +226,7 @@ public class ProfileActionsView extends View {
         }
         iosCoverColor = cover;
         iosDarkTheme = dark;
-        final int shade = 0x33000000;
+        final int shade = 0x21000000;
         final int highlight = dark ? 0x28ffffff : 0x42ffffff;
         final int preferred = dark ? shade : highlight;
         final int alternate = dark ? highlight : shade;
@@ -381,16 +380,14 @@ public class ProfileActionsView extends View {
             final float radius = usesRoundIosActions() ? halfEdge : iosLayout ? Math.min(r, halfEdge) : r;
             final float alpha = action.getAlpha() * alphaFraction1;
             if (usesRoundIosActions() && iosActionTint != 0) {
-                final float centerX = AndroidUtilities.rectTmp.centerX();
-                final float centerY = AndroidUtilities.rectTmp.centerY();
+                iosActionBounds.set(AndroidUtilities.rectTmp);
                 if (glassFactory != null) {
-                    drawGlass(canvas, AndroidUtilities.rectTmp, radius, alpha);
+                    drawGlass(canvas, iosActionBounds, radius, alpha);
                 }
                 // Apply the tint over the sampled glass so a flat cover still shows the circular button.
                 iosActionPaint.setColor(Theme.multAlpha(iosActionTint, alpha));
-                canvas.drawCircle(centerX, centerY, radius, iosActionPaint);
-                iosActionStroke.setColor(Theme.multAlpha(0x66ffffff, alpha));
-                canvas.drawCircle(centerX, centerY, Math.max(0, radius - iosActionStroke.getStrokeWidth() / 2f), iosActionStroke);
+                canvas.drawCircle(iosActionBounds.centerX(), iosActionBounds.centerY(), radius, iosActionPaint);
+                iosActionRim.draw(canvas, iosActionBounds, radius, iosCoverColor, alpha);
                 continue;
             }
             if (glassFactory != null) {
@@ -451,7 +448,7 @@ public class ProfileActionsView extends View {
             return;
         }
 
-        final int drawableSize = dp(24);
+        final int drawableSize = dp(usesRoundIosActions() ? 27 : 24);
         final float drawableR = drawableSize * 0.5f;
 
         action.text.setMaxWidth(action.rect.width() - dp(2));
@@ -513,7 +510,7 @@ public class ProfileActionsView extends View {
             textCenterX = cx;
             if (usesRoundIosActions()) {
                 getActionBackgroundBounds(action.rect, AndroidUtilities.rectTmp);
-                textY = AndroidUtilities.rectTmp.bottom + dp(5) + action.text.getHeight() / 2f;
+                textY = AndroidUtilities.rectTmp.bottom + dp(8) + action.text.getHeight() / 2f;
             } else {
                 textY = iosLayout ? action.rect.bottom - dp(9) - action.text.getHeight()
                         : action.bounds.bottom + action.bounds.top - action.text.getHeight() * action.textScale / 2.0f - dp(4.66f);
@@ -808,11 +805,11 @@ public class ProfileActionsView extends View {
         switch (mode) {
             case MODE_USER:
                 if (iosLayout) {
-                    final boolean photoSearch = allAvailableActions.contains(KEY_SEARCH);
-                    if (!photoSearch) insertIfAvailable(out, KEY_MESSAGE);
+                    final boolean search = allAvailableActions.contains(KEY_SEARCH);
+                    if (!search) insertIfAvailable(out, KEY_MESSAGE);
                     insertIfAvailable(out, allAvailableActions.contains(KEY_CALL) ? KEY_CALL : KEY_VIDEO);
                     insertIfAvailable(out, KEY_NOTIFICATION);
-                    if (photoSearch) insertIfAvailable(out, KEY_SEARCH);
+                    if (search) insertIfAvailable(out, KEY_SEARCH);
                     insertIfAvailable(out, KEY_MORE);
                     break;
                 }
@@ -1146,6 +1143,9 @@ public class ProfileActionsView extends View {
         }
 
         public void setText(CharSequence cs) {
+            if (usesRoundIosActions()) {
+                cs = cs.toString().toLowerCase(org.telegram.messenger.LocaleController.getInstance().getCurrentLocale());
+            }
             this.text = new Text(cs, compactIosActions ? 14 : 11,
                     iosLayout && !compactIosActions ? app.freezgram.IosTypography.REGULAR : AndroidUtilities.bold())
                 .multiline(usesRoundIosActions() ? 1 : 3)

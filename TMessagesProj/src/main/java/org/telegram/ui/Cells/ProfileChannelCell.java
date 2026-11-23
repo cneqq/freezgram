@@ -51,6 +51,7 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
     private final TextView headerView;
     private final AnimatedTextView subscribersView;
     private final boolean captionAboveCard;
+    private final FrameLayout iosPreviewCard;
 
     public final DialogCell dialogCell;
 
@@ -163,8 +164,12 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
         dialogCell.avatarStart = 15;
         dialogCell.messagePaddingStart = 83;
         if (captionAboveCard) {
-            cardGroup.addView(dialogCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 16, 0, 16, 0));
+            iosPreviewCard = new FrameLayout(context);
+            iosPreviewCard.addView(dialogCell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,
+                    Gravity.TOP, 0, 6, 0, 6));
+            cardGroup.addView(iosPreviewCard, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 16, 0, 16, 0));
         } else {
+            iosPreviewCard = null;
             addView(dialogCell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,
                     Gravity.FILL_HORIZONTAL | Gravity.BOTTOM));
         }
@@ -482,8 +487,8 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
         subscribersView.setBackground(captionAboveCard ? null
                 : Theme.createRoundRectDrawable(dp(9f), dp(9f), Theme.multAlpha(headerColor, .1f)));
         headerView.setTextColor(headerColor);
-        if (captionAboveCard) {
-            dialogCell.setBackground(Theme.createRoundRectDrawable(dp(24),
+        if (iosPreviewCard != null) {
+            iosPreviewCard.setBackground(Theme.createRoundRectDrawable(dp(24),
                     Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider)));
         }
     }

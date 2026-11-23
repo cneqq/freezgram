@@ -518,6 +518,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private ActionBarMenuItem callItem;
     private ActionBarMenuItem videoCallItem;
     private ActionBarMenuItem editItem;
+    private ActionBarMenuItem iosAddContactItem;
     private ActionBarMenuItem otherItem;
     // exteraless plugins: подменю PROFILE_ACTION_MENU в меню «⋮».
     private app.exteraless.plugins.menus.MenuInjector.SwipeBackMenu pluginsMenu;
@@ -1441,14 +1442,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             if (actionsView != null) {
                 actionsView.setActionsColor(btnColor, hasColorById);
                 if (usesIosUserProfile()) {
-                    final int coverColor = !hasColorById ? currentColor
-                            : iosGiftProfileColors != null && iosGiftProfileColors.headerFade != null
-                                    ? ColorUtils.blendARGB(color1, iosGiftProfileColors.background, .5f) : color1;
-                    actionsView.setIosCoverColor(coverColor);
+                    actionsView.setIosCoverColor(getIosProfileCoverColor());
                 }
             }
             if (musicView != null) {
                 musicView.setButtonColor(btnColor, hasColorById);
+                if (usesIosUserProfile()) {
+                    musicView.setIosCoverColor(getIosProfileCoverColor());
+                }
             }
             if (buttonsGlass != null) {
                 buttonsGlass.setButtonColor(btnColor, hasColorById);
@@ -4170,11 +4171,16 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             callItem.setContentDescription(LocaleController.getString(R.string.Call));
         }
         if (usesIosUserProfile()) {
-            editItem = menu.addItem(usesIosOwnProfile() ? edit_profile : edit_contact, getString(R.string.Edit));
+            editItem = menu.addItem(usesIosOwnProfile() ? edit_profile : edit_contact, getString(R.string.FreezgramProfileEditShort));
             editItem.getTextView().setTypeface(app.freezgram.IosTypography.MEDIUM);
             editItem.getTextView().setMaxWidth(dp(92));
             editItem.getTextView().setEllipsize(TextUtils.TruncateAt.END);
             editItem.setContentDescription(getString(R.string.Edit));
+            if (!usesIosOwnProfile()) {
+                iosAddContactItem = menu.addItem(add_contact, getString(R.string.Add));
+                iosAddContactItem.getTextView().setTypeface(app.freezgram.IosTypography.MEDIUM);
+                iosAddContactItem.setContentDescription(getString(R.string.AddContact));
+            }
         } else if (myProfile) {
             editItem = menu.addItem(edit_profile, R.drawable.group_edit_profile);
             editItem.setContentDescription(LocaleController.getString(R.string.Edit));
@@ -6389,6 +6395,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         @Override
         public int getBackgroundColor() {
+            if (usesIosUserProfile()) {
+                final int fill = ColorUtils.blendARGB(getIosProfileCoverColor(), Color.BLACK, .25f);
+                return ColorUtils.blendARGB(Theme.multAlpha(fill, .50f), headerMenuGlassColors.getBackgroundColor(), getHeaderSimpleFactor());
+            }
             if (app.exteraless.appearance.AppearanceConfig.iosMode()
                     && app.freezgram.LiquidGlassStyle.canDrawGlass()) {
                 return Theme.multAlpha(getThemedColor(Theme.key_windowBackgroundWhite),
@@ -6400,11 +6410,19 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         @Override
         public int getStrokeColorTop() {
+            if (usesIosUserProfile()) {
+                return ColorUtils.blendARGB(Theme.multAlpha(ProfileButtonsGlass.iosRimColor(getIosProfileCoverColor()), .60f),
+                        headerMenuGlassColors.getStrokeColorTop(), getHeaderSimpleFactor());
+            }
             return ColorUtils.blendARGB(Theme.multAlpha(0x20FFFFFF, org.telegram.utils.glass.GlassEngine.getCurrentGlassSettings().isBlurEnabled ? 1f : 1f - buttonsPhotoProgress), headerMenuGlassColors.getStrokeColorTop(), getHeaderSimpleFactor());
         }
 
         @Override
         public int getStrokeColorBottom() {
+            if (usesIosUserProfile()) {
+                return ColorUtils.blendARGB(Theme.multAlpha(ProfileButtonsGlass.iosRimColor(getIosProfileCoverColor()), .27f),
+                        headerMenuGlassColors.getStrokeColorBottom(), getHeaderSimpleFactor());
+            }
             return ColorUtils.blendARGB(Theme.multAlpha(0x14FFFFFF, org.telegram.utils.glass.GlassEngine.getCurrentGlassSettings().isBlurEnabled ? 1f : 1f - buttonsPhotoProgress), headerMenuGlassColors.getStrokeColorBottom(), getHeaderSimpleFactor());
         }
     };
@@ -6429,6 +6447,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     }
 
     private int lastHeaderGlassColor;
+    private int lastHeaderGlassStroke;
 
     private void updateHeaderButtonsColors() {
         if (simpleActionBar == null || headerMenuGlassColors == null) {
@@ -6443,8 +6462,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             simpleActionBar.setItemsColor(iconsColor, false);
         }
         final int glassColor = headerButtonsGlassColors.getBackgroundColor();
-        if (lastHeaderGlassColor != glassColor) {
+        final int glassStroke = headerButtonsGlassColors.getStrokeColorTop();
+        if (lastHeaderGlassColor != glassColor || lastHeaderGlassStroke != glassStroke) {
             lastHeaderGlassColor = glassColor;
+            lastHeaderGlassStroke = glassStroke;
             simpleActionBar.updateButtonsGlassColors();
         }
     }
@@ -6575,6 +6596,13 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
     private boolean usesIosUserProfile() {
         return userId != 0 && app.exteraless.appearance.AppearanceConfig.iosMode();
+    }
+
+    private int getIosProfileCoverColor() {
+        if (iosGiftProfileColors != null && iosGiftProfileColors.headerFade != null) {
+            return iosGiftProfileColors.background;
+        }
+        return topView != null && topView.hasColorById ? topView.color1 : getThemedColor(Theme.key_windowBackgroundGray);
     }
 
     private static final class IosGiftProfileColors implements Theme.ResourcesProvider {
@@ -7739,16 +7767,22 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         if (chat != null) {
             pendingIosChatSearch = chat;
             finishFragment();
+        } else if (currentEncryptedChat == null) {
+            openChat(true);
         }
     }
 
     private void openChat() {
+        openChat(false);
+    }
+
+    private void openChat(boolean search) {
         if (userId != 0) {
-            if (usesIosUserProfile() && getIosProfileSourceChat() != null) {
+            if (!search && usesIosUserProfile() && getIosProfileSourceChat() != null) {
                 finishFragment();
                 return;
             }
-            if (finishFragmentIfPreviousIsChatActivity()) {
+            if (!search && finishFragmentIfPreviousIsChatActivity()) {
                 return;
             }
 
@@ -7758,6 +7792,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             }
             Bundle args = new Bundle();
             args.putLong("user_id", userId);
+            args.putBoolean("openProfileChatSearch", search);
             if (!getMessagesController().checkCanOpenChat(args, ProfileActivity.this)) {
                 return;
             }
@@ -8728,11 +8763,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         setHeaderItemShown(videoCallItem, profile && !photo && videoCallItemVisible, animated);
         final boolean showEdit = usesIosUserProfile() ? iosEdit && (photo || iosProfileHeaderExpanded)
                 : !photo && editItemVisible && !moreInProfileRow;
+        final boolean showAddContact = iosAddContactItem != null && !iosContactEdit && addToContactsRow > 0
+                && (photo || iosProfileHeaderExpanded);
         setHeaderItemShown(editItem, profile && showEdit, animated);
+        setHeaderItemShown(iosAddContactItem, profile && showAddContact, animated);
         // the media's ⋮ takes the place of the profile's ⋮ (both the last in the pill): the same button, nothing to animate
         final boolean optionsSwap = sharedMediaLayout != null && sharedMediaLayout.hasSimpleOptions() && !sharedMediaLayout.isReordering();
         setHeaderItemShown(otherItem, profile && !moreInProfileRow
-                && !(photo && showEdit && actionsView != null && actionsView.hasIosMoreButton()), animated && !optionsSwap);
+                && !(photo && (showEdit || showAddContact) && actionsView != null && actionsView.hasIosMoreButton()), animated && !optionsSwap);
         if (sharedMediaLayout != null) {
             sharedMediaLayout.setSimpleMenuItemsAllowed(mediaHeaderVisible, animated, animated && !optionsSwap);
         }
@@ -12488,7 +12526,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         final int rowHeight = getProfileActionRowHeight();
         actionsView.isOpeningLayout = openAnimationInProgress;
         if (usesIosUserProfile() && actionsView.mode == ProfileActionsView.MODE_USER) {
-            actionsView.set(ProfileActionsView.KEY_SEARCH, isPulledDown && getIosProfileSourceChat() != null);
+            actionsView.set(ProfileActionsView.KEY_SEARCH, currentEncryptedChat == null || getIosProfileSourceChat() != null);
         }
 
         if (openAnimationInProgress && playProfileAnimation == 2 && avatarContainer != null) {
@@ -14953,7 +14991,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         detailCell.setImageClickListener(null);
                     }
                     detailCell.setTag(position);
-                    detailCell.setLeadingCaption(position == usernameRow && usesIosUserProfile() ? getString(R.string.Username) : null);
+                    final boolean iosUsername = position == usernameRow && usesIosUserProfile();
+                    detailCell.setLeadingCaption(iosUsername
+                            ? getString(R.string.Username).toLowerCase(LocaleController.getInstance().getCurrentLocale()) : null);
+                    detailCell.valueTextView.setLineSpacing(iosUsername ? dp(2) : 0, 1f);
                     detailCell.textView.setLoading(loadingSpan);
                     detailCell.valueTextView.setLoading(loadingSpan);
                     break;

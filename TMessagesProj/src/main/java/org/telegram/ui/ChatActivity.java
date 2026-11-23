@@ -30178,6 +30178,10 @@ public class ChatActivity extends BaseFragment implements
         if (isOpen) {
             checkShowBlur(false);
             openAnimationEnded = true;
+            if (arguments.getBoolean("openProfileChatSearch")) {
+                arguments.remove("openProfileChatSearch");
+                openSearchWithText(null);
+            }
             getNotificationCenter().onAnimationFinish(transitionAnimationIndex);
             NotificationCenter.getGlobalInstance().onAnimationFinish(transitionAnimationGlobalIndex);
 //            if (Build.VERSION.SDK_INT >= 21) {

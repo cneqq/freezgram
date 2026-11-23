@@ -165,7 +165,14 @@ public class ProfileActionsView extends View {
         final BlurredBackgroundDrawable drawable = glass.get(glassUsed++);
         drawable.setContinuousCorners(iosLayout && !usesRoundIosActions());
         drawable.setRadius(radius);
-        drawable.setBounds((int) rect.left, (int) rect.top, (int) Math.ceil(rect.right), (int) Math.ceil(rect.bottom));
+        if (usesRoundIosActions()) {
+            final int diameter = Math.round(rect.width());
+            final int left = Math.round(rect.centerX() - diameter / 2f);
+            final int top = Math.round(rect.centerY() - diameter / 2f);
+            drawable.setBounds(left, top, left + diameter, top + diameter);
+        } else {
+            drawable.setBounds((int) rect.left, (int) rect.top, (int) Math.ceil(rect.right), (int) Math.ceil(rect.bottom));
+        }
         drawable.setAlpha((int) (0xFF * alpha));
         drawable.draw(canvas);
     }
@@ -262,7 +269,7 @@ public class ProfileActionsView extends View {
     private void getActionBackgroundBounds(RectF row, RectF bounds) {
         bounds.set(row);
         if (usesRoundIosActions()) {
-            final float diameter = Math.max(0, Math.min(dp(54), Math.min(row.width(), row.height() - dp(22))));
+            final float diameter = Math.max(0, Math.min(dp(54), Math.min(row.width(), row.height() - dp(20))));
             final float left = row.centerX() - diameter / 2f;
             bounds.set(left, row.top, left + diameter, row.top + diameter);
         }
@@ -405,12 +412,9 @@ public class ProfileActionsView extends View {
             drawableTop = iosLayout ? action.rect.top + dp(8)
                     : Math.max(0, (targetHeight - action.text.getHeight() * action.textScale) / 3f + dpf2(1.33f));
         }
-        action.setBounds(
-            (int) (cx - drawableR),
-            (int) (drawableTop),
-            (int) (cx + drawableR),
-            (int) (drawableTop + drawableSize)
-        );
+        final int left = usesRoundIosActions() ? Math.round(cx - drawableR) : (int) (cx - drawableR);
+        final int top = usesRoundIosActions() ? Math.round(drawableTop) : (int) drawableTop;
+        action.setBounds(left, top, left + drawableSize, top + drawableSize);
     }
 
     private int lastColorFilterColor;
@@ -451,12 +455,17 @@ public class ProfileActionsView extends View {
             textY = cy - action.text.getHeight() / 2f;
         } else {
             textCenterX = cx;
-            textY = usesRoundIosActions() ? action.rect.bottom - action.text.getHeight()
-                    : iosLayout ? action.rect.bottom - dp(9) - action.text.getHeight()
-                    : action.bounds.bottom + action.bounds.top - action.text.getHeight() * action.textScale / 2.0f - dp(4.66f);
+            if (usesRoundIosActions()) {
+                getActionBackgroundBounds(action.rect, AndroidUtilities.rectTmp);
+                textY = AndroidUtilities.rectTmp.bottom + dp(5) + action.text.getHeight() / 2f;
+            } else {
+                textY = iosLayout ? action.rect.bottom - dp(9) - action.text.getHeight()
+                        : action.bounds.bottom + action.bounds.top - action.text.getHeight() * action.textScale / 2.0f - dp(4.66f);
+            }
         }
         canvas.save();
-        final float textPivotY = compactIosActions ? cy : textY + action.text.getHeight() * action.textScale / 2f;
+        final float textPivotY = compactIosActions || usesRoundIosActions() ? textY
+                : textY + action.text.getHeight() * action.textScale / 2f;
         canvas.scale(action.textScale, action.textScale, textCenterX, textPivotY);
         action.text.draw(canvas, textCenterX - action.text.getWidth() / 2f, textY, textColor, alpha);
         canvas.restore();
@@ -1081,7 +1090,7 @@ public class ProfileActionsView extends View {
         public void setText(CharSequence cs) {
             this.text = new Text(cs, compactIosActions ? 14 : 11,
                     iosLayout && !compactIosActions ? app.freezgram.IosTypography.REGULAR : AndroidUtilities.bold())
-                .multiline(3)
+                .multiline(usesRoundIosActions() ? 1 : 3)
                 .align(Layout.Alignment.ALIGN_CENTER);
         }
 

@@ -31,11 +31,11 @@ public class ProfileBalanceView extends ProfileMusicView {
     private float ejectProgress;
     private final DecimalFormat balanceFormat = new DecimalFormat("#,##0.#########", new DecimalFormatSymbols(Locale.US));
 
-    public ProfileBalanceView(Context context, Theme.ResourcesProvider resourcesProvider) {
-        super(context, resourcesProvider);
+    public ProfileBalanceView(Context context, Theme.ResourcesProvider resourcesProvider, boolean iosLayout) {
+        super(context, resourcesProvider, iosLayout);
         gramIcon = context.getResources().getDrawable(R.drawable.profile_balance_gram).mutate();
         gramColorIcon = context.getResources().getDrawable(R.drawable.profile_balance_gram_color).mutate();
-        label = new Text(getString(R.string.StarsBalance) + ":", 11);
+        label = new Text(getString(R.string.StarsBalance) + ":", iosLayout ? 12 : 11);
         chevronPaint.setStyle(Paint.Style.STROKE);
         chevronPaint.setStrokeCap(Paint.Cap.ROUND);
         chevronPaint.setStrokeJoin(Paint.Join.ROUND);
@@ -48,7 +48,8 @@ public class ProfileBalanceView extends ProfileMusicView {
 
     public void setBalance(long nanograms) {
         final String formatted = balanceFormat.format(new BigDecimal(GramWallet.formatGramsBalance(nanograms, false)));
-        amount = new Text(formatted, 11, AndroidUtilities.bold());
+        amount = new Text(formatted, iosLayout ? 12 : 11,
+                iosLayout ? app.freezgram.IosTypography.SEMIBOLD : AndroidUtilities.bold());
         setContentDescription(getString(R.string.StarsBalance) + ": " + formatted);
         invalidate();
     }
@@ -64,7 +65,7 @@ public class ProfileBalanceView extends ProfileMusicView {
     protected float getContentWidth(float maxWidth) {
         label.ellipsize(-1);
         amount.ellipsize(-1);
-        final float available = Math.max(0, maxWidth - dp(16 + 4 + 13 + 2 + 8));
+        final float available = Math.max(0, maxWidth - 2 * getPillHorizontalPadding() - dp(4 + 13 + 2 + 8));
         // Prefer the numeric balance when a translation or a large amount needs more room.
         label.ellipsize(Math.max(0, available - amount.getWidth()));
         amount.ellipsize(Math.max(0, available - label.getWidth()));
@@ -73,13 +74,14 @@ public class ProfileBalanceView extends ProfileMusicView {
 
     @Override
     protected void drawContent(Canvas canvas, float alpha) {
-        final float cy = getHeight() / 2f;
+        final float cy = getContentCenterY();
         canvas.translate(0, -dp(20) * ejectProgress);
         label.draw(canvas, 0, cy, textColor, 0.85f * alpha);
         canvas.translate(label.getWidth() + dp(4), 0);
         final Drawable icon = hasProfileColor || isOnProfilePhoto() ? gramColorIcon : gramIcon;
         final int size = dp(13);
-        icon.setBounds(0, (int) cy - size / 2, size, (int) cy - size / 2 + size);
+        final int iconTop = Math.round(cy - size / 2f);
+        icon.setBounds(0, iconTop, size, iconTop + size);
         icon.setAlpha((int) (255 * alpha));
         icon.draw(canvas);
         canvas.translate(size + dp(2), 0);

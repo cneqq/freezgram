@@ -3977,8 +3977,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         sharedMediaLayout.setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, RecyclerView.LayoutParams.MATCH_PARENT));
 //        sharedMediaLayout.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundWhite));
         if (userId == 0 || imageUpdater == null || myProfile) {
-            musicView = new ProfileMusicView(context, resourcesProvider);
-            balanceView = new ProfileBalanceView(context, resourcesProvider);
+            musicView = new ProfileMusicView(context, resourcesProvider, usesIosUserProfile());
+            balanceView = new ProfileBalanceView(context, resourcesProvider, usesIosUserProfile());
             musicView.setTrailingView(balanceView);
             if (buttonsGlass != null) {
                 musicView.setGlassFactory(buttonsGlass.actionsFactory);
@@ -5935,8 +5935,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             avatarImage.setHasStories(needInsetForStories());
         }
         avatarContainer2.addView(storyView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-        giftsView = new ProfileGiftsView(context, currentAccount, getDialogId(), avatarContainer, avatarImage,
-                resourcesProvider, usesIosUserProfile());
+        giftsView = new ProfileGiftsView(context, currentAccount, getDialogId(), avatarContainer, avatarImage, resourcesProvider);
         avatarContainer2.addView(giftsView, 0, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         updateProfileData(true);
 
@@ -6640,7 +6639,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
     private int getProfileActionRowHeight() {
         if (usesIosUserProfile() && !myProfile) {
-            return dp(96);
+            return dp(92);
         }
         return dp(app.exteraless.appearance.AppearanceConfig.iosMode() ? 80 : 74);
     }
@@ -6660,7 +6659,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int getActionsExtraHeight(boolean withPills) {
         if (userId != 0 && imageUpdater != null && !myProfile)
             return 0;
-        return (usesIosOwnProfile() ? 0 : getProfileActionRowHeight()) + (withPills && (hasMusic || hasBalance) ? dp(25) : 0);
+        return (usesIosOwnProfile() ? 0 : getProfileActionRowHeight()) + (withPills ? getProfilePillsRowHeight() : 0);
+    }
+
+    private int getProfilePillsRowHeight() {
+        return hasMusic || hasBalance ? dp(usesIosUserProfile() ? 42 : 25) : 0;
     }
 
     private int getHeaderExtraHeight() {
@@ -12415,7 +12418,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
         final int newTop = ActionBar.getCurrentActionBarHeight() + (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0);
         if (usesIosUserProfile()) {
-            final int rowHeight = hasMusic || hasBalance ? dp(25) : 0;
+            final int rowHeight = getProfilePillsRowHeight();
             final float bottom = newTop + extraHeight - getActionsExtraHeight(false);
             final float height = Math.max(0, Math.min(rowHeight, bottom - newTop));
             musicView.setAlpha(openAnimationInProgress ? avatarAnimationProgress : 1f);

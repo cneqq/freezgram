@@ -46,6 +46,7 @@ import xyz.nextalone.nagram.NaConfig;
 public class ProfileMusicView extends View {
 
     private final Theme.ResourcesProvider resourcesProvider;
+    protected final boolean iosLayout;
     private final PorterDuffColorFilter filterColorWhite = new PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
     private final PorterDuffColorFilter filterColorBlack = new PorterDuffColorFilter(Color.BLACK, PorterDuff.Mode.SRC_IN);
 
@@ -80,9 +81,10 @@ public class ProfileMusicView extends View {
 
     private final ButtonBounce bounce = new ButtonBounce(this);
 
-    public ProfileMusicView(Context context, Theme.ResourcesProvider resourcesProvider) {
+    public ProfileMusicView(Context context, Theme.ResourcesProvider resourcesProvider, boolean iosLayout) {
         super(context);
         this.resourcesProvider = resourcesProvider;
+        this.iosLayout = iosLayout;
 
         icon = context.getResources().getDrawable(R.drawable.files_music).mutate();
 
@@ -218,8 +220,9 @@ public class ProfileMusicView extends View {
     }
 
     public void setText(CharSequence author, CharSequence title) {
-        this.author = new Text(author, 11, AndroidUtilities.bold());
-        this.title = new Text(title, 11);
+        this.author = new Text(author, iosLayout ? 12 : 11,
+                iosLayout ? app.freezgram.IosTypography.SEMIBOLD : AndroidUtilities.bold());
+        this.title = new Text(title, iosLayout ? 12 : 11);
 
         setContentDescription(getString(R.string.AccDescrProfileMusic) + " " + author + " — " + title);
     }
@@ -252,7 +255,7 @@ public class ProfileMusicView extends View {
     public void updatePosition(float y, float newHeight) {
         if (trailingView != null) trailingView.updatePosition(y, newHeight);
         currentHeight = newHeight;
-        setTranslationY(y - dp(12));
+        setTranslationY(iosLayout ? y + dp(5) : y - dp(12));
         invalidate();
     }
 
@@ -267,7 +270,7 @@ public class ProfileMusicView extends View {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
-        final float alpha = Utilities.clamp01((currentHeight) / dp(21));
+        final float alpha = getRevealProgress();
         if (alpha <= 0) return false;
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             longPressed = false;
@@ -293,18 +296,34 @@ public class ProfileMusicView extends View {
         return bounce.isPressed() || longPressed;
     }
 
+    private float getRevealProgress() {
+        return Utilities.clamp01(currentHeight / dp(iosLayout ? 34 : 21));
+    }
+
+    protected int getPillHorizontalPadding() {
+        return dp(iosLayout ? 10 : 8);
+    }
+
+    protected float getContentCenterY() {
+        return iosLayout ? rect.centerY() : getHeight() / 2f;
+    }
+
     protected float getContentWidth(float maxWidth) {
-        final float textWidth = Math.max(0, maxWidth - dp(16) - dp(16.6f) - dp(8));
-        this.author.ellipsize(textWidth / 2f);
+        final float textWidth = Math.max(0, maxWidth - 2 * getPillHorizontalPadding() - dp(16.6f) - dp(8));
+        final float authorWidth = iosLayout
+                ? Math.max(textWidth * .45f, textWidth - title.getCurrentWidth()) : textWidth / 2f;
+        this.author.ellipsize(authorWidth);
         this.title.ellipsize(Math.max(0, textWidth - this.author.getWidth()));
         return dp(16.6f) + this.author.getWidth() + this.title.getWidth() + dp(8);
     }
 
     protected void drawContent(Canvas canvas, float alpha) {
-        final float cy = getHeight() / 2f;
+        final float cy = getContentCenterY();
 
         final int iconSz = dp(13);
-        icon.setBounds(0, (int) cy - iconSz / 2, iconSz, (int) cy + iconSz / 2);
+        final int iconTop = Math.round(cy - iconSz / 2f);
+        icon.setBounds(0, iconTop, iconSz, iconTop + iconSz);
+        icon.setAlpha(Math.round(255 * alpha));
         icon.draw(canvas);
 
         canvas.translate(dp(16.6f), 0);
@@ -314,6 +333,7 @@ public class ProfileMusicView extends View {
         canvas.translate(this.title.getWidth(), 0);
 
         arrowPaint.setStrokeWidth(dpf2(1.16f));
+        arrowPaint.setAlpha(Math.round(217 * alpha));
         canvas.translate(dpf2(4.8f), cy);
         canvas.drawPath(arrowPath, arrowPaint);
     }
@@ -324,14 +344,14 @@ public class ProfileMusicView extends View {
     }
 
     private float getPillWidth(float maxWidth) {
-        return dp(16) + getContentWidth(maxWidth);
+        return 2 * getPillHorizontalPadding() + getContentWidth(maxWidth);
     }
 
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         if (this.author == null || this.title == null) return;
 
-        final float alpha = Utilities.clamp01((currentHeight) / dp(21));
+        final float alpha = getRevealProgress();
         final float scale = bounce.getScale(0.02f);
         if (alpha <= 0) {
             if (glass != null) {
@@ -340,8 +360,9 @@ public class ProfileMusicView extends View {
             return;
         }
 
-        final int padding = dp(12);
-        final int maxWidth = getWidth() - padding * 2;
+        final int padding = dp(iosLayout ? 18 : 12);
+        final int gap = dp(iosLayout ? 8 : 6);
+        final int maxWidth = iosLayout ? Math.min(dp(400), getWidth() - padding * 2) : getWidth() - padding * 2;
 
         float containerWidth;
         float left;
@@ -350,18 +371,22 @@ public class ProfileMusicView extends View {
             ProfileMusicView trailing = trailingView != null ? trailingView : this;
             // Reserve the balance first so long song titles cannot push it offscreen.
             float trailingWidth = trailing.getPillWidth(maxWidth / 2f);
-            float leadingWidth = leading.getPillWidth(Math.max(0, maxWidth - trailingWidth - dp(6)));
-            left = (getWidth() - leadingWidth - dp(6) - trailingWidth) / 2f;
+            float leadingWidth = leading.getPillWidth(Math.max(0, maxWidth - trailingWidth - gap));
+            left = (getWidth() - leadingWidth - gap - trailingWidth) / 2f;
             containerWidth = leadingView != null ? trailingWidth : leadingWidth;
-            if (leadingView != null) left += leadingWidth + dp(6);
+            if (leadingView != null) left += leadingWidth + gap;
         } else {
             containerWidth = getPillWidth(maxWidth);
             left = (getWidth() - containerWidth) / 2f;
         }
 
-        rect.set(left, dp(10), left + containerWidth, dp(10) + dp(17) * alpha);
+        if (iosLayout && LocaleController.isRTL) {
+            left = getWidth() - left - containerWidth;
+        }
+        final int top = iosLayout ? 0 : dp(10);
+        rect.set(left, top, left + containerWidth, top + dp(iosLayout ? 28 : 17) * alpha);
         canvas.save();
-        canvas.scale(scale, scale, rect.centerX(), getHeight() / 2f);
+        canvas.scale(scale, scale, rect.centerX(), getContentCenterY());
 
         if (glass != null) {
             final float radius = rect.height() / 2f;
@@ -383,7 +408,7 @@ public class ProfileMusicView extends View {
                 if (radialGradient == null || radialGradientWidth != rect.width()) {
                     radialGradientWidth = rect.width();
                     radialGradient = new RadialGradient(
-                        rect.width() / 2f, dp(17) / 2f, rect.width() * 0.65f,
+                        rect.width() / 2f, dp(iosLayout ? 28 : 17) / 2f, rect.width() * 0.65f,
                         Theme.multAlpha(buttonColor, 0.8f), buttonColor,
                         Shader.TileMode.CLAMP
                     );
@@ -401,7 +426,7 @@ public class ProfileMusicView extends View {
 
         canvas.save();
         canvas.clipPath(clipPath);
-        canvas.translate(rect.left + dp(8), 0);
+        canvas.translate(rect.left + getPillHorizontalPadding(), 0);
         drawContent(canvas, alpha);
 
         canvas.restore();

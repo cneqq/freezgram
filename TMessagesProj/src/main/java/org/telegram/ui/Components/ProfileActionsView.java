@@ -798,9 +798,11 @@ public class ProfileActionsView extends View {
         switch (mode) {
             case MODE_USER:
                 if (iosLayout) {
-                    insertIfAvailable(out, KEY_MESSAGE);
+                    final boolean photoSearch = allAvailableActions.contains(KEY_SEARCH);
+                    if (!photoSearch) insertIfAvailable(out, KEY_MESSAGE);
                     insertIfAvailable(out, allAvailableActions.contains(KEY_CALL) ? KEY_CALL : KEY_VIDEO);
                     insertIfAvailable(out, KEY_NOTIFICATION);
+                    if (photoSearch) insertIfAvailable(out, KEY_SEARCH);
                     insertIfAvailable(out, KEY_MORE);
                     break;
                 }

@@ -90,6 +90,7 @@ import org.telegram.ui.Components.RadialProgress;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SeekBarView;
 import org.telegram.ui.Components.TypefaceSpan;
+import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.Stories.recorder.HintView2;
 import org.telegram.ui.Stories.recorder.StoryRecorder;
@@ -121,6 +122,7 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
 
     private final int type;
     public final static int HEIGHT_IN_DP = 81;
+    public static final int IOS_HEIGHT_IN_DP = 96;
     private final Drawable addNewStoryDrawable;
     private final DefaultItemAnimator miniItemAnimator;
     private int addNewStoryLastColor;
@@ -768,7 +770,7 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
                 if (adapterPosition > animateFromPosition && adapterPosition < animateFromPosition + animateToDialogIds.size()) {
                     StoryCell previousCell = (StoryCell) recyclerListView.getChildAt(i - 1);
                     if (previousCell != null) {
-                        float size = dp(48);
+                        float size = dp(usesIosChatListLayout() ? 56 : 48);
                         float collapsedSize = dp(COLLAPSED_SIZE);
                         float previousSize = AndroidUtilities.lerp(size, collapsedSize, previousCell.progressToCollapsed) + dp(8);
                         float currentSize = AndroidUtilities.lerp(size, collapsedSize, cell.progressToCollapsed) + dp(8);
@@ -897,7 +899,7 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
                     cell.setTranslationY(translationY);
                 }
                 if (cell.drawInParent) {
-                    float right = recyclerListView.getX() + cell.getX() + cell.getMeasuredWidth() / 2f + dp(ITEM_WIDTH) / 2f;
+                    float right = recyclerListView.getX() + cell.getX() + cell.getMeasuredWidth() / 2f + currentCellWidth / 2f;
                     if (lastViewRight == 0 || right > lastViewRight) {
                         lastViewRight = right;
                     }
@@ -944,6 +946,20 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
             titleView.setTranslationY(bottomY - barOffset + dp(14) - offset + dp(FAKE_TOP_PADDING) - dp(6) * subtitleOverlayContainer.getTotalVisibility());
             int cellWidth = dp(72);
             lastViewRight += -cellWidth + getAvatarRight(cellWidth, collapsedProgress) + dp(12);
+            if (usesIosChatListLayout() && lastViewRight > menuItemsOffset && actionBar.getTitleTextView() != null) {
+                final float titleWidth = Math.max(titleView.getDrawable().getCurrentWidth(), actionBar.getTitleTextView().getTextWidth());
+                final float groupWidth = lastViewRight - menuItemsOffset + titleWidth;
+                final float minStart = menuItemsOffset;
+                final float maxStart = Math.max(minStart,
+                        getWidth() - actionBar.menu.getVisibleItemsMeasuredWidthWithAlpha() - dp(8) - groupWidth);
+                final float start = MathUtils.clamp((getWidth() - groupWidth) / 2f, minStart, maxStart);
+                final float shift = (start - menuItemsOffset) * progress;
+                recyclerListView.setTranslationX(shift);
+                listViewMini.setTranslationX(menuItemsOffset + shift);
+                lastViewRight += shift;
+            } else {
+                recyclerListView.setTranslationX(0);
+            }
             titleView.setTranslationX(lastViewRight);
             titleView.getDrawable().setRightPadding(lastViewRight - dp(12) + actionBar.menu.getVisibleItemsMeasuredWidthWithAlpha() * progress);
 
@@ -953,6 +969,8 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
 
             subtitleOverlayContainer.setTranslationX(titleView.getTranslationX());
             subtitleOverlayContainer.setTranslationY(bottomY - barOffset + dp(15 + FAKE_TOP_PADDING + 4.333f + 8));
+        } else {
+            recyclerListView.setTranslationX(0);
         }
 
         super.dispatchDraw(canvas);
@@ -1015,9 +1033,17 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         titleView.setTextSize(dp(!AndroidUtilities.isTablet() && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 18 : 20));
-        currentCellWidth = dp(ITEM_WIDTH);
+        currentCellWidth = dp(usesIosChatListLayout() ? 86 : ITEM_WIDTH);
         AndroidUtilities.rectTmp.set(0, 0, getMeasuredWidth(), getMeasuredHeight());
-        super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(dp(85 + FAKE_TOP_PADDING), MeasureSpec.EXACTLY));
+        super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(dp(getExpandedHeightDp() + 4 + FAKE_TOP_PADDING), MeasureSpec.EXACTLY));
+    }
+
+    private boolean usesIosChatListLayout() {
+        return fragment instanceof DialogsActivity && ((DialogsActivity) fragment).usesIosRootChatList();
+    }
+
+    private int getExpandedHeightDp() {
+        return usesIosChatListLayout() ? IOS_HEIGHT_IN_DP : HEIGHT_IN_DP;
     }
 
     @Override
@@ -1671,11 +1697,11 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
 
         @Override
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-            super.onMeasure(MeasureSpec.makeMeasureSpec(mini ? dp(ITEM_WIDTH) : currentCellWidth, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(dp(HEIGHT_IN_DP), MeasureSpec.EXACTLY));
+            super.onMeasure(MeasureSpec.makeMeasureSpec(mini ? dp(ITEM_WIDTH) : currentCellWidth, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(dp(getExpandedHeightDp()), MeasureSpec.EXACTLY));
         }
 
         float getCy() {
-            float size = dp(48);
+            float size = dp(usesIosChatListLayout() ? 56 : 48);
             float collapsedSize = dp(COLLAPSED_SIZE);
 
             float finalSize = AndroidUtilities.lerp(size, collapsedSize, progressToCollapsed);
@@ -1687,7 +1713,7 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
 
         @Override
         protected void dispatchDraw(Canvas canvas) {
-            float size = dp(48);
+            float size = dp(usesIosChatListLayout() ? 56 : 48);
             float collapsedSize = dp(COLLAPSED_SIZE);
             float overscrollSize = dp(8) *  Utilities.clamp(DialogStoriesCell.this.overscrollProgress / 0.5f, 1f, 0);
             if (selectedForOverscroll) {
@@ -2103,8 +2129,8 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
         invalidate();
     }
 
-    static float getAvatarRight(int width, float progressToCollapsed) {
-        float size = dp(48);
+    private float getAvatarRight(int width, float progressToCollapsed) {
+        float size = dp(usesIosChatListLayout() ? 56 : 48);
         float collapsedSize = dp(COLLAPSED_SIZE);
         float finalSize = AndroidUtilities.lerp(size, collapsedSize, progressToCollapsed);
         float radius = finalSize / 2f;

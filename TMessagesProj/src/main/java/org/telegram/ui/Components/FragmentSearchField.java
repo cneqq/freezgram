@@ -238,6 +238,21 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
         if (editText == null) return;
         boolean center = centeredPlaceholder && editText.length() == 0 && !editText.hasFocus() && currentSearchFilters.isEmpty();
         editText.setGravity(Gravity.CENTER_VERTICAL | (center ? Gravity.CENTER_HORIZONTAL : LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT));
+        if (iosCancelButton != null && searchIcon != null) {
+            CharSequence hint = editText.getHint();
+            float hintWidth = hint == null ? 0 : editText.getPaint().measureText(hint.toString());
+            float centerX = (editText.getLeft() + editText.getRight()) / 2f;
+            float offset = (hintWidth + searchIcon.getWidth()) / 2f + dp(4);
+            float iconX = centerX + (LocaleController.isRTL ? offset : -offset);
+            boolean fits = hint != null && 2 * offset + searchIcon.getWidth() <= editText.getWidth();
+            searchIcon.setTranslationX(center && fits ? iconX - (searchIcon.getLeft() + searchIcon.getRight()) / 2f : 0);
+        }
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        if (iosCancelButton != null) updatePlaceholderGravity();
     }
 
     public void setSharedGlass(java.util.function.BooleanSupplier enabled) {
@@ -283,7 +298,7 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
     }
 
     public void setupBlurredBackground(BlurredBackgroundDrawable drawable) {
-        drawable.setRadius(dp(20));
+        drawable.setRadius(dp(iosCancelButton == null ? 20 : 24));
         drawable.setPadding(dp(4));
         blurredBackgroundDrawable = drawable;
     }

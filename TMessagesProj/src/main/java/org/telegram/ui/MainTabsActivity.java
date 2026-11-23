@@ -133,12 +133,12 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         final boolean calls = MainTabsHelper.isCallsTabShown(currentAccount);
         final int[] order = new int[TABS_COUNT + 1];
         int count = 0;
-        if (calls) order[count++] = INDEX_CALLS;
         if (isFeedTabEnabled()) {
             order[count++] = INDEX_FEED;
         } else if (!MainTabsHelper.isContactsTabHidden()) {
             order[count++] = INDEX_CONTACTS;
         }
+        if (calls) order[count++] = INDEX_CALLS;
         order[count++] = INDEX_CHATS;
         if (!MainTabsHelper.isProfileTabHidden()) order[count++] = INDEX_PROFILE;
         order[count++] = INDEX_SETTINGS;

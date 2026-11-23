@@ -43,4 +43,5 @@
     <string name="FreezgramStyleGiftInfo">Меняет фон карточек подарков. Коллекционные подарки сохраняют исходные изображения и цвета.</string>
     <string name="FreezgramUnreadCountersGlass">Счётчики непрочитанных: стекло</string>
     <string name="FreezgramMessageDecorationsGlass">Ответы и время на стикерах: стекло</string>
+    <string name="FreezgramIosChatListEdit">Изм.</string>
 </resources>

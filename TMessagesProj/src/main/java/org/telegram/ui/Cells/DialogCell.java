@@ -188,21 +188,31 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     private TextPaint iosNamePaint;
     private TextPaint iosMessagePaint;
     private TextPaint profilePreviewTimePaint;
+    private boolean iosChatListRow;
 
     public void useIosLayout() {
+        iosChatListRow = true;
         useForceThreeLines = true;
-        heightThreeLines = 82;
-        avatarStart = 14;
-        messagePaddingStart = 80;
+        heightThreeLines = 76;
+        avatarStart = 16;
+        messagePaddingStart = 84;
         setPreviewTypefaces(app.freezgram.IosTypography.SEMIBOLD, app.freezgram.IosTypography.REGULAR);
         iosNamePaint.setTextSize(dp(17));
         iosMessagePaint.setTextSize(dp(15));
+        profilePreviewTimePaint = new TextPaint(Theme.dialogs_timePaint);
+        profilePreviewTimePaint.setTypeface(app.freezgram.IosTypography.REGULAR);
+        profilePreviewTimePaint.setTextSize(dp(13));
     }
 
     public void useIosProfilePreview() {
         setPreviewTypefaces(app.freezgram.IosTypography.Profile.SEMIBOLD, app.freezgram.IosTypography.Profile.REGULAR);
         profilePreviewTimePaint = new TextPaint(Theme.dialogs_timePaint);
         profilePreviewTimePaint.setTypeface(app.freezgram.IosTypography.Profile.REGULAR);
+    }
+
+    private boolean drawIosPin() {
+        return iosChatListRow && getIsPinned() && !drawCount && !drawMention
+                && !drawReactionMention && !drawPollVotesMention && !drawError;
     }
 
     private void setPreviewTypefaces(android.graphics.Typeface name, android.graphics.Typeface message) {
@@ -1563,7 +1573,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 drawVerified = !forbidVerified && customDialog.verified;
                 if (useForceThreeLines || SharedConfig.useThreeLinesLayout) {
                     if (!LocaleController.isRTL) {
-                        nameLeft = dp(messagePaddingStart + 6);
+                        nameLeft = dp(messagePaddingStart + (iosChatListRow ? 0 : 6));
                     } else {
                         nameLeft = dp(22);
                     }
@@ -1635,7 +1645,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         } else {
             if (useForceThreeLines || SharedConfig.useThreeLinesLayout) {
                 if (!LocaleController.isRTL) {
-                    nameLeft = dp(messagePaddingStart + 6);
+                    nameLeft = dp(messagePaddingStart + (iosChatListRow ? 0 : 6));
                 } else {
                     nameLeft = dp(22);
                 }
@@ -2471,7 +2481,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             final TextPaint tp = getTimeTextPaint();
             timeWidth = (int) Math.ceil(tp.measureText(timeString));
             timeLayout = new StaticLayout(timeString, tp, timeWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
-            timeWidth += dp(getIsPinned() ? 24 : 0);
+            timeWidth += dp(getIsPinned() && !iosChatListRow ? 24 : 0);
             if (!LocaleController.isRTL) {
                 timeLeft = getMeasuredWidth() - dp(15) - timeWidth;
             } else {
@@ -2641,10 +2651,10 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         int avatarTop;
         int thumbLeft;
         if (useForceThreeLines || SharedConfig.useThreeLinesLayout) {
-            final int avatarDiameter = iosNamePaint != null ? 58 : 56;
-            avatarTop = dp(iosNamePaint != null ? 12 : 11);
-            messageNameTop = dp(32);
-            timeTop = dp(13);
+            final int avatarDiameter = iosChatListRow ? 60 : iosNamePaint != null ? 58 : 56;
+            avatarTop = dp(iosChatListRow ? 8 : iosNamePaint != null ? 12 : 11);
+            messageNameTop = dp(iosChatListRow ? 30 : 32);
+            timeTop = dp(iosChatListRow ? 12 : 13);
             errorTop = dp(42.33f);
             pinTop = dp(43);
             countTop = dp(42.33f);
@@ -2656,13 +2666,13 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 avatarLeft = getMeasuredWidth() - dp(avatarDiameter + avatarStart);
                 thumbLeft = avatarLeft - dp(13 + 18);
             } else {
-                buttonLeft = typingLeft = messageLeft = messageNameLeft = dp(messagePaddingStart + 6);
+                buttonLeft = typingLeft = messageLeft = messageNameLeft = dp(messagePaddingStart + (iosChatListRow ? 0 : 6));
                 avatarLeft = dp(avatarStart);
-                thumbLeft = avatarLeft + dp(avatarDiameter + 13);
+                thumbLeft = iosChatListRow ? messageLeft : avatarLeft + dp(avatarDiameter + 13);
             }
             storyParams.originalAvatarRect.set(avatarLeft, avatarTop, avatarLeft + dp(avatarDiameter), avatarTop + dp(avatarDiameter));
             for (int i = 0; i < thumbImage.length; ++i) {
-                thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + dp(31) + (twoLinesForName ? dp(20) : 0) - (!(useForceThreeLines || SharedConfig.useThreeLinesLayout) && tags != null && !tags.isEmpty() ? dp(9) : 0), dp(18), dp(18));
+                thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + dp(iosChatListRow ? 25 : 31) + (twoLinesForName ? dp(20) : 0) - (!(useForceThreeLines || SharedConfig.useThreeLinesLayout) && tags != null && !tags.isEmpty() ? dp(9) : 0), dp(18), dp(18));
             }
         } else {
             avatarTop = dp(9);
@@ -2821,6 +2831,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         } else if (allowBotOpenButton && !isFolderCell() && !isForumCell() && !isDialogFolder() && UserObject.isBot(user) && user.bot_has_main_app) {
             setOpenBotButton(true);
             int buttonWidth = (int) (dp(2 * 13) + openButtonText.getCurrentWidth()), p = dp(13);
+            int edge = p + (iosChatListRow && getIsPinned() ? dp(22) : 0);
             messageWidth -= buttonWidth;
             int y;
             if (useForceThreeLines || SharedConfig.useThreeLinesLayout) {
@@ -2829,9 +2840,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 y = isTopic ? dp(33) : dp(36);
             }
             if (!LocaleController.isRTL) {
-                openButtonRect.set(getMeasuredWidth() - buttonWidth - dp(13), y, getMeasuredWidth() - dp(13), y + dp(28));
+                openButtonRect.set(getMeasuredWidth() - buttonWidth - edge, y, getMeasuredWidth() - edge, y + dp(28));
             } else {
-                openButtonRect.set(dp(13), y, dp(13) + buttonWidth, y + dp(28));
+                openButtonRect.set(edge, y, edge + buttonWidth, y + dp(28));
                 messageLeft += buttonWidth + p;
                 typingLeft += buttonWidth + p;
                 buttonLeft += buttonWidth + p;
@@ -2842,6 +2853,16 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         } else {
             drawCount = false;
             drawMention = false;
+        }
+
+        if (drawIosPin()) {
+            messageWidth -= dp(22);
+            if (LocaleController.isRTL) {
+                messageLeft += dp(22);
+                typingLeft += dp(22);
+                buttonLeft += dp(22);
+                messageNameLeft += dp(22);
+            }
         }
 
         drawGramTransfer = !drawError && customDialog == null && !isFolderCell() && !isForumCell() && !isDialogFolder()
@@ -4009,7 +4030,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             }
             drawMonoforumAvatar = !isFolderCell() && chat != null && chat.monoforum;
 
-            final int avatarSize = dp(iosNamePaint != null ? 58 : useForceThreeLines || SharedConfig.useThreeLinesLayout ? 56 : 52);
+            final int avatarSize = dp(iosChatListRow ? 60 : iosNamePaint != null ? 58 : useForceThreeLines || SharedConfig.useThreeLinesLayout ? 56 : 52);
             final int avatarRadius;
             if (drawMonoforumAvatar) {
                 avatarRadius = 1;
@@ -4351,9 +4372,13 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             Theme.dialogs_pinnedPaint.setAlpha((int) (Theme.dialogs_pinnedPaint.getAlpha() * (1f - rightFragmentOpenedProgress)));
             // canvas.drawRect(-xOffset, 0, getMeasuredWidth(), getMeasuredHeight() - translateY, Theme.dialogs_pinnedPaint);
         } else if (getIsPinned() || drawPinBackground) {
-            Theme.dialogs_pinnedPaint.setColor(Theme.getColor(Theme.key_chats_pinnedOverlay, resourcesProvider));
-            Theme.dialogs_pinnedPaint.setAlpha((int) (Theme.dialogs_pinnedPaint.getAlpha() * (1f - rightFragmentOpenedProgress)));
-            //canvas.drawRect(-xOffset, 0, getMeasuredWidth(), getMeasuredHeight() - translateY, Theme.dialogs_pinnedPaint);
+            if (iosChatListRow && !isSelected) {
+                final int base = Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider);
+                final int foreground = Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider);
+                Theme.dialogs_pinnedPaint.setColor(ColorUtils.blendARGB(base, foreground, Theme.isCurrentThemeDark() ? .075f : .045f));
+                Theme.dialogs_pinnedPaint.setAlpha((int) (255 * (1f - rightFragmentOpenedProgress)));
+                canvas.drawRect(-xOffset, 0, getMeasuredWidth(), getMeasuredHeight() - translateY, Theme.dialogs_pinnedPaint);
+            }
         }
         canvas.restore();
 
@@ -4425,7 +4450,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 Theme.dialogs_lockDrawable.draw(canvas);
             }
 
-            int nameTop = dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 10 : 14);
+            int nameTop = dp(iosChatListRow ? 9 : useForceThreeLines || SharedConfig.useThreeLinesLayout ? 10 : 14);
             if ((!(useForceThreeLines || SharedConfig.useThreeLinesLayout) || isForumCell()) && hasTags()) {
                 nameTop -= dp(isForumCell() ? 8 : 9);
             }
@@ -4481,7 +4506,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 canvas.translate(timeLeft, timeTop);
 
                 final TextPaint timeTextPaint = getTimeTextPaint();
-                if (getIsPinned()) {
+                if (getIsPinned() && !iosChatListRow) {
                     canvas.translate(dp(20), 0);
 
                     final float y = timeLayout.getHeight() / 2f - dp(17 / 2f);
@@ -4961,6 +4986,15 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 canvas.restore();
             }
 
+            if (drawIosPin() && !drawGramTransfer && reorderIconProgress < 1f) {
+                final Drawable pin = Theme.dialogs_pinnedDrawable2;
+                final int previousAlpha = pin.getAlpha();
+                pin.setAlpha((int) (255 * (1f - reorderIconProgress)));
+                setDrawableBounds(pin, pinLeft, countTop + (dp(BADGE_SIZE) - pin.getIntrinsicHeight()) / 2);
+                pin.draw(canvas);
+                pin.setAlpha(previousAlpha);
+            }
+
             if (drawGramTransfer) {
                 if (gramTransferDrawable == null) {
                     gramTransferDrawable = (LayerDrawable) ContextCompat.getDrawable(getContext(), R.drawable.dialog_gram_transfer).mutate();
@@ -5160,10 +5194,11 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                     Theme.dividerPaint.setAlpha((int) (alpha * (1f - rightFragmentOpenedProgress)));
                 }
                 float y = getMeasuredHeight() - 1 - rightFragmentOffset * rightFragmentOpenedProgress;
+                final int edge = iosChatListRow && left != 0 ? dp(16) : 0;
                 if (LocaleController.isRTL) {
-                    canvas.drawLine(0, y, getMeasuredWidth() - left, y, Theme.dividerPaint);
+                    canvas.drawLine(edge, y, getMeasuredWidth() - left, y, Theme.dividerPaint);
                 } else {
-                    canvas.drawLine(left, y, getMeasuredWidth(), y, Theme.dividerPaint);
+                    canvas.drawLine(left, y, getMeasuredWidth() - edge, y, Theme.dividerPaint);
                 }
                 if (rightFragmentOpenedProgress != 0) {
                     Theme.dividerPaint.setAlpha(alpha);

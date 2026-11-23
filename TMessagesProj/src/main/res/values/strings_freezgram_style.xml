@@ -43,4 +43,5 @@
     <string name="FreezgramStyleGiftInfo">Changes the gift card background. Collectible gifts retain their original artwork and colors.</string>
     <string name="FreezgramUnreadCountersGlass">Unread counters: glass</string>
     <string name="FreezgramMessageDecorationsGlass">Replies and sticker timestamps: glass</string>
+    <string name="FreezgramIosChatListEdit">Edit</string>
 </resources>

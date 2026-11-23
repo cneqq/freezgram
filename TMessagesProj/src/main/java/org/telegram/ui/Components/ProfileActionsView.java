@@ -123,6 +123,11 @@ public class ProfileActionsView extends View {
     final float textPadding;
 
     private int color = 0;
+    private int iosCoverColor;
+    private int iosActionTint;
+    private boolean iosActionUsesWhiteIcon;
+    private boolean iosDarkTheme;
+    private final Paint iosActionPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private boolean hasColorById;
     private RadialGradient radialGradient;
     private final Matrix matrix = new Matrix();
@@ -206,6 +211,30 @@ public class ProfileActionsView extends View {
             createColorShader();
             checkPaints();
         }
+    }
+
+    public void setIosCoverColor(int color) {
+        if (!usesRoundIosActions()) {
+            return;
+        }
+        final int cover = color | 0xff000000;
+        final boolean dark = Theme.isCurrentThemeDark();
+        if (iosCoverColor == cover && iosDarkTheme == dark) {
+            return;
+        }
+        iosCoverColor = cover;
+        iosDarkTheme = dark;
+        final int shade = 0x60000000;
+        final int highlight = dark ? 0x4affffff : 0x59ffffff;
+        final int preferred = dark ? shade : highlight;
+        final int alternate = dark ? highlight : shade;
+        final int preferredFill = ColorUtils.compositeColors(preferred, cover);
+        final int alternateFill = ColorUtils.compositeColors(alternate, cover);
+        final double contrast = ColorUtils.calculateContrast(preferredFill, cover);
+        final boolean useAlternate = contrast < 1.55 && ColorUtils.calculateContrast(alternateFill, cover) > contrast;
+        iosActionTint = useAlternate ? alternate : preferred;
+        iosActionUsesWhiteIcon = ColorUtils.calculateLuminance(useAlternate ? alternateFill : preferredFill) <= .179;
+        invalidate();
     }
 
     private boolean isButtonColorLight() {
@@ -341,8 +370,21 @@ public class ProfileActionsView extends View {
             }
             final float halfEdge = Math.min(AndroidUtilities.rectTmp.width(), AndroidUtilities.rectTmp.height()) / 2f;
             final float radius = usesRoundIosActions() ? halfEdge : iosLayout ? Math.min(r, halfEdge) : r;
+            final float alpha = action.getAlpha() * alphaFraction1;
+            if (usesRoundIosActions() && iosActionTint != 0) {
+                final float centerX = AndroidUtilities.rectTmp.centerX();
+                final float centerY = AndroidUtilities.rectTmp.centerY();
+                if (glassFactory != null) {
+                    drawGlass(canvas, AndroidUtilities.rectTmp, radius, alpha);
+                }
+                // Apply the tint over the sampled glass so a flat cover still shows the circular button.
+                final int tint = parentExpanded >= .75f ? 0x66000000 : iosActionTint;
+                iosActionPaint.setColor(Theme.multAlpha(tint, alpha));
+                canvas.drawCircle(centerX, centerY, radius, iosActionPaint);
+                continue;
+            }
             if (glassFactory != null) {
-                drawGlass(canvas, AndroidUtilities.rectTmp, radius, action.getAlpha() * alphaFraction1);
+                drawGlass(canvas, AndroidUtilities.rectTmp, radius, alpha);
                 continue;
             }
             int wasAlpha = paint.getAlpha();
@@ -427,12 +469,16 @@ public class ProfileActionsView extends View {
 
         final boolean isButtonColorLight = isButtonColorLight();
         // over the photo the buttons are the dimmed photo on every Android (see ProfileButtonsGlass): white icons there
-        final float useFilledWhiteIcon = !isButtonColorLight ? 1 : MathUtils.clamp((parentExpanded - 0.75f) / 0.25f, 0, 1);
+        final boolean tintedCircle = usesRoundIosActions() && iosActionTint != 0 && parentExpanded < .75f;
+        final float originalWhite = !isButtonColorLight ? 1 : MathUtils.clamp((parentExpanded - 0.75f) / 0.25f, 0, 1);
+        final float useFilledWhiteIcon = tintedCircle ? (iosActionUsesWhiteIcon ? 1f : 0f)
+                : usesRoundIosActions() && parentExpanded >= .75f ? 1f : originalWhite;
 
-        final int textColor = ColorUtils.blendARGB(Color.BLACK, Color.WHITE, useFilledWhiteIcon);
-        if (lastColorFilter == null || lastColorFilterColor != textColor) {
-            lastColorFilterColor = textColor;
-            lastColorFilter = new PorterDuffColorFilter(textColor, PorterDuff.Mode.SRC_IN);
+        final int iconColor = ColorUtils.blendARGB(Color.BLACK, Color.WHITE, useFilledWhiteIcon);
+        final int textColor = ColorUtils.blendARGB(Color.BLACK, Color.WHITE, originalWhite);
+        if (lastColorFilter == null || lastColorFilterColor != iconColor) {
+            lastColorFilterColor = iconColor;
+            lastColorFilter = new PorterDuffColorFilter(iconColor, PorterDuff.Mode.SRC_IN);
         }
 
         canvas.save();

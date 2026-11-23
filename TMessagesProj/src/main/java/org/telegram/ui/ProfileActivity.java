@@ -1439,6 +1439,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             final int color2 = color2Animated.set(this.color2);
             if (actionsView != null) {
                 actionsView.setActionsColor(btnColor, hasColorById);
+                if (usesIosUserProfile()) {
+                    final int coverColor = !hasColorById ? currentColor
+                            : iosGiftProfileColors != null && iosGiftProfileColors.headerFade != null
+                                    ? ColorUtils.blendARGB(color1, iosGiftProfileColors.background, .5f) : color1;
+                    actionsView.setIosCoverColor(coverColor);
+                }
             }
             if (musicView != null) {
                 musicView.setButtonColor(btnColor, hasColorById);

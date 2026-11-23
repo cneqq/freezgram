@@ -2591,9 +2591,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (!isActionMode && ttlIconView != null) {
                     ttlIconView.setColorFilter(new PorterDuffColorFilter(color, PorterDuff.Mode.MULTIPLY));
                 }
-                if (hasMainTabs && backButtonImageView != null) {
-                    backButtonImageView.setColorFilter(color, PorterDuff.Mode.SRC_IN);
-                }
             }
 
             @Override
@@ -2614,17 +2611,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         actionBar.setOccupyStatusBar(hasMainTabs || parentLayout != null && parentLayout.isSheet() || !AndroidUtilities.isTablet() && !inBubbleMode || isInTabletRightLayout());
 
         if (hasMainTabs) {
-            actionBar.setBackButtonDrawable(new BackDrawable(false));
-            actionBar.getBackButton().setTranslationX(dp(2));
-            actionBar.backButtonImageView.setContentDescription(getString(R.string.QrCode));
-            actionBar.backButtonImageView.setImageResource(R.drawable.outline_header_qr_24);
-            actionBar.backButtonImageView.setColorFilter(getThemedColor(Theme.key_actionBarDefaultIcon), PorterDuff.Mode.SRC_IN);
-            actionBar.backButtonImageView.setOnClickListener(v -> {
-                Bundle args = new Bundle();
-                args.putLong("chat_id", chatId);
-                args.putLong("user_id", userId);
-                presentFragment(new QrShareActivity(args));
-            });
+            // The visible main-tab header owns the QR action. Keep this bar for layout only.
+            actionBar.setBackButtonDrawable(null);
+            actionBar.setVisibility(View.INVISIBLE);
         } else {
             actionBar.setBackButtonDrawable(new BackDrawable(false));
             actionBar.getBackButton().setTranslationX(dp(2));
@@ -14990,9 +14979,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             detailCell.setImageClickListener(ProfileActivity.this::onTextDetailCellImageClicked);
                         }
                     } else if (containsQr) {
-                        final int icon = position == usernameRow && usesIosUserProfile()
-                                ? R.drawable.msg_qrcode_mini_solar : R.drawable.header_qr_24;
-                        Drawable drawable = ContextCompat.getDrawable(detailCell.getContext(), icon).mutate();
+                        Drawable drawable = ContextCompat.getDrawable(detailCell.getContext(), R.drawable.header_qr_24);
                         drawable.setColorFilter(new PorterDuffColorFilter(dontApplyPeerColor(getThemedColor(Theme.key_actionBarDefaultIcon), false), PorterDuff.Mode.MULTIPLY));
                         qrRowIconDrawable = drawable;
                         detailCell.setImage(drawable, LocaleController.getString(R.string.GetQRCode));

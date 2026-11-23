@@ -225,9 +225,11 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             @Override
             public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
                 super.onInitializeAccessibilityNodeInfo(info);
-                if (avatarClickable && getImageReceiver().hasNotThumb()) {
+                final boolean opensOptions = usesIosHeaderGeometry() && hasAvatarOptionsMenu();
+                if (avatarClickable && (opensOptions || getImageReceiver().hasNotThumb())) {
                     info.setText(getString(R.string.AccDescrProfilePicture));
-                    info.addAction(new AccessibilityNodeInfo.AccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK, getString(R.string.Open)));
+                    info.addAction(new AccessibilityNodeInfo.AccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK,
+                            getString(opensOptions ? R.string.AccDescrMoreOptions : R.string.Open)));
                 } else {
                     info.setVisibleToUser(false);
                 }
@@ -259,13 +261,12 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
 
             @Override
             public boolean onTouchEvent(MotionEvent event) {
-                if (isCentered() && avatarOptionsMenuItem != null && avatarOptionsMenuItem.hasSubMenu()) {
+                if (isCentered() && hasAvatarOptionsMenu()) {
                     final int action = event.getActionMasked();
                     if (action == MotionEvent.ACTION_MOVE) {
                         if (!avatarOptionsMenuItem.isSubMenuShowing()) {
                             if (event.getY() > getHeight()) {
-                                final ActionBar actionBar = parentFragment != null ? parentFragment.getActionBar() : null;
-                                if (actionBar != null && actionBar.actionBarMenuOnItemClick != null && !actionBar.actionBarMenuOnItemClick.canOpenMenu()) {
+                                if (!canOpenAvatarOptionsMenu()) {
                                     return false;
                                 }
                                 if (getParent() != null) {
@@ -365,19 +366,16 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
                 ScaleStateListAnimator.apply(avatarImageView, .05f, 1.2f);
             }
             avatarImageView.setOnClickListener(v -> {
+                if (usesIosHeaderGeometry() && hasAvatarOptionsMenu()) {
+                    openAvatarOptionsMenu();
+                    return;
+                }
                 if (!onAvatarClick()) {
                     openProfile(true);
                 }
             });
             if (isCentered() && app.exteraless.appearance.AppearanceConfig.iosMode()) {
-                avatarImageView.setOnLongClickListener(v -> {
-                    if (avatarOptionsMenuItem == null || !avatarOptionsMenuItem.hasSubMenu()) return false;
-                    final ActionBar actionBar = parentFragment != null ? parentFragment.getActionBar() : null;
-                    if (actionBar != null && actionBar.actionBarMenuOnItemClick != null
-                            && !actionBar.actionBarMenuOnItemClick.canOpenMenu()) return false;
-                    avatarOptionsMenuItem.toggleSubMenu();
-                    return true;
-                });
+                avatarImageView.setOnLongClickListener(v -> openAvatarOptionsMenu());
             }
         }
 
@@ -495,6 +493,22 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
 
     public void setAvatarOptionsMenuItem(ActionBarMenuItem menuItem) {
         avatarOptionsMenuItem = menuItem;
+    }
+
+    private boolean hasAvatarOptionsMenu() {
+        return avatarOptionsMenuItem != null && avatarOptionsMenuItem.hasSubMenu();
+    }
+
+    private boolean canOpenAvatarOptionsMenu() {
+        final ActionBar actionBar = parentFragment != null ? parentFragment.getActionBar() : null;
+        return actionBar == null || actionBar.actionBarMenuOnItemClick == null
+                || actionBar.actionBarMenuOnItemClick.canOpenMenu();
+    }
+
+    private boolean openAvatarOptionsMenu() {
+        if (!hasAvatarOptionsMenu() || !canOpenAvatarOptionsMenu()) return false;
+        if (!avatarOptionsMenuItem.isSubMenuShowing()) avatarOptionsMenuItem.toggleSubMenu();
+        return avatarOptionsMenuItem.isSubMenuShowing();
     }
 
     public ButtonBounce bounce = new ButtonBounce(this);

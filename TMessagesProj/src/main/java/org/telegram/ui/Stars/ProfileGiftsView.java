@@ -8,6 +8,7 @@ import static org.telegram.ui.Stars.StarsController.findAttribute;
 import android.animation.TimeInterpolator;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RadialGradient;
@@ -19,6 +20,7 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 
 import androidx.annotation.NonNull;
+import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MessagesController;
@@ -46,13 +48,14 @@ public class ProfileGiftsView extends View implements NotificationCenter.Notific
     private final View avatarContainer;
     private final ProfileActivity.AvatarImageView avatarImage;
     private final Theme.ResourcesProvider resourcesProvider;
+    private final boolean giftBubbles;
 
     private boolean active = true;
     public void setActive(boolean f) {
         this.active = f;
     }
 
-    public ProfileGiftsView(Context context, int currentAccount, long dialogId, @NonNull View avatarContainer, ProfileActivity.AvatarImageView avatarImage, Theme.ResourcesProvider resourcesProvider) {
+    public ProfileGiftsView(Context context, int currentAccount, long dialogId, @NonNull View avatarContainer, ProfileActivity.AvatarImageView avatarImage, Theme.ResourcesProvider resourcesProvider, boolean giftBubbles) {
         super(context);
 
         this.currentAccount = currentAccount;
@@ -62,6 +65,7 @@ public class ProfileGiftsView extends View implements NotificationCenter.Notific
         this.avatarImage = avatarImage;
 
         this.resourcesProvider = resourcesProvider;
+        this.giftBubbles = giftBubbles;
     }
 
     public float expandProgress, collapseProgress;
@@ -233,11 +237,21 @@ public class ProfileGiftsView extends View implements NotificationCenter.Notific
             canvas.rotate(rotate);
             final float scale = ascale * bounce.getScale(0.1f);
             canvas.scale(scale, scale);
-            particles.process();
-            particles.draw(canvas, color, alpha);
+            if (!giftBubbles) {
+                particles.process();
+                particles.draw(canvas, color, alpha);
+            }
             if (gradientPaint != null) {
                 gradientPaint.setAlpha((int) (0xFF * alpha * gradientAlpha));
-                canvas.drawRect(-gsz / 2.0f, -gsz / 2.0f, gsz / 2.0f, gsz / 2.0f, gradientPaint);
+                if (giftBubbles) {
+                    canvas.drawCircle(0, 0, gsz / 2.0f, gradientPaint);
+                } else {
+                    canvas.drawRect(-gsz / 2.0f, -gsz / 2.0f, gsz / 2.0f, gsz / 2.0f, gradientPaint);
+                }
+            }
+            if (giftBubbles) {
+                particles.process();
+                particles.draw(canvas, color, alpha);
             }
             if (emojiDrawable != null) {
                 final int sz = dp(24);
@@ -315,7 +329,15 @@ public class ProfileGiftsView extends View implements NotificationCenter.Notific
             if (oldGift != null) {
                 g.copy(oldGift);
             } else {
-                g.gradient = new RadialGradient(0, 0, dp(22.5f), new int[]{g.color, Theme.multAlpha(g.color, 0.0f)}, new float[]{0, 1}, Shader.TileMode.CLAMP);
+                if (giftBubbles) {
+                    final int rim = ColorUtils.blendARGB(g.color, Color.WHITE, .64f);
+                    g.gradient = new RadialGradient(0, 0, dpf2(22.5f),
+                            new int[] {Theme.multAlpha(g.color, .29f), Theme.multAlpha(g.color, .13f),
+                                    Theme.multAlpha(rim, .48f), Theme.multAlpha(rim, .12f)},
+                            new float[] {0f, .61f, .93f, 1f}, Shader.TileMode.CLAMP);
+                } else {
+                    g.gradient = new RadialGradient(0, 0, dp(22.5f), new int[]{g.color, Theme.multAlpha(g.color, 0.0f)}, new float[]{0, 1}, Shader.TileMode.CLAMP);
+                }
                 g.gradientPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
                 g.gradientPaint.setShader(g.gradient);
                 if (g.document != null) {

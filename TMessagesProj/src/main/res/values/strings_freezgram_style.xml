@@ -19,6 +19,7 @@
     <string name="FreezgramIosGlassInfo">These glass settings apply in iOS mode.</string>
     <string name="FreezgramIosGlassEdge">Refracting edge width</string>
     <string name="FreezgramProfileMore">More</string>
+    <string name="FreezgramProfileChat">Chat</string>
     <string name="FreezgramStyleChat">Chat</string>
     <string name="FreezgramStyleEffects">Effects</string>
     <string name="FreezgramStyleChatHeader">Chat header</string>

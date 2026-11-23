@@ -490,6 +490,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private Paint actionBarBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private ActionBarPopupWindow scrimPopupWindow;
     private Theme.ResourcesProvider resourcesProvider;
+    private IosGiftProfileColors iosGiftProfileColors;
 
     private int overlayCountVisible;
 
@@ -673,6 +674,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private final static int enable_no_forwards = 46;
     private final static int disable_no_forwards = 47;
     private final static int send_money = 48;
+    private final static int search_profile_chat = 49;
 
     private final static int event_log = 102;
     private final static int message_filter = 103;
@@ -1495,6 +1497,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         StarGiftPatterns.drawProfileAnimatedPattern(canvas, emoji, getMeasuredWidth(), maxExpand, calculateHeaderExtraDiff(), avatarContainer, 1.0f);
                         canvas.restore();
                     }
+                }
+                if (iosGiftProfileColors != null && iosGiftProfileColors.headerFade != null) {
+                    final GradientDrawable fade = iosGiftProfileColors.headerFade;
+                    fade.setBounds(0, Math.max(0, y1 - dp(112)), getMeasuredWidth(), y1);
+                    fade.draw(canvas);
                 }
                 if (previousTransitionFragment != null) {
                     ActionBar actionBar = previousTransitionFragment.getActionBar();
@@ -2652,9 +2659,19 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         additionNavigationBarHeight = hasMainTabs ? dp(app.exteraless.appearance.MainTabsUiHelper.getTabsBottomOccupiedHeightDp()) : 0;
         additionFloatingButtonOffset = hasMainTabs ? dp(app.exteraless.appearance.MainTabsUiHelper.getTabsFabOffsetDp()) : 0;
 
+        if (iosGiftProfileColors != null) {
+            resourcesProvider = iosGiftProfileColors.base;
+            iosGiftProfileColors = null;
+        }
         BaseFragment lastFragment = parentLayout.getLastFragment();
         if (lastFragment instanceof ChatActivity && ((ChatActivity) lastFragment).themeDelegate != null && ((ChatActivity) lastFragment).themeDelegate.getCurrentTheme() != null && !((ChatActivity) lastFragment).themeDelegate.isGiftTheme()) {
             resourcesProvider = lastFragment.getResourceProvider();
+        }
+        if (usesIosUserProfile()) {
+            iosGiftProfileColors = new IosGiftProfileColors(resourcesProvider);
+            final TLRPC.User user = getMessagesController().getUser(userId);
+            iosGiftProfileColors.setStatus(user == null ? null : user.emoji_status);
+            resourcesProvider = iosGiftProfileColors;
         }
         searchTransitionOffset = 0;
         searchTransitionProgress = 1f;
@@ -2673,6 +2690,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         return;
                     }
                     finishFragment();
+                } else if (id == search_profile_chat) {
+                    final ChatActivity chat = getIosProfileSourceChat();
+                    if (chat != null) {
+                        pendingIosChatSearch = chat;
+                        finishFragment();
+                    }
                 } else if (id == block_contact) {
                     onBlockContactClicked(false);
                 } else if (id == shadow_ban) {
@@ -3982,9 +4005,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         if (actionsView != null) {
             setActionsMode();
             updateNotifications(false);
-            if (actionsView.iosLayout && actionsView.mode == ProfileActionsView.MODE_USER) {
-                actionsView.set(ProfileActionsView.KEY_SEARCH, getIosProfileSourceChat() != null);
-            }
 
             actionsView.setOnActionClickListener((key, x, y) -> {
                 switch (key) {
@@ -4083,14 +4103,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             otherItem.toggleSubMenuAtRow(actionsView);
                         }
                         break;
-                    case ProfileActionsView.KEY_SEARCH: {
-                        final ChatActivity chat = getIosProfileSourceChat();
-                        if (chat != null) {
-                            pendingIosChatSearch = chat;
-                            finishFragment();
-                        }
-                        break;
-                    }
                 }
             });
         }
@@ -5926,7 +5938,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             avatarImage.setHasStories(needInsetForStories());
         }
         avatarContainer2.addView(storyView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-        giftsView = new ProfileGiftsView(context, currentAccount, getDialogId(), avatarContainer, avatarImage, resourcesProvider);
+        giftsView = new ProfileGiftsView(context, currentAccount, getDialogId(), avatarContainer, avatarImage,
+                resourcesProvider, usesIosUserProfile());
         avatarContainer2.addView(giftsView, 0, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         updateProfileData(true);
 
@@ -6209,6 +6222,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         // only the images of the header: its texts (the name, the status) and buttons are over the glass, not under it
         iBlur3Capture = (c, p) -> {
             final ViewGroup root = (ViewGroup) fragmentView;
+            if (iosGiftProfileColors != null && iosGiftProfileColors.headerFade != null) {
+                captureFillPaint.setColor(iosGiftProfileColors.background);
+                c.drawRect(p, captureFillPaint);
+            }
             // over the media only they are under the glass: the rows above them would show through the pages' overscan
             final float mediaProgress = sharedMediaLayout != null && sharedMediaLayout.getParent() == listView ? mediaHeaderAnimationProgress : 0f;
             if (mediaProgress < 1f) {
@@ -6520,11 +6537,114 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         return userId != 0 && app.exteraless.appearance.AppearanceConfig.iosMode();
     }
 
+    private static final class IosGiftProfileColors implements Theme.ResourcesProvider {
+        private final Theme.ResourcesProvider base;
+        private int background;
+        private int card;
+        private int secondary;
+        private int link;
+        private int divider;
+        private GradientDrawable headerFade;
+
+        IosGiftProfileColors(Theme.ResourcesProvider base) {
+            this.base = base;
+        }
+
+        boolean setStatus(TLRPC.EmojiStatus status) {
+            if (!(status instanceof TLRPC.TL_emojiStatusCollectible)) {
+                final boolean changed = headerFade != null;
+                headerFade = null;
+                return changed;
+            }
+            final TLRPC.TL_emojiStatusCollectible gift = (TLRPC.TL_emojiStatusCollectible) status;
+            int fill = ColorUtils.blendARGB(0xff252528, gift.edge_color | 0xff000000, .8f);
+            // Keep secondary text legible even for gifts with a nearly white outer color.
+            while (ColorUtils.calculateLuminance(fill) > .12) {
+                fill = ColorUtils.blendARGB(fill, Color.BLACK, .10f);
+            }
+            final int cardColor = ColorUtils.blendARGB(fill, 0xff1b1b20, .22f);
+            final int linkColor = ColorUtils.blendARGB(gift.text_color | 0xff000000, Color.WHITE, .87f);
+            if (headerFade != null && background == fill && card == cardColor && link == linkColor) {
+                return false;
+            }
+            background = fill;
+            card = cardColor;
+            link = linkColor;
+            secondary = ColorUtils.blendARGB(fill, Color.WHITE, .88f);
+            divider = ColorUtils.blendARGB(card, Color.WHITE, .12f);
+            headerFade = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[] {background & 0x00ffffff, background});
+            return true;
+        }
+
+        @Override
+        public int getColor(int key) {
+            if (headerFade != null) {
+                if (key == Theme.key_windowBackgroundGray) {
+                    return background;
+                }
+                if (key == Theme.key_windowBackgroundWhite) {
+                    return card;
+                }
+                if (key == Theme.key_windowBackgroundWhiteBlackText || key == Theme.key_chats_name) {
+                    return Color.WHITE;
+                }
+                if (key == Theme.key_windowBackgroundWhiteGrayText || key == Theme.key_windowBackgroundWhiteGrayText2
+                        || key == Theme.key_windowBackgroundWhiteGrayText3 || key == Theme.key_windowBackgroundWhiteGrayText4
+                        || key == Theme.key_windowBackgroundWhiteGrayIcon || key == Theme.key_chats_message
+                        || key == Theme.key_chats_message_threeLines || key == Theme.key_chats_date) {
+                    return secondary;
+                }
+                if (key == Theme.key_windowBackgroundWhiteBlueText || key == Theme.key_windowBackgroundWhiteBlueText2
+                        || key == Theme.key_windowBackgroundWhiteBlueText4 || key == Theme.key_windowBackgroundWhiteBlueHeader
+                        || key == Theme.key_windowBackgroundWhiteBlueIcon || key == Theme.key_windowBackgroundWhiteLinkText
+                        || key == Theme.key_windowBackgroundWhiteValueText) {
+                    return link;
+                }
+                if (key == Theme.key_divider) {
+                    return divider;
+                }
+                if (key == Theme.key_listSelector) {
+                    return 0x20ffffff;
+                }
+            }
+            return Theme.getColor(key, base);
+        }
+
+        @Override
+        public Drawable getDrawable(String key) {
+            return base == null ? null : base.getDrawable(key);
+        }
+
+        @Override
+        public Paint getPaint(String key) {
+            return base == null ? Theme.getThemePaint(key) : base.getPaint(key);
+        }
+
+        @Override
+        public ColorFilter getAnimatedEmojiColorFilter() {
+            return Theme.getAnimatedEmojiColorFilter(base);
+        }
+
+        @Override
+        public boolean isDark() {
+            return headerFade != null || (base == null ? Theme.isCurrentThemeDark() : base.isDark());
+        }
+
+        @Override
+        public boolean isCompactMode() {
+            return Theme.isCompactMode(base);
+        }
+    }
+
     private boolean usesIosOwnProfile() {
         return myProfile && usesIosUserProfile();
     }
 
     private int getProfileActionRowHeight() {
+        if (usesIosUserProfile() && !myProfile) {
+            return dp(96);
+        }
         return dp(app.exteraless.appearance.AppearanceConfig.iosMode() ? 80 : 74);
     }
 
@@ -7534,6 +7654,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
     private void openChat() {
         if (userId != 0) {
+            if (usesIosUserProfile() && getIosProfileSourceChat() != null) {
+                finishFragment();
+                return;
+            }
             if (finishFragmentIfPreviousIsChatActivity()) {
                 return;
             }
@@ -12404,7 +12528,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 final MessagesController.PeerColors peerColors = MessagesController.getInstance(currentAccount).profilePeerColors;
                 peerColor = peerColors == null ? null : peerColors.getColor(colorId);
             }
-            if (wasPeerColor != peerColor) {
+            final boolean profileColorsChanged = iosGiftProfileColors != null && iosGiftProfileColors.setStatus(user.emoji_status);
+            if (profileColorsChanged) {
+                ThemeBind.updateTree(fragmentView, true);
+            }
+            if (wasPeerColor != peerColor || profileColorsChanged) {
                 updatedPeerColor();
             }
             if (topView != null) {
@@ -13126,6 +13254,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }*/
                 editItemVisible = getContactsController().contactsDict.get(userId) == null;
 
+                if (usesIosUserProfile() && getIosProfileSourceChat() != null) {
+                    otherItem.addSubItem(search_profile_chat, R.drawable.freezgram_ios_search, getString(R.string.Search));
+                }
                 if (userInfo != null && userInfo.phone_calls_available) {
                     callItemVisible = true;
                     videoCallItemVisible = userInfo.video_calls_available;

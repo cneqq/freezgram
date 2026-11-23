@@ -19,6 +19,7 @@
     <string name="FreezgramIosGlassInfo">Эти параметры стекла действуют в режиме iOS.</string>
     <string name="FreezgramIosGlassEdge">Ширина края преломления</string>
     <string name="FreezgramProfileMore">Ещё</string>
+    <string name="FreezgramProfileChat">Чат</string>
     <string name="FreezgramStyleChat">Чат</string>
     <string name="FreezgramStyleEffects">Эффекты</string>
     <string name="FreezgramStyleChatHeader">Шапка чата</string>

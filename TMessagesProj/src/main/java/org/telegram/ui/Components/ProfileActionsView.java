@@ -160,9 +160,10 @@ public class ProfileActionsView extends View {
     private void drawGlass(Canvas canvas, RectF rect, float radius, float alpha) {
         if (glassUsed == glass.size()) {
             glass.add(glassFactory.create(this, ProfileButtonsGlass.NO_COLORS)
-                    .setContinuousCorners(iosLayout).setRadius(radius));
+                    .setRadius(radius));
         }
         final BlurredBackgroundDrawable drawable = glass.get(glassUsed++);
+        drawable.setContinuousCorners(iosLayout && !usesRoundIosActions());
         drawable.setRadius(radius);
         drawable.setBounds((int) rect.left, (int) rect.top, (int) Math.ceil(rect.right), (int) Math.ceil(rect.bottom));
         drawable.setAlpha((int) (0xFF * alpha));
@@ -254,6 +255,19 @@ public class ProfileActionsView extends View {
         return iosLayout && org.telegram.messenger.LocaleController.isRTL ? getMeasuredWidth() - distance - width : distance;
     }
 
+    private boolean usesRoundIosActions() {
+        return iosLayout && !compactIosActions && mode == MODE_USER;
+    }
+
+    private void getActionBackgroundBounds(RectF row, RectF bounds) {
+        bounds.set(row);
+        if (usesRoundIosActions()) {
+            final float diameter = Math.max(0, Math.min(dp(54), Math.min(row.width(), row.height() - dp(22))));
+            final float left = row.centerX() - diameter / 2f;
+            bounds.set(left, row.top, left + diameter, row.top + diameter);
+        }
+    }
+
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         glassUsed = 0;
@@ -310,12 +324,16 @@ public class ProfileActionsView extends View {
             if (action.isDeleted) {
                 continue;
             }
-            AndroidUtilities.rectTmp.set(action.rect);
+            getActionBackgroundBounds(action.rect, AndroidUtilities.rectTmp);
             AndroidUtilities.rectTmp.inset(
-                action.rect.width() / 2.0f * (1.0f - action.getScale()),
-                action.rect.height() / 2.0f * (1.0f - action.getScale())
+                AndroidUtilities.rectTmp.width() / 2.0f * (1.0f - action.getScale()),
+                AndroidUtilities.rectTmp.height() / 2.0f * (1.0f - action.getScale())
             );
-            final float radius = iosLayout ? Math.min(r, Math.min(AndroidUtilities.rectTmp.width(), AndroidUtilities.rectTmp.height()) / 2f) : r;
+            if (AndroidUtilities.rectTmp.isEmpty()) {
+                continue;
+            }
+            final float halfEdge = Math.min(AndroidUtilities.rectTmp.width(), AndroidUtilities.rectTmp.height()) / 2f;
+            final float radius = usesRoundIosActions() ? halfEdge : iosLayout ? Math.min(r, halfEdge) : r;
             if (glassFactory != null) {
                 drawGlass(canvas, AndroidUtilities.rectTmp, radius, action.getAlpha() * alphaFraction1);
                 continue;
@@ -379,8 +397,14 @@ public class ProfileActionsView extends View {
 
         action.text.setMaxWidth(action.rect.width() - dp(2));
         action.textScale = action.text.getLineCount() >= 3 ? 0.75f : action.text.getLineCount() >= 2 ? 0.85f : 1.0f;
-        final float drawableTop = iosLayout ? action.rect.top + dp(8)
-                : Math.max(0, (targetHeight - action.text.getHeight() * action.textScale) / 3f + dpf2(1.33f));
+        final float drawableTop;
+        if (usesRoundIosActions()) {
+            getActionBackgroundBounds(action.rect, AndroidUtilities.rectTmp);
+            drawableTop = AndroidUtilities.rectTmp.centerY() - drawableR;
+        } else {
+            drawableTop = iosLayout ? action.rect.top + dp(8)
+                    : Math.max(0, (targetHeight - action.text.getHeight() * action.textScale) / 3f + dpf2(1.33f));
+        }
         action.setBounds(
             (int) (cx - drawableR),
             (int) (drawableTop),
@@ -427,7 +451,8 @@ public class ProfileActionsView extends View {
             textY = cy - action.text.getHeight() / 2f;
         } else {
             textCenterX = cx;
-            textY = iosLayout ? action.rect.bottom - dp(9) - action.text.getHeight()
+            textY = usesRoundIosActions() ? action.rect.bottom - action.text.getHeight()
+                    : iosLayout ? action.rect.bottom - dp(9) - action.text.getHeight()
                     : action.bounds.bottom + action.bounds.top - action.text.getHeight() * action.textScale / 2.0f - dp(4.66f);
         }
         canvas.save();
@@ -501,8 +526,9 @@ public class ProfileActionsView extends View {
         }
 
         if (action.loadingDrawable != null) {
-            action.loadingDrawable.setBounds(action.rect);
-            action.loadingDrawable.setRadii(getRoundRadius());
+            getActionBackgroundBounds(action.rect, AndroidUtilities.rectTmp);
+            action.loadingDrawable.setBounds(AndroidUtilities.rectTmp);
+            action.loadingDrawable.setRadii(usesRoundIosActions() ? AndroidUtilities.rectTmp.width() / 2f : getRoundRadius());
             action.loadingDrawable.setAlpha((int) (0xFF * alpha));
             action.loadingDrawable.draw(canvas);
         }
@@ -717,11 +743,9 @@ public class ProfileActionsView extends View {
         switch (mode) {
             case MODE_USER:
                 if (iosLayout) {
-                    final boolean fromChat = allAvailableActions.contains(KEY_SEARCH);
-                    if (!fromChat) insertIfAvailable(out, KEY_MESSAGE);
+                    insertIfAvailable(out, KEY_MESSAGE);
                     insertIfAvailable(out, allAvailableActions.contains(KEY_CALL) ? KEY_CALL : KEY_VIDEO);
                     insertIfAvailable(out, KEY_NOTIFICATION);
-                    if (fromChat) insertIfAvailable(out, KEY_SEARCH);
                     insertIfAvailable(out, KEY_MORE);
                     break;
                 }
@@ -847,6 +871,9 @@ public class ProfileActionsView extends View {
         switch (key) {
             case KEY_MESSAGE:
                 newAction = new Action(ActionButton.MESSAGE);
+                if (usesRoundIosActions()) {
+                    newAction.setText(getString(R.string.FreezgramProfileChat));
+                }
                 break;
             case KEY_DISCUSS:
                 newAction = new Action(ActionButton.DISCUSS);

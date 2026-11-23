@@ -52256,6 +52256,14 @@ public class ChatActivity extends BaseFragment implements
             parentChatActivity.checkUi_topFade();
         }
 
+        if (chatActivityFadeView == null) {
+            return;
+        }
+        if (chatMode == MODE_DEFAULT && avatarContainer != null && avatarContainer.usesIosHeaderGeometry()) {
+            chatActivityFadeView.setFadeTopAlpha(0);
+            chatActivityFadeView.setFadeZoneTop(0);
+            return;
+        }
         float fadeHeight = 0;
         if (!isInsideContainer) {
             fadeHeight += actionBar.getMeasuredHeight();

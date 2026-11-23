@@ -889,9 +889,8 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
         if (ios) {
             final ViewParent parent = getParent();
             final int barWidth = parent instanceof ActionBar ? ((ActionBar) parent).getMeasuredWidth() : width;
-            final int side = dp(IosLiquidGlassChatHeader.SIDE_INSET_DP * 2 + IosLiquidGlassChatHeader.PILL_HEIGHT_DP);
-            final int reservedSide = side + getActionBarMenuWidth();
-            textWidth = Math.max(0, barWidth - 2 * (reservedSide + dp(IosLiquidGlassChatHeader.TITLE_PADDING_DP)));
+            textWidth = Math.max(0, IosLiquidGlassChatHeader.getTitlePillMaxWidth(barWidth, getActionBarMenuWidth())
+                    - 2 * dp(IosLiquidGlassChatHeader.TITLE_PADDING_DP));
         }
         avatarImageView.measure(MeasureSpec.makeMeasureSpec(avatarSizePx, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(avatarSizePx, MeasureSpec.EXACTLY));
         titleTextView.measure(MeasureSpec.makeMeasureSpec(textWidth, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(dp(24 + 8), MeasureSpec.AT_MOST));
@@ -2137,9 +2136,11 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
 
     public int getIosHeaderTextWidth() {
         final int titleWidth = (int) Math.ceil(titleTextView.getExactWidthIncludeDrawables());
-        if (getSubtitleTextView().getVisibility() == GONE) return titleWidth;
-        final int subtitleWidth = subtitleTextView != null ? (int) Math.ceil(subtitleTextView.getExactWidthIncludeDrawables())
-                : animatedSubtitleTextView.width();
-        return Math.max(titleWidth, subtitleWidth);
+        final boolean hasStaticSubtitle = subtitleTextView != null;
+        final int typingWidth = (int) Math.ceil((hasStaticSubtitle ? subtitleTextView.getPaint() : animatedSubtitleTextView.getPaint())
+                .measureText(getString(R.string.Typing)));
+        final int subtitleWidth = getSubtitleTextView().getVisibility() == GONE ? 0 : hasStaticSubtitle
+                ? (int) Math.ceil(subtitleTextView.getExactWidthIncludeDrawables()) : animatedSubtitleTextView.width();
+        return Math.max(titleWidth, Math.max(subtitleWidth, typingWidth));
     }
 }

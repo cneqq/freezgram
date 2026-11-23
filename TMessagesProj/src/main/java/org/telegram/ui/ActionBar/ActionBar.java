@@ -2688,6 +2688,7 @@ public class ActionBar extends FrameLayout implements FactorAnimator.Target, The
 
     public boolean doNotDrawGlassMenu;
     private boolean drawGlassTitle = true;
+    private boolean glassTitleUsedCompactPill;
 
     public void setDrawGlassTitle(boolean draw) {
         if (drawGlassTitle != draw) {
@@ -2771,7 +2772,8 @@ public class ActionBar extends FrameLayout implements FactorAnimator.Target, The
             drawCompactIosHeaderPills(canvas, compactAvatar, hasBackButton, (t + b) / 2);
         }
         if (!compactIos && glassDrawable != null && drawGlassMiddlePill && !glassOnlyBack && drawGlassTitle) {
-            if (glassDrawable.hasContinuousCorners()) {
+            if (glassTitleUsedCompactPill || glassDrawable.hasContinuousCorners()) {
+                glassTitleUsedCompactPill = false;
                 glassDrawable.setContinuousCorners(false);
                 glassDrawable.setRadius(dp(23));
             }
@@ -2882,20 +2884,16 @@ public class ActionBar extends FrameLayout implements FactorAnimator.Target, The
 
     private void drawCompactIosHeaderPills(Canvas canvas, ChatAvatarContainer avatar, boolean hasBackButton, int centerY) {
         final int diameter = dp(app.freezgram.IosLiquidGlassChatHeader.PILL_HEIGHT_DP);
-        final int inset = dp(app.freezgram.IosLiquidGlassChatHeader.SIDE_INSET_DP);
         if (hasBackButton && glassDrawableBack != null) {
             final int centerX = Math.round(backButtonImageView.getX() + backButtonImageView.getWidth() / 2f);
             drawCompactIosHeaderPill(canvas, glassDrawableBack, centerX, centerY, diameter, diameter);
         }
         if (glassDrawable != null && drawGlassMiddlePill && drawGlassTitle && !doNotDrawCenterGlass) {
-            final int maxWidth = getWidth() - 2 * (diameter + inset * 2);
-            final int minimumContent = dp(app.freezgram.IosLiquidGlassChatHeader.MIN_TITLE_CONTENT_WIDTH_DP);
-            final int content = Math.max(minimumContent, avatar.getIosHeaderTextWidth());
-            final int width = Math.min(maxWidth, content + 2 * dp(app.freezgram.IosLiquidGlassChatHeader.TITLE_PADDING_DP));
+            final int width = app.freezgram.IosLiquidGlassChatHeader.getTitlePillWidth(getWidth(), avatar.getIosHeaderTextWidth());
             if (width > 0) {
-                glassDrawable.setContinuousCorners(true);
-                setCompactIosHeaderPillBounds(glassDrawable, getWidth() / 2, centerY, width, diameter, dp(16));
-                glassDrawable.draw(canvas);
+                glassTitleUsedCompactPill = true;
+                glassDrawable.setContinuousCorners(false);
+                drawCompactIosHeaderPill(canvas, glassDrawable, getWidth() / 2, centerY, width, diameter);
             }
         }
         final View avatarView = getGlassMenuAvatarView(avatar);

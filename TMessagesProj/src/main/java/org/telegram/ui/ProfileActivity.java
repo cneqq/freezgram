@@ -15013,11 +15013,15 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     break;
                 case VIEW_TYPE_ABOUT_LINK:
                     AboutLinkCell aboutLinkCell = (AboutLinkCell) holder.itemView;
-                    aboutLinkCell.setValueAboveText(position == userInfoRow && usesIosUserProfile());
+                    final boolean iosProfileBio = usesIosUserProfile() && (position == userInfoRow || position == bioRow);
+                    final String bioLabel = LocaleController.getString(R.string.UserBio);
+                    final String profileBioLabel = iosProfileBio
+                            ? bioLabel.toLowerCase(LocaleController.getInstance().getCurrentLocale()) : bioLabel;
+                    aboutLinkCell.setValueAboveText(position == userInfoRow && iosProfileBio);
                     if (position == userInfoRow) {
                         // TLRPC.User user = userInfo.user != null ? userInfo.user : getMessagesController().getUser(userInfo.id);
                         // boolean addlinks = isBot || (user != null && user.premium && userInfo.about != null);
-                        aboutLinkCell.setTextAndValue(MessageHelper.zalgoFilter(userInfo.about), LocaleController.getString(R.string.UserBio), true);
+                        aboutLinkCell.setTextAndValue(MessageHelper.zalgoFilter(userInfo.about), profileBioLabel, true);
                     } else if (position == channelInfoRow) {
                         String text = chatInfo.about;
                         while (text.contains("\n\n\n")) {
@@ -15028,10 +15032,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         String value;
                         if (userInfo == null || !TextUtils.isEmpty(userInfo.about)) {
                             value = userInfo == null ? LocaleController.getString(R.string.Loading) : userInfo.about;
-                            aboutLinkCell.setTextAndValue(MessageHelper.zalgoFilter(value), LocaleController.getString(R.string.UserBio), true/*getUserConfig().isPremium()*/);
+                            aboutLinkCell.setTextAndValue(MessageHelper.zalgoFilter(value), profileBioLabel, true/*getUserConfig().isPremium()*/);
                             currentBio = userInfo != null ? userInfo.about : null;
                         } else {
-                            aboutLinkCell.setTextAndValue(LocaleController.getString(R.string.UserBio), LocaleController.getString(R.string.UserBioDetail), false);
+                            aboutLinkCell.setTextAndValue(profileBioLabel, LocaleController.getString(R.string.UserBioDetail), false);
                             currentBio = null;
                         }
                         aboutLinkCell.setMoreButtonDisabled(true);

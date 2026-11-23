@@ -48,6 +48,7 @@ public class TextDetailCell extends FrameLayout implements Theme.Colorable {
     private final TextView showMoreTextView = null;
     private final ImageView imageView;
     private TextView leadingCaption;
+    private Paint captionDividerPaint;
     private boolean hasLeadingCaption;
     private int contentTopMargin;
     private int valueTopMargin;
@@ -205,6 +206,7 @@ public class TextDetailCell extends FrameLayout implements Theme.Colorable {
         final boolean shown = !TextUtils.isEmpty(caption);
         if (leadingCaption == null && !shown) return;
         if (leadingCaption == null) {
+            captionDividerPaint = new Paint();
             contentTopMargin = ((LayoutParams) textView.getLayoutParams()).topMargin;
             valueTopMargin = ((LayoutParams) valueTextView.getLayoutParams()).topMargin;
             leadingCaption = new TextView(getContext());
@@ -306,6 +308,12 @@ public class TextDetailCell extends FrameLayout implements Theme.Colorable {
     @Override
     protected void onDraw(Canvas canvas) {
         if (needDivider) {
+            if (hasLeadingCaption) {
+                captionDividerPaint.setColor(Theme.getColor(Theme.key_divider, resourcesProvider));
+                canvas.drawRect(horizontalPadding, getMeasuredHeight() - 1,
+                        getMeasuredWidth() - horizontalPadding, getMeasuredHeight(), captionDividerPaint);
+                return;
+            }
             Paint paint = resourcesProvider != null ? resourcesProvider.getPaint(Theme.key_paint_divider) : Theme.dividerPaint;
             if (paint == null) paint = Theme.dividerPaint;
             canvas.drawLine(

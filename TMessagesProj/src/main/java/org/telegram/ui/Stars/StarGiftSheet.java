@@ -53,6 +53,7 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.OvalShape;
 import android.os.Build;
@@ -2153,6 +2154,32 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             return iosGiftControls ? dp(20 + (infoArtworkSize() - 160) / 2f - 8) : 0;
         }
 
+        private void styleOwnerActions(TL_stars.starGiftAttributeBackdrop giftBackdrop) {
+            if (!iosGiftControls) {
+                return;
+            }
+            final boolean styled = giftBackdrop != null;
+            for (int i = 0; i < buttons.length; i++) {
+                final Button action = buttons[i];
+                final LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) action.getLayoutParams();
+                params.height = dp(styled ? 58 : 56);
+                params.rightMargin = i == buttons.length - 1 ? 0 : dp(styled ? 10 : 11);
+                action.setLayoutParams(params);
+                action.ownerGiftStyle = styled;
+                action.textView.setTypeface(styled ? app.freezgram.IosTypography.REGULAR : AndroidUtilities.bold());
+                if (styled) {
+                    final int rim = ColorUtils.blendARGB(giftBackdrop.text_color | 0xff000000, Color.WHITE, .55f);
+                    final GradientDrawable surface = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                            new int[]{Theme.multAlpha(rim, .27f), Theme.multAlpha(Color.WHITE, .16f)});
+                    surface.setCornerRadius(dp(16));
+                    surface.setStroke(Math.max(1, dp(.66f)), Theme.multAlpha(rim, .43f));
+                    action.setBackground(new RippleDrawable(android.content.res.ColorStateList.valueOf(0x26ffffff), surface, null));
+                } else {
+                    action.setBackground(Theme.createRadSelectorDrawable(0, 0x10FFFFFF, 16, 16));
+                }
+            }
+        }
+
         public void setShowOptions(boolean show) {
             showOptions = show;
             onSwitchPage(currentPage);
@@ -2162,6 +2189,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
             public ImageView imageView;
             public TextView textView;
+            private boolean ownerGiftStyle;
 
             public Button(Context context) {
                 super(context);
@@ -2185,7 +2213,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 } else {
                     imageView.setImageResource(iconResId);
                 }
-                textView.setText(text);
+                textView.setText(ownerGiftStyle && text instanceof String
+                        ? text.toString().toLowerCase(LocaleController.getInstance().getCurrentLocale()) : text);
                 requestLayout();
             }
 
@@ -2227,8 +2256,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 textView.setSingleLine(lines == 1);
                 textView.setLineSpacing(0, lines == 2 ? 0.85f : 1f);
                 textView.setIncludeFontPadding(lines != 2);
-                lp.topMargin = dp(lines == 2 ? 29 : 35);
-                ((LayoutParams) imageView.getLayoutParams()).topMargin = dp(lines == 2 ? 4 : 8);
+                lp.topMargin = dp(lines == 2 ? 29 : ownerGiftStyle ? 36 : 35);
+                ((LayoutParams) imageView.getLayoutParams()).topMargin = dp(lines == 2 ? 4 : ownerGiftStyle ? 10 : 8);
             }
         }
 
@@ -2656,6 +2685,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             final boolean withButtons = isOwner || isHost;
             if (gift instanceof TL_stars.TL_starGiftUnique) {
                 backdrop[page] = findAttribute(gift.attributes, TL_stars.starGiftAttributeBackdrop.class);
+                styleOwnerActions(withButtons ? backdrop[page] : null);
                 setPattern(page, findAttribute(gift.attributes, TL_stars.starGiftAttributePattern.class), false);
                 subtitleView[page].setTextSize(TypedValue.COMPLEX_UNIT_DIP, iosGiftControls ? 14 : 13);
                 buttonsLayout.setVisibility(withButtons ? View.VISIBLE : View.GONE);
@@ -2691,7 +2721,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
                 if (isOwner) {
                     buttons[0].setAlpha(1.0f);
-                    buttons[0].set(R.drawable.filled_gift_send, getString(R.string.Gift2ActionTransfer), false);
+                    buttons[0].set(buttons[0].ownerGiftStyle ? R.drawable.freezgram_gift_transfer : R.drawable.filled_gift_send,
+                            getString(R.string.Gift2ActionTransfer), false);
                 } else {
                     buttons[0].setAlpha(0.5f);
                     SpannableStringBuilder sb = new SpannableStringBuilder("L ");
@@ -2716,6 +2747,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 ribbon.drawable.setBackdrop(backdrop[page], false, true);
             } else {
                 backdrop[page] = null;
+                styleOwnerActions(null);
                 setPattern(page, null, false);
                 subtitleView[page].setTextSize(TypedValue.COMPLEX_UNIT_DIP, iosGiftControls ? 15 : 14);
                 hasRibbon = false;
@@ -2737,6 +2769,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         }
 
         public void setWalletButtons(OnClickListener onTransferClick, OnClickListener onColorClick, OnClickListener onWearClick, boolean displayed) {
+            styleOwnerActions(null);
             buttonsLayout.setVisibility(View.VISIBLE);
             buttons[0].setAlpha(1.0f);
             buttons[0].set(R.drawable.filled_gift_send, getString(R.string.Gift2ActionTransfer), false);

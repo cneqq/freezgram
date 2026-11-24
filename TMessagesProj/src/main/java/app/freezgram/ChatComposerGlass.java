@@ -43,7 +43,7 @@ public final class ChatComposerGlass {
         return 57 + (AppearanceConfig.iosMode() ? 14 : AppearanceConfig.composerContentInset());
     }
     public static int emojiRightInsetDp() {
-        return AppearanceConfig.iosMode() ? 0 : AppearanceConfig.composerContentInset();
+        return AppearanceConfig.iosMode() ? 7 : AppearanceConfig.composerContentInset();
     }
     public static int textRightInsetDp(int emojiWidthDp) {
         return emojiWidthDp + emojiRightInsetDp() + 8;

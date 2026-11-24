@@ -202,7 +202,9 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             parentFragment = (ChatActivity) baseFragment;
         }
 
-        final boolean avatarClickable = parentFragment != null && (parentFragment.getChatMode() == 0 || parentFragment.getChatMode() == ChatActivity.MODE_SUGGESTIONS || (parentFragment.getChatMode() == ChatActivity.MODE_PINNED && isCentered())) && !UserObject.isReplyUser(parentFragment.getCurrentUser()) && (parentFragment.getCurrentUser() == null || parentFragment.getCurrentUser().id != UserObject.VERIFY);
+        final boolean savedOptions = parentFragment != null && app.exteraless.appearance.AppearanceConfig.iosMode()
+                && parentFragment.isSavedMessagesSidebar();
+        final boolean avatarClickable = parentFragment != null && (savedOptions || parentFragment.getChatMode() == 0 || parentFragment.getChatMode() == ChatActivity.MODE_SUGGESTIONS || (parentFragment.getChatMode() == ChatActivity.MODE_PINNED && isCentered())) && !UserObject.isReplyUser(parentFragment.getCurrentUser()) && (parentFragment.getCurrentUser() == null || parentFragment.getCurrentUser().id != UserObject.VERIFY);
         avatarImageView = new BackupImageView(context) {
 
             StoriesUtilities.AvatarStoryParams params = new StoriesUtilities.AvatarStoryParams(true) {
@@ -225,7 +227,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             @Override
             public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
                 super.onInitializeAccessibilityNodeInfo(info);
-                final boolean opensOptions = usesIosHeaderGeometry() && hasAvatarOptionsMenu();
+                final boolean opensOptions = (savedOptions || usesIosHeaderGeometry()) && hasAvatarOptionsMenu();
                 if (avatarClickable && (opensOptions || getImageReceiver().hasNotThumb())) {
                     info.setText(getString(R.string.AccDescrProfilePicture));
                     info.addAction(new AccessibilityNodeInfo.AccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK,
@@ -366,7 +368,13 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
                 ScaleStateListAnimator.apply(avatarImageView, .05f, 1.2f);
             }
             avatarImageView.setOnClickListener(v -> {
-                if (usesIosHeaderGeometry() && hasAvatarOptionsMenu()) {
+                if ((savedOptions || usesIosHeaderGeometry()) && hasAvatarOptionsMenu()) {
+                    if (savedOptions) {
+                        if (canOpenAvatarOptionsMenu() && (!usesIosHeaderGeometry() || !openAvatarOptionsMenu())) {
+                            avatarOptionsMenuItem.toggleSubMenu(parentFragment.getActionBar(), avatarImageView);
+                        }
+                        return;
+                    }
                     openAvatarOptionsMenu();
                     return;
                 }

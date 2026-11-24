@@ -5131,7 +5131,9 @@ public class ChatActivity extends BaseFragment implements
                     LocaleController.getString(UserObject.isBotForum(currentUser) ? R.string.ClearAllHistory : R.string.ClearHistory));
             }
             boolean addedSettings = false;
-            if (NaConfig.INSTANCE.getChatMenuItemToBeginning().Bool()) headerItem.lazilyAddSubItem(to_the_beginning, R.drawable.ic_upward, getString(R.string.ToTheBeginning));
+            if (NaConfig.INSTANCE.getChatMenuItemToBeginning().Bool() || AppearanceConfig.iosMode() && isSavedMessagesSidebar()) {
+                headerItem.lazilyAddSubItem(to_the_beginning, R.drawable.ic_upward, getString(R.string.ToTheBeginning));
+            }
             if (NaConfig.INSTANCE.getChatMenuItemGoToMessage().Bool()) headerItem.lazilyAddSubItem(to_the_message, R.drawable.msg_go_up, getString(R.string.ToTheMessage));
             if (NaConfig.INSTANCE.getShowAddToBookmark().Bool()) {
                 bookmarksItem = headerItem.lazilyAddSubItem(nkbtn_bookmarks_manager, R.drawable.msg_fave, getString(R.string.BookmarksManager));
@@ -5182,6 +5184,14 @@ public class ChatActivity extends BaseFragment implements
                 feeItemGap.setVisibility(View.GONE);
                 feeItemText.setVisibility(View.GONE);
             }
+        } else if (chatMode == MODE_SAVED && AppearanceConfig.iosMode() && isSavedMessagesSidebar()) {
+            headerItem = menu.addItem(chat_menu_options, otherIcon);
+            headerItem.lazilyAddSubItem(to_the_beginning, R.drawable.ic_upward, getString(R.string.ToTheBeginning));
+            if (NaConfig.INSTANCE.getChatMenuItemClearDeleted().Bool() && NaConfig.INSTANCE.getEnableSaveDeletedMessages().Bool()) {
+                headerItem.lazilyAddSubItem(nkbtn_clearDeleted, R.drawable.msg_clear, getString(R.string.ClearDeleted));
+            }
+            headerItem.setForceHidden(true);
+            avatarContainer.setAvatarOptionsMenuItem(headerItem);
         } else if (chatMode == MODE_EDIT_BUSINESS_LINK) {
             headerItem = menu.addItem(chat_menu_options, otherIcon);
             updateTopicsPanelItem();
@@ -11025,7 +11035,7 @@ public class ChatActivity extends BaseFragment implements
         return isTopicsSidebarFlag();
     }
 
-    private boolean isSavedMessagesSidebar() {
+    public boolean isSavedMessagesSidebar() {
         return (chatMode == 0 && threadMessageId == 0 || chatMode == MODE_SAVED) && dialog_id == getUserConfig().getClientUserId() && !isReport();
     }
 

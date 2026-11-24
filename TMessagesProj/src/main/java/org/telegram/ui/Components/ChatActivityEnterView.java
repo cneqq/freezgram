@@ -16479,7 +16479,8 @@ public class ChatActivityEnterView extends FrameLayout implements
 
     private void applyIosComposerSpacing() {
         FrameLayout.LayoutParams emojiParams = (FrameLayout.LayoutParams) emojiButton.getLayoutParams();
-        emojiParams.rightMargin = iosComposerLayout ? dp(app.freezgram.ChatComposerGlass.emojiRightInsetDp()) : 0;
+        emojiParams.rightMargin = iosComposerLayout && !app.exteraless.appearance.AppearanceConfig.iosMode()
+                ? dp(app.freezgram.ChatComposerGlass.emojiRightInsetDp()) : 0;
         if (iosComposerLayout) {
             emojiParams.leftMargin = 0;
             ((MarginLayoutParams) messageEditText.getLayoutParams()).leftMargin = dp(app.freezgram.ChatComposerGlass.textLeftInsetDp());

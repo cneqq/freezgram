@@ -40,7 +40,6 @@ public class FireworksOverlay extends View {
     private static final int fallParticlesCount = SharedConfig.getDevicePerformanceClass() == SharedConfig.PERFORMANCE_CLASS_LOW ? 20 : 30;
     private boolean isFebruary14;
     private boolean withStars;
-    private GiftConfetti giftConfetti;
 
     private static int[] colors = new int[]{
             0xff2CBCE8,
@@ -264,7 +263,6 @@ public class FireworksOverlay extends View {
     }
 
     public void start(boolean withStars) {
-        if (giftConfetti != null) return;
         this.withStars = withStars;
 //        particles.clear();
         setLayerType(View.LAYER_TYPE_HARDWARE, null);
@@ -293,16 +291,6 @@ public class FireworksOverlay extends View {
         start(false);
     }
 
-    public void startGiftConfetti() {
-        if (giftConfetti != null) return;
-        giftConfetti = new GiftConfetti();
-        particles.clear();
-        started = true;
-        setLayerType(View.LAYER_TYPE_NONE, null);
-        setVisibility(VISIBLE);
-        postInvalidateOnAnimation();
-    }
-
     private void startFall() {
         if (startedFall) {
             return;
@@ -319,16 +307,6 @@ public class FireworksOverlay extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (giftConfetti != null) {
-            if (giftConfetti.draw(canvas, getWidth(), getHeight(), SystemClock.elapsedRealtime())) {
-                postInvalidateOnAnimation();
-            } else {
-                giftConfetti = null;
-                started = false;
-                onStop();
-            }
-            return;
-        }
         long newTime = SystemClock.elapsedRealtime();
         int dt = (int) (newTime - lastUpdateTime);
         lastUpdateTime = newTime;

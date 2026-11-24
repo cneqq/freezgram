@@ -28739,13 +28739,14 @@ public class ChatActivity extends BaseFragment implements
                 }
                 maxDate[0] = Math.max(maxDate[0], obj.messageOwner.date);
                 messagesDict[0].put(messageId, obj);
-                if (AppearanceConfig.iosMode() && animatedFromBottom && chatMode == 0
+                if (AppearanceConfig.iosMode() && animatedFromBottom && chatMode == MODE_DEFAULT
                         && isFullyVisible && !isPaused && SharedConfig.animationsEnabled()
-                        && fireworksOverlay != null
                         && messageId > 0 && !obj.isOutOwner() && !obj.isAyuDeleted()
                         && action instanceof TLRPC.TL_messageActionStarGiftUnique gift
-                        && !gift.refunded && !gift.upgrade && !gift.craft) {
-                    fireworksOverlay.startGiftConfetti();
+                        && !gift.refunded && !gift.upgrade && !gift.craft
+                        && getParentActivity() instanceof LaunchActivity activity
+                        && activity.getFireworksOverlay() != null) {
+                    activity.getFireworksOverlay().start(true);
                 }
                 ArrayList<MessageObject> dayArray;
                 if (isAd && !messages.isEmpty()) {

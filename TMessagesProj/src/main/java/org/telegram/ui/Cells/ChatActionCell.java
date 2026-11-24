@@ -514,7 +514,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                                     && !messageObject.isOutOwner() && (messageObject.isAnyGift() || messageObject.isStarGiftAction());
                             final var fireworks = activity.getFireworksOverlay();
                             if (iosReceivedGift) {
-                                if (SharedConfig.animationsEnabled()) fireworks.startGiftConfetti();
+                                if (SharedConfig.animationsEnabled()) fireworks.start(true);
                             } else {
                                 fireworks.start();
                             }

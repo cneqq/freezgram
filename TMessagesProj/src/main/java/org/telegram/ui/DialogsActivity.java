@@ -555,7 +555,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private ActionBarMenuItem speedItem;
     private ActionBarMenuItem iosComposeItem;
     private ActionBarMenuItem iosStoryItem;
-    private TextView iosEditButton;
     public static boolean switchingTheme;
     private ActionBarMenuItem doneItem;
     private ProxyDrawable proxyDrawable;
@@ -3339,7 +3338,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         boolean iosLayout = usesIosListLayout();
         iosComposeItem = null;
         iosStoryItem = null;
-        iosEditButton = null;
         searchItem = menu.addItem(0, iosLayout ? R.drawable.freezgram_ios_search : R.drawable.outline_header_search).setIsSearchField(true, false);
         searchItem.setOnClickListener(v -> {
             showSearch(true, false, true);
@@ -3404,26 +3402,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
 
         if (usesIosRootChatList()) {
-            iosEditButton = new TextView(context);
-            iosEditButton.setGravity(Gravity.CENTER);
-            iosEditButton.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-            iosEditButton.setTypeface(app.freezgram.IosTypography.REGULAR);
-            iosEditButton.setSingleLine(true);
-            iosEditButton.setIncludeFontPadding(false);
-            iosEditButton.setText(R.string.FreezgramIosChatListEdit);
-            iosEditButton.setContentDescription(getString(R.string.Edit));
-            ThemeBind.textColor(iosEditButton, Theme.key_actionBarDefaultTitle, resourceProvider);
-            iosEditButton.setPadding(dp(12), 0, dp(12), 0);
-            iosEditButton.setOnClickListener(v -> showOrUpdateActionMode(0, null));
-            if (AppearanceConfig.navigationDrawer()) {
-                iosEditButton.setOnLongClickListener(v -> {
-                    if (!canOpenDrawer() || drawerContainer() == null) return false;
-                    drawerContainer().toggleDrawer();
-                    return true;
-                });
-            }
-            actionBar.addView(iosEditButton, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 42,
-                    Gravity.BOTTOM | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT), 16, 0, 16, 7));
             iosStoryItem = menu.addItemWithWidth(-48, R.drawable.freezgram_ios_story, dp(54), getString(R.string.StoryPrivacyButtonPost));
             iosStoryItem.setOnClickListener(v -> floatingButtonStories.performClick());
             iosComposeItem = menu.addItemWithWidth(-49, R.drawable.freezgram_ios_compose, dp(54), getString(R.string.NewMessageTitle));
@@ -4295,11 +4273,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             iosListGlass.setSourceRootView(viewPositionWatcher, contentView);
             addIosListGlassButton(iosListGlass, iosComposeItem);
             addIosListGlassButton(iosListGlass, iosStoryItem);
-            if (iosEditButton != null) {
-                BlurredBackgroundDrawable surface = createIosListGlassSurface(iosListGlass, iosEditButton);
-                surface.setRadius(dp(21));
-                iosEditButton.setBackground(surface);
-            }
             if (folderId == 0) addIosListGlassButton(iosListGlass, searchItem);
         }
         fragmentView = contentView;
@@ -14505,7 +14478,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         checkUi_itemSearchVisibility();
         float iosActions = (1f - animatorSearchVisible.getFloatValue()) * (1f - getRightSlidingProgress())
                 * (1f - animatorDoneButtonVisible.getFloatValue()) * (1f - animatorActionModeVisible.getFloatValue());
-        FragmentFloatingButton.setAnimatedVisibility(iosEditButton, iosActions);
         FragmentFloatingButton.setAnimatedVisibility(iosComposeItem, iosActions);
         if (iosComposeItem != null) iosComposeItem.setIconColor(Color.WHITE);
         FragmentFloatingButton.setAnimatedVisibility(iosStoryItem, NaConfig.INSTANCE.getDisableStories().Bool() ? 0f : iosActions);

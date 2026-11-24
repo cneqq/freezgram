@@ -11834,7 +11834,8 @@ public class ChatActivity extends BaseFragment implements
         actionModeViews.add(actionMode.addItemWithWidth(star, R.drawable.msg_fave, dp(54), LocaleController.getString(R.string.AddToFavorites)));
         actionModeViews.add(actionMode.addItemWithWidth(copy, R.drawable.msg_copy, dp(54), LocaleController.getString(R.string.Copy)));
         actionModeViews.add(actionMode.addItemWithWidth(combine_message, R.drawable.msg_replace, dp(54), LocaleController.getString(R.string.CombineMessage)));
-        if (currentEncryptedChat == null && getDialogId() != UserObject.VERIFY && NaConfig.INSTANCE.getActionBarButtonForward().Bool()) {
+        if (!AppearanceConfig.iosMode() && currentEncryptedChat == null && getDialogId() != UserObject.VERIFY
+                && NaConfig.INSTANCE.getActionBarButtonForward().Bool()) {
             actionModeViews.add(actionMode.addItemWithWidth(forward, R.drawable.msg_forward_noquote, dp(54), LocaleController.getString(R.string.Forward)));
         }
         actionModeViews.add(actionMode.addItemWithWidth(delete, R.drawable.msg_delete, dp(54), LocaleController.getString(R.string.Delete)));
@@ -11875,7 +11876,6 @@ public class ChatActivity extends BaseFragment implements
         actionMode.setItemVisibility(copy, /*!isPeerNoForwards() &&*/ (selectedMessagesCanCopyIds[0].size() + selectedMessagesCanCopyIds[1].size() != 0) && NaConfig.INSTANCE.getActionBarButtonCopy().Bool() ? View.VISIBLE : View.GONE);
         actionMode.setItemVisibility(star, selectedMessagesCanStarIds[0].size() + selectedMessagesCanStarIds[1].size() != 0 ? View.VISIBLE : View.GONE);
         actionMode.setItemVisibility(combine_message, selectedMessagesCanCopyIds[0].size() + selectedMessagesCanCopyIds[1].size() != 0 ? View.VISIBLE : View.GONE);
-        actionMode.setItemVisibility(forward, NaConfig.INSTANCE.getActionBarButtonForward().Bool() ? View.VISIBLE : View.GONE);
         actionMode.setItemVisibility(delete, cantDeleteMessagesCount == 0 ? View.VISIBLE : View.GONE);
         actionMode.setItemVisibility(tag_message, getUserConfig().isPremium() ? View.VISIBLE : View.GONE);
         actionMode.setItemVisibility(share, View.GONE);
@@ -14091,8 +14091,13 @@ public class ChatActivity extends BaseFragment implements
                     fwdRestrictedTopHint = addGlassHint(HintView2.DIRECTION_TOP, 310, false, index + 1);
                 }
 
-                fwdRestrictedTopHint.setText(str);
-                fwdRestrictedTopHint.showForView(actionBar.getActionMode().getItem(forward), true);
+                final View forwardButton = actionBar.getActionMode().getItem(forward);
+                final View anchor = forwardButton != null && forwardButton.getVisibility() == View.VISIBLE
+                        ? forwardButton : actionModeOtherItem;
+                if (anchor != null) {
+                    fwdRestrictedTopHint.setText(str);
+                    fwdRestrictedTopHint.showForView(anchor, true);
+                }
             } else {
                 if (fwdRestrictedBottomHint == null) {
                     SizeNotifierFrameLayout frameLayout = contentView;

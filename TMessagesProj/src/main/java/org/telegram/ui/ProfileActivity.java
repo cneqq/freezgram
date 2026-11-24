@@ -14997,6 +14997,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     final boolean iosUsername = position == usernameRow && usesIosUserProfile();
                     detailCell.setLeadingCaption(iosUsername
                             ? getString(R.string.Username).toLowerCase(LocaleController.getInstance().getCurrentLocale()) : null);
+                    final boolean emptyAliasesBeforeId = iosUsername && position + 1 == idDcRow
+                            && TextUtils.isEmpty(detailCell.valueTextView.getText());
+                    detailCell.valueTextView.setVisibility(emptyAliasesBeforeId ? View.GONE : View.VISIBLE);
                     detailCell.valueTextView.setLineSpacing(iosUsername ? dp(2) : 0, 1f);
                     detailCell.textView.setLoading(loadingSpan);
                     detailCell.valueTextView.setLoading(loadingSpan);

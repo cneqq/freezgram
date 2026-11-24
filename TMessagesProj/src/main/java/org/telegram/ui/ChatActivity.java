@@ -3013,7 +3013,7 @@ public class ChatActivity extends BaseFragment implements
         navbarContentSourceWallpaper = new GlassSourceWrapped();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SharedConfig.chatBlurEnabled()) {
             scrollableViewNoiseSuppressor = new DownscaleScrollableNoiseSuppressor(
-                    true, false, app.freezgram.IosLiquidGlassChatHeader.isRequested() || app.freezgram.ChatComposerGlass.isRequested() || app.exteraless.appearance.AppearanceConfig.smallElementsGlass());
+                    true, false, app.freezgram.IosLiquidGlassChatHeader.isRequested() || app.freezgram.ChatComposerGlass.isRequested() || app.freezgram.SmallElementsGlass.isRequested());
 
             recommendedAdditionalSizeY = Math.max(0, dp(48) - Math.min(AndroidUtilities.navigationBarHeight, AndroidUtilities.statusBarHeight));
 
@@ -3044,7 +3044,7 @@ public class ChatActivity extends BaseFragment implements
             glassBackgroundDrawableFactory = new BlurredBackgroundDrawableViewFactory(navbarContentSourceWallpaper);
             glassBackgroundDrawableFactoryFrosted = new BlurredBackgroundDrawableViewFactory(navbarContentSourceWallpaper);
         }
-        if (scrollableViewNoiseSuppressor != null && (app.freezgram.IosLiquidGlassChatHeader.isRequested() || app.freezgram.ChatComposerGlass.isRequested() || app.exteraless.appearance.AppearanceConfig.smallElementsGlass())) {
+        if (scrollableViewNoiseSuppressor != null && (app.freezgram.IosLiquidGlassChatHeader.isRequested() || app.freezgram.ChatComposerGlass.isRequested() || app.freezgram.SmallElementsGlass.isRequested())) {
             iosHeaderGlassSource = new GlassSourceRenderNode(navbarContentSourceWallpaper);
             iosHeaderGlassSource.setScrollableNoiseSuppressor(scrollableViewNoiseSuppressor, DownscaleScrollableNoiseSuppressor.DRAW_HEADER_GLASS);
             iosHeaderGlassSource.setUnderSource(app.freezgram.SmallElementsGlass.createSource(navbarContentSourceWallpaper));
@@ -8012,8 +8012,7 @@ public class ChatActivity extends BaseFragment implements
         BlurredBackgroundDrawableViewFactory sideButtonsFactory = glassBackgroundDrawableFactory;
         org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundColorProvider sideButtonsColors = blurredBackgroundColorProvider;
         // Keep a restorable source even when the chat opens while power saving is active.
-        if (app.exteraless.appearance.AppearanceConfig.smallElementsGlass() && Build.VERSION.SDK_INT >= 33
-                && SharedConfig.chatBlurEnabled() && iosHeaderGlassSource != null) {
+        if (app.freezgram.SmallElementsGlass.isRequested() && Build.VERSION.SDK_INT >= 33 && iosHeaderGlassSource != null) {
             sideButtonsFactory = iosHeaderGlassFactory.withSource(iosHeaderGlassSource);
             sideButtonsFactory.setDrawableConfigurator(app.freezgram.LiquidGlassStyle::configure);
             sideButtonsColors = app.freezgram.LiquidGlassStyle.surfaceColors(resourceProvider, app.freezgram.SmallElementsGlass::isEnabled);

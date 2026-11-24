@@ -19821,7 +19821,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 restoreToSponosoredAlpha = canvas.saveLayerAlpha(sideStartX, sideStartY, sideStartX + dp(32), sideStartY + dp(64), sponosoredAlpha);
             }
 
-            boolean glassShare = drawSideButton == 1 && app.exteraless.appearance.AppearanceConfig.smallElementsGlass()
+            boolean glassShare = drawSideButton == 1 && app.freezgram.SmallElementsGlass.isEnabled()
                     && delegate != null && delegate.drawShareButtonGlass(this, canvas, rect);
             if (!glassShare) {
                 applyServiceShaderMatrix();

@@ -384,9 +384,16 @@ public class LiteMode {
     private static final java.util.HashSet<Utilities.Callback<Boolean>> glassPowerSaverListeners = new java.util.HashSet<>();
     public static void addGlassPowerSaverListener(Utilities.Callback<Boolean> listener) { glassPowerSaverListeners.add(listener); }
     public static void removeGlassPowerSaverListener(Utilities.Callback<Boolean> listener) { glassPowerSaverListeners.remove(listener); }
+
+    public static void onGlassPreferenceChanged() {
+        notifyGlassPowerSaverListeners();
+    }
+
     private static void notifyGlassPowerSaverListeners() {
         boolean applied = isGlassPowerSaverApplied();
         for (Utilities.Callback<Boolean> listener : new java.util.ArrayList<>(glassPowerSaverListeners)) listener.run(applied);
+        java.util.List<android.view.View> roots = AndroidUtilities.allGlobalViews();
+        if (roots != null) for (android.view.View root : roots) invalidateGlassViewTree(root);
     }
 
     private static void invalidateGlassViewTree(android.view.View view) {
@@ -439,8 +446,6 @@ public class LiteMode {
                     AndroidUtilities.runOnUIThread(() -> {
                         getValue(false);
                         notifyGlassPowerSaverListeners();
-                        java.util.List<android.view.View> roots = AndroidUtilities.allGlobalViews();
-                        if (roots != null) for (android.view.View root : roots) invalidateGlassViewTree(root);
                     });
                 }
             };

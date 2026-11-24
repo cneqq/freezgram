@@ -603,17 +603,20 @@ public class GlassEngine {
     private static int glassSettingsGenerationId;
 
     private static void checkGlassSettings() {
-        final boolean isBlurEnabled = LiteMode.isEnabled(LiteMode.FLAG_CHAT_BLUR);
-        final boolean isLiquidGlassEnabled = LiteMode.isEnabled(LiteMode.FLAG_LIQUID_GLASS);
-        final boolean isFreezgramGlassEnabled = isBlurEnabled && !LiteMode.isGlassPowerSaverApplied();
+        final boolean iosMode = app.exteraless.appearance.AppearanceConfig.iosMode();
+        final boolean isBlurEnabled = iosMode ? app.freezgram.LiquidGlassStyle.canDrawGlass()
+                : LiteMode.isEnabled(LiteMode.FLAG_CHAT_BLUR);
+        final boolean isLiquidGlassEnabled = iosMode ? isBlurEnabled : LiteMode.isEnabled(LiteMode.FLAG_LIQUID_GLASS);
+        final boolean isFreezgramGlassEnabled = !iosMode && isBlurEnabled && !LiteMode.isGlassPowerSaverApplied();
 
         final boolean glassSettingsInvalidated = glassSettings == null
             || glassSettings.isBlurEnabled != isBlurEnabled
             || glassSettings.isLiquidGlassEnabled != isLiquidGlassEnabled
-            || glassSettings.isFreezgramGlassEnabled != isFreezgramGlassEnabled;
+            || glassSettings.isFreezgramGlassEnabled != isFreezgramGlassEnabled
+            || glassSettings.iosMode != iosMode;
 
         if (glassSettingsInvalidated) {
-            glassSettings = new GlassSettings(isBlurEnabled, isLiquidGlassEnabled, isFreezgramGlassEnabled);
+            glassSettings = new GlassSettings(isBlurEnabled, isLiquidGlassEnabled, isFreezgramGlassEnabled, iosMode);
             glassSettingsGenerationId++;
         }
     }
@@ -625,6 +628,7 @@ public class GlassEngine {
 
     /** Changes with the glass settings (LiteMode reports its changes here): a cheap check for drawables drawn by hand. */
     public static int getGlassSettingsGenerationId() {
+        checkGlassSettings();
         return glassSettingsGenerationId;
     }
 }

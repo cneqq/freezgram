@@ -18,16 +18,23 @@ public final class GiftGlassStyle {
     private GiftGlassStyle() {}
     public static final int ORDINARY = 0, GLASS = 1, SOFT = 2;
     public static int style() {
+        if (AppearanceConfig.iosMode()) {
+            return ORDINARY;
+        }
         // Preserve the former gift-glass opt-out when upgrading or restoring backups.
         return AppearanceConfig.giftCardsGlass() ? AppearanceConfig.giftCardStyle() : ORDINARY;
     }
 
     public static float cornerRadius(float nativeRadius) {
+        if (AppearanceConfig.iosMode()) {
+            return nativeRadius;
+        }
         int corners = AppearanceConfig.giftCardCorners();
         return corners < 0 ? nativeRadius : AndroidUtilities.dpf2(corners);
     }
     public static boolean customOrdinary() {
-        return AppearanceConfig.giftOrdinaryOpacity() != 100 || AppearanceConfig.giftCardCorners() >= 0;
+        return !AppearanceConfig.iosMode()
+                && (AppearanceConfig.giftOrdinaryOpacity() != 100 || AppearanceConfig.giftCardCorners() >= 0);
     }
     public static void drawOrdinary(Canvas canvas, RectF bounds, float radius, Paint fill, Paint darken) {
         canvas.saveLayerAlpha(bounds, (int) (255 * AppearanceConfig.giftOrdinaryOpacity() / 100f));

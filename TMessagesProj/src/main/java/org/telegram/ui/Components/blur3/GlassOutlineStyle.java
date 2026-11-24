@@ -45,6 +45,9 @@ public enum GlassOutlineStyle {
 
     /** Текущий стиль из настроек; неизвестное значение трактуется как {@link #GLARE}. */
     public static GlassOutlineStyle current() {
+        if (AppearanceConfig.iosMode()) {
+            return GLARE;
+        }
         final int index = AppearanceConfig.glassOutlineStyle();
         if (index < 0 || index >= VALUES.length) {
             return GLARE;

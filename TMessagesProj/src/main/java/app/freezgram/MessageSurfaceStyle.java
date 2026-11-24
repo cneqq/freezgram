@@ -16,6 +16,9 @@ public final class MessageSurfaceStyle {
         return profile == 1 && !AppearanceConfig.sameMessageSurfaces() ? 1 : 0;
     }
     public static int style(int profile) {
+        if (AppearanceConfig.iosMode()) {
+            return 0;
+        }
         return settingsProfile(profile) == 1 ? AppearanceConfig.outgoingSurfaceStyle() : AppearanceConfig.incomingSurfaceStyle();
     }
     public static int opacity(int profile) {

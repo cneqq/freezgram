@@ -3,14 +3,11 @@ package app.freezgram;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
-import android.os.Build;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import java.lang.ref.WeakReference;
 import app.exteraless.appearance.AppearanceConfig;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.LiteMode;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
 import org.telegram.utils.glass.source.GlassSource;
@@ -21,16 +18,19 @@ import org.telegram.ui.Components.blur3.utils.Blur3Utils;
 /** Shared opt-in for small app surfaces; system notifications are not affected. */
 public final class SmallElementsGlass {
     private SmallElementsGlass() {}
+    public static boolean isRequested() {
+        return AppearanceConfig.iosMode() || AppearanceConfig.smallElementsGlass();
+    }
+
     public static boolean isEnabled() {
-        return AppearanceConfig.smallElementsGlass() && Build.VERSION.SDK_INT >= 33
-                && SharedConfig.chatBlurEnabled() && !LiteMode.isGlassPowerSaverApplied();
+        return isRequested() && LiquidGlassStyle.canDrawGlass();
     }
 
     public static boolean areUnreadCountersEnabled() {
-        return AppearanceConfig.unreadCountersGlass() && Build.VERSION.SDK_INT >= 33 && SharedConfig.chatBlurEnabled() && !LiteMode.isGlassPowerSaverApplied();
+        return (AppearanceConfig.iosMode() || AppearanceConfig.unreadCountersGlass()) && LiquidGlassStyle.canDrawGlass();
     }
     public static boolean areMessageDecorationsEnabled() {
-        return AppearanceConfig.messageDecorationsGlass() && Build.VERSION.SDK_INT >= 33 && SharedConfig.chatBlurEnabled() && !LiteMode.isGlassPowerSaverApplied();
+        return (AppearanceConfig.iosMode() || AppearanceConfig.messageDecorationsGlass()) && LiquidGlassStyle.canDrawGlass();
     }
 
     public static boolean areServiceBubblesEnabled() {
@@ -38,8 +38,7 @@ public final class SmallElementsGlass {
     }
 
     public static boolean areGiftCardsEnabled() {
-        return GiftGlassStyle.style() == GiftGlassStyle.GLASS && Build.VERSION.SDK_INT >= 33
-                && SharedConfig.chatBlurEnabled() && !LiteMode.isGlassPowerSaverApplied();
+        return GiftGlassStyle.style() == GiftGlassStyle.GLASS && LiquidGlassStyle.canDrawGlass();
     }
 
     /** Bridge existing bitmap captures into the same AGSL renderer used by the panels. */

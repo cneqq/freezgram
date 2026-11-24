@@ -8,6 +8,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
@@ -621,8 +622,12 @@ public class PluginsController extends com.exteragram.messenger.plugins.PluginsC
 
     /** Проверка __app_version__/__sdk_version__ (операторы >=, <=, ==, >, <; без оператора — >=). */
     private String checkVersionConstraints(Plugin p) {
-        if (p.appVersion != null && !checkVersionConstraint(p.appVersion, BuildVars.BUILD_VERSION_STRING)) {
-            return "requires app " + p.appVersion;
+        if (p.appVersion != null) {
+            String currentVersion = p.appVersion.contains("-") ? BuildVars.BUILD_VERSION_STRING
+                    : BuildConfig.OFFICIAL_VERSION;
+            if (!checkVersionConstraint(p.appVersion, currentVersion)) {
+                return "requires app " + p.appVersion;
+            }
         }
         if (p.sdkVersion != null && !checkVersionConstraint(p.sdkVersion, PluginsConstants.SDK_VERSION)) {
             return "requires sdk " + p.sdkVersion;

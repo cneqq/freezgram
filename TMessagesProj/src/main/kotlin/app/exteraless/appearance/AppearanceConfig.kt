@@ -404,6 +404,7 @@ object AppearanceConfig {
     @JvmStatic
     fun chatComposerStyle(): Int {
         ensureLoaded()
+        if (iosMode()) return 1
         return chatComposerStyle.Int().takeIf { it in 0..2 } ?: 0
     }
 

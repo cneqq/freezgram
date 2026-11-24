@@ -34,7 +34,8 @@ public abstract class GlassMenuHelper {
 
     public static boolean isEnabled(int currentAccount, Theme.ResourcesProvider resourcesProvider) {
         return app.freezgram.SmallElementsGlass.isEnabled()
-                || AppearanceConfig.glassMessageMenu() && BlurredBackgroundProviderImpl.checkBlurEnabled(currentAccount, resourcesProvider);
+                || !AppearanceConfig.iosMode() && AppearanceConfig.glassMessageMenu()
+                    && BlurredBackgroundProviderImpl.checkBlurEnabled(currentAccount, resourcesProvider);
     }
 
     /**
@@ -136,7 +137,8 @@ public abstract class GlassMenuHelper {
     }
 
     public static void applyDividers(ActionBarPopupWindow.ActionBarPopupWindowLayout popup, Theme.ResourcesProvider provider) {
-        popup.setGlassDividers(() -> app.freezgram.SmallElementsGlass.isEnabled() && AppearanceConfig.glassMenuDividers(),
+        popup.setGlassDividers(() -> app.freezgram.SmallElementsGlass.isEnabled()
+                        && (AppearanceConfig.iosMode() || AppearanceConfig.glassMenuDividers()),
                 Theme.getColor(Theme.key_actionBarDefaultSubmenuItem, provider));
     }
 

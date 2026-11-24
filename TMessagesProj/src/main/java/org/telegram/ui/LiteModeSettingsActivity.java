@@ -152,8 +152,14 @@ public class LiteModeSettingsActivity extends BaseFragment {
                         return;
                     }
                 }
-                boolean value = LiteMode.isEnabledSetting(item.flags);
-                LiteMode.toggleFlag(item.flags, !value);
+                if (usesIosGlassToggle(item.flags)) {
+                    var glassEnabled = app.exteraless.appearance.AppearanceConfig.glassEnabled;
+                    glassEnabled.setConfigBool(!glassEnabled.Bool());
+                    LiteMode.onGlassPreferenceChanged();
+                } else {
+                    boolean value = LiteMode.isEnabledSetting(item.flags);
+                    LiteMode.toggleFlag(item.flags, !value);
+                }
                 updateValues();
             } else if (item.viewType == VIEW_TYPE_SWITCH2) {
                 if (item.type == SWITCH_TYPE_SMOOTH_TRANSITIONS) {
@@ -185,6 +191,15 @@ public class LiteModeSettingsActivity extends BaseFragment {
         updateItems();
 
         return fragmentView;
+    }
+
+    private static boolean usesIosGlassToggle(int flags) {
+        return flags == LiteMode.FLAG_LIQUID_GLASS && app.exteraless.appearance.AppearanceConfig.iosMode();
+    }
+
+    private static boolean isCheckboxEnabled(int flags) {
+        return usesIosGlassToggle(flags) ? app.exteraless.appearance.AppearanceConfig.glassEnabled()
+                : LiteMode.isEnabled(flags);
     }
 
     @Override
@@ -680,7 +695,7 @@ public class LiteModeSettingsActivity extends BaseFragment {
                 needLine = item.getFlagsCount() > 1;
             } else {
                 checkBoxView.setVisibility(VISIBLE);
-                checkBoxView.setChecked(LiteMode.isEnabled(item.flags), false);
+                checkBoxView.setChecked(isCheckboxEnabled(item.flags), false);
                 imageView.setVisibility(GONE);
                 switchView.setVisibility(GONE);
                 countTextView.setVisibility(GONE);
@@ -707,7 +722,7 @@ public class LiteModeSettingsActivity extends BaseFragment {
                 }
                 switchView.setChecked(LiteMode.isEnabled(item.flags), true);
             } else {
-                checkBoxView.setChecked(LiteMode.isEnabled(item.flags), true);
+                checkBoxView.setChecked(isCheckboxEnabled(item.flags), true);
             }
 
             setDisabled(LiteMode.isPowerSaverApplied(), true);

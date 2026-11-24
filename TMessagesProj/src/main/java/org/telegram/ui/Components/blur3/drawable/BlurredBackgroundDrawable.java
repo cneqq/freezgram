@@ -364,7 +364,8 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
             ((BlurredBackgroundColorProviderThemed) colorProvider).updateColors();
         }
 
-        final GlassOutlineStyle outlineStyle = GlassOutlineStyle.current();
+        final GlassOutlineStyle outlineStyle = getGlassSettings().iosMode && !getGlassSettings().isBlurEnabled
+                ? GlassOutlineStyle.HIDDEN : GlassOutlineStyle.current();
         final boolean glare = outlineStyle == GlassOutlineStyle.GLARE;
         final boolean solid = outlineStyle == GlassOutlineStyle.SOLID;
 
@@ -980,7 +981,11 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
             resolvedOpaque = opaque;
 
             final Impl newImpl;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && source instanceof BlurredBackgroundDrawableViewFactory.DrawableOwner
+            if (getGlassSettings().iosMode && !getGlassSettings().isBlurEnabled
+                    && staticSource == glassSource) {
+                // A custom backdrop factory can share a single capture across all three sources.
+                newImpl = colorImpl;
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && source instanceof BlurredBackgroundDrawableViewFactory.DrawableOwner
                     && !(unwrapped instanceof GlassSourceColor) && !(unwrapped instanceof GlassSourceBitmap)) {
                 // the source records into its drawables and tells them when to record again
                 if (renderNodeImpl == null) {

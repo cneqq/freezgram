@@ -56,7 +56,7 @@ public final class LiquidGlassStyle {
         return optics * 16 + flags;
     }
     public static void configure(BlurredBackgroundDrawable drawable) {
-        drawable.setFreezgramGlass(true);
+        drawable.setFreezgramGlass(!AppearanceConfig.iosMode());
         drawable.setThickness(AndroidUtilities.dp(AppearanceConfig.iosMode() ? AppearanceConfig.iosGlassEdge() : 12));
         drawable.setIntensity(refraction() / 100f);
     }

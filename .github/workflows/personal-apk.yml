@@ -16,7 +16,7 @@ concurrency:
 jobs:
   build:
     if: github.repository == 'cneqq/freezgram'
-    name: Release APK (${{ matrix.abi }})
+    name: Release APK
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     strategy:
@@ -24,10 +24,8 @@ jobs:
       matrix:
         include:
           - abi: universal
-            label: universal
     env:
       NATIVE_TARGET: ${{ matrix.abi }}
-      APK_ABI_LABEL: ${{ matrix.label }}
       PERSONAL_BUILD_ID: personal
       PERSONAL_APPLICATION_ID: com.freezgram.app
       PERSONAL_BUILD_LABEL: Freezgram
@@ -208,6 +206,7 @@ jobs:
             :TMessagesProj:assembleRelease
 
       - name: Verify APK contents, manifest and signature
+        id: verify_apk
         shell: bash
         env:
           KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
@@ -227,10 +226,15 @@ jobs:
           if len(apks) != 1:
               raise SystemExit('Expected exactly one release APK for ' + os.environ['NATIVE_TARGET'])
           abi = os.environ['NATIVE_TARGET']
-          apk = Path(f'artifact/freezgram-{os.environ["OPTIMIZATION_MODE"]}-{os.environ["APK_ABI_LABEL"]}.apk')
-          shutil.copyfile(apks[0], apk)
+          versions = dict(line.split('=', 1) for line in Path('gradle.properties').read_text(encoding='utf-8').splitlines()
+                          if line.startswith(('APP_VERSION_NAME=', 'FREEZGRAM_VERSION=')))
+          version_name = f'{versions["APP_VERSION_NAME"]}-{versions["FREEZGRAM_VERSION"]}'
           tools = Path(os.environ['ANDROID_HOME']) / 'build-tools/36.0.0'
-          manifest = subprocess.check_output([str(tools / 'aapt2'), 'dump', 'badging', str(apk)], text=True)
+          manifest = subprocess.check_output([str(tools / 'aapt2'), 'dump', 'badging', str(apks[0])], text=True)
+          if f"versionName='{version_name}'" not in manifest:
+              raise SystemExit('APK version name does not match gradle.properties.')
+          apk = Path('artifact') / f'FreezGram-{version_name}.apk'
+          shutil.copyfile(apks[0], apk)
           configurations = subprocess.check_output([str(tools / 'aapt2'), 'dump', 'configurations', str(apk)], text=True).splitlines()
           for locale in ('ru-rRU', 'uk-rUA'):
               if not any(config.strip() == locale or config.strip().startswith(locale + '-') for config in configurations):
@@ -273,8 +277,13 @@ jobs:
               'application_id': expected_package, 'app_label': os.environ['PERSONAL_BUILD_LABEL'],
               'firebase': False,
               'api_source': 'personal', 'version_code': int(os.environ['PERSONAL_VERSION_CODE']),
+              'version_name': version_name, 'telegram_version': versions['APP_VERSION_NAME'],
+              'freezgram_version': versions['FREEZGRAM_VERSION'], 'apk': apk.name,
               'signer_sha256': signer_sha256, 'personal_signing': True, 'sha256': checksum}, indent=2))
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'version_name={version_name}\n')
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f:
+              f.write(f'APK: `{apk.name}`\n\n')
               f.write(f'Optimization: {os.environ["OPTIMIZATION_MODE"]} (release signing, not debuggable)\n\n')
               f.write(f'Stable personal app: `{expected_package}` — {os.environ["PERSONAL_BUILD_LABEL"]}\n\n')
               f.write('Future versions with the same signing key update this app and preserve its data. Old isolated packages remain separate. Firebase is disabled; background notifications need device verification.\n\n')
@@ -286,7 +295,7 @@ jobs:
       - name: Upload APK only
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: freezgram-${{ matrix.label }}-release-${{ github.run_id }}-${{ github.run_attempt }}
+          name: FreezGram-${{ steps.verify_apk.outputs.version_name }}-${{ github.run_attempt }}
           path: artifact/
           if-no-files-found: error
           retention-days: 3

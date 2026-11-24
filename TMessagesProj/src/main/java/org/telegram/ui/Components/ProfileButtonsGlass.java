@@ -260,7 +260,7 @@ public final class ProfileButtonsGlass {
             if (!settings.isBlurEnabled) {
                 return factory.getStaticSource();
             }
-            final boolean liquid = app.freezgram.SmallElementsGlass.isEnabled()
+            final boolean liquid = !settings.iosMode && app.freezgram.SmallElementsGlass.isEnabled()
                     ? settings.isFreezgramGlassEnabled : settings.isLiquidGlassEnabled;
             return liquid && Build.VERSION.SDK_INT >= 33 ? factory.getSource() : factory.getFrostedSource();
         }

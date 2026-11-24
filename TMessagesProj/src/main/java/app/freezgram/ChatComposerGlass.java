@@ -16,7 +16,7 @@ public final class ChatComposerGlass {
     private ChatComposerGlass() {}
 
     public static boolean isRequested() {
-        return AppearanceConfig.composerLiquidGlass();
+        return AppearanceConfig.iosMode() || AppearanceConfig.composerLiquidGlass();
     }
 
     /** Old 1/2 styles included glass; an explicit switch now overrides either layout. */
@@ -40,10 +40,10 @@ public final class ChatComposerGlass {
 
     /** Visible field starts 50dp + 7dp drawable padding from the left edge. */
     public static int textLeftInsetDp() {
-        return 57 + AppearanceConfig.composerContentInset();
+        return 57 + emojiRightInsetDp();
     }
     public static int emojiRightInsetDp() {
-        return AppearanceConfig.composerContentInset();
+        return AppearanceConfig.iosMode() ? 0 : AppearanceConfig.composerContentInset();
     }
     public static int textRightInsetDp(int emojiWidthDp) {
         return emojiWidthDp + emojiRightInsetDp() + 8;

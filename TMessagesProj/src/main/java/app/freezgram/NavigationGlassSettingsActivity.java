@@ -365,7 +365,7 @@ public final class NavigationGlassSettingsActivity extends BaseFragment {
         private void surface(Canvas canvas, BlurredBackgroundDrawable drawable, android.graphics.Rect bounds, int radius, int padding) {
             if (previewMaterialRequested(mode) && drawable != null && canvas.isHardwareAccelerated()) {
                 drawable.setBounds(bounds);
-                LiquidGlassStyle.configure(drawable);
+                LiquidGlassStyle.configureIosSurface(drawable);
                 var node = (BlurredBackgroundDrawable) drawable;
                 node.setLiquidGlassEffectAllowed(effectsEnabled());
                 drawable.updateColors(); node.invalidateDisplayList(); drawable.draw(canvas);

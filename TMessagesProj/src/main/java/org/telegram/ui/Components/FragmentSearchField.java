@@ -282,7 +282,7 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
         }
         if (blurredBackgroundDrawable != null) {
             if (sharedGlassActive()) {
-                app.freezgram.LiquidGlassStyle.configure(blurredBackgroundDrawable);
+                app.freezgram.LiquidGlassStyle.configureIosSurface(blurredBackgroundDrawable);
                 blurredBackgroundDrawable.setAlpha(255);
                 blurredBackgroundDrawable.updateColors();
             }

@@ -824,6 +824,7 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
 
     private boolean liquidGlassEffectAllowed;
     private boolean freezgramGlass;
+    private boolean iosGlass;
     private int glassSettingsGeneration = GlassEngine.getGlassSettingsGenerationId();
 
     /** The screen wants the liquid glass here: it is drawn while the glass settings have it on (Android 13+). */
@@ -850,9 +851,23 @@ public class BlurredBackgroundDrawable extends GlassDrawable implements Theme.Co
         }
     }
 
+    public void setIosGlass(boolean enabled) {
+        if (iosGlass != enabled) {
+            iosGlass = enabled;
+            implInvalidated = true;
+            invalidateSelf();
+        }
+    }
+
     private boolean isLiquidGlassEffectEnabled() {
-        return liquidGlassEffectAllowed && Build.VERSION.SDK_INT >= 33
-            && (freezgramGlass ? getGlassSettings().isFreezgramGlassEnabled : getGlassSettings().isLiquidGlassEnabled);
+        if (!liquidGlassEffectAllowed || Build.VERSION.SDK_INT < 33) {
+            return false;
+        }
+        final GlassSettings settings = getGlassSettings();
+        if (iosGlass) {
+            return settings.iosMode && settings.isBlurEnabled;
+        }
+        return freezgramGlass ? settings.isFreezgramGlassEnabled : settings.isLiquidGlassEnabled;
     }
 
     private GlassSource pickSource() {

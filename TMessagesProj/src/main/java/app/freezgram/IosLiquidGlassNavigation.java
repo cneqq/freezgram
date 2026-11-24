@@ -29,7 +29,7 @@ public final class IosLiquidGlassNavigation {
 
     public static float overlayAlpha(boolean dark) { return LiquidGlassStyle.overlayAlpha(dark); }
     public static int blurRadiusDp() { return LiquidGlassStyle.blurRadiusDp(); }
-    public static void configure(BlurredBackgroundDrawable drawable) { LiquidGlassStyle.configure(drawable); }
+    public static void configure(BlurredBackgroundDrawable drawable) { LiquidGlassStyle.configureIosSurface(drawable); }
 
     public static void refresh(BlurredBackgroundDrawable drawable) {
         if (isRequested()) configure(drawable);

@@ -787,7 +787,7 @@ public class Bulletin {
         }
 
         @Override public void draw(Canvas canvas) {
-            if (AndroidUtilities.makingGlobalBlurBitmap && app.freezgram.SmallElementsGlass.areNotificationsEnabled()) return;
+            if (AndroidUtilities.makingGlobalBlurBitmap && app.freezgram.SmallElementsGlass.isEnabled()) return;
             super.draw(canvas);
         }
 
@@ -1242,7 +1242,7 @@ public class Bulletin {
         @Override
         protected void dispatchDraw(Canvas canvas) {
             if (bulletin != null && bulletin.allowBlurAnimation && !app.exteraless.appearance.AppearanceConfig.iosMode()
-                    && !app.freezgram.SmallElementsGlass.areNotificationsEnabled()) {
+                    && !app.freezgram.SmallElementsGlass.isEnabled()) {
                 if (blurVisibilityDrawable == null) {
                     blurVisibilityDrawable = new BlurVisibilityDrawable(this::dispatchDrawImplBlur);
                 }

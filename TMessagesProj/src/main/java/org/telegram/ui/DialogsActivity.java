@@ -14697,7 +14697,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private BlurredBackgroundDrawable createIosListGlassSurface(BlurredBackgroundDrawableViewFactory factory, View view) {
         BlurredBackgroundDrawable surface = factory.create(view,
                 app.freezgram.LiquidGlassStyle.surfaceColors(resourceProvider, app.freezgram.LiquidGlassStyle::canDrawGlass));
-        app.freezgram.LiquidGlassStyle.configure(surface);
+        app.freezgram.LiquidGlassStyle.configureIosSurface(surface);
         iosListGlassSurfaces.add(surface);
         return surface;
     }
@@ -14790,7 +14790,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 dialogsHeaderGlassDrawable.updateColors();
             }
             for (BlurredBackgroundDrawable surface : iosListGlassSurfaces) {
-                app.freezgram.LiquidGlassStyle.configure(surface);
+                app.freezgram.LiquidGlassStyle.configureIosSurface(surface);
                 surface.updateColors();
             }
         }

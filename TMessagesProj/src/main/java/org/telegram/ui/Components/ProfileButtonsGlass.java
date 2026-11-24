@@ -178,9 +178,10 @@ public final class ProfileButtonsGlass {
         menuFactory.setLiquidGlassEffectAllowed(true);
         if (freezgramBackdrop != null) {
             actionsFactory.setLiquidGlassEffectAllowed(true);
-            actionsFactory.setDrawableConfigurator(app.freezgram.LiquidGlassStyle::configure);
+            actionsFactory.setDrawableConfigurator(app.freezgram.LiquidGlassStyle::configureIosSurface);
+            headerFactory.setDrawableConfigurator(app.freezgram.LiquidGlassStyle::configureIosSurface);
         }
-        if (freezgramBackdrop != null || app.freezgram.SmallElementsGlass.isEnabled()) {
+        if (app.freezgram.SmallElementsGlass.isEnabled()) {
             headerFactory.setDrawableConfigurator(app.freezgram.LiquidGlassStyle::configure);
             menuFactory.setDrawableConfigurator(app.freezgram.LiquidGlassStyle::configure);
         }

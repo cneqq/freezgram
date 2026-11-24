@@ -482,12 +482,12 @@ object AppearanceConfig {
     @JvmField
     val dialogsHeaderGlass = addConfig("FreezgramDialogsHeaderGlass", ConfigItem.configTypeBool, false)
     @JvmStatic
-    fun dialogsHeaderGlass(): Boolean { ensureLoaded(); return dialogsHeaderGlass.Bool() }
+    fun dialogsHeaderGlass(): Boolean { ensureLoaded(); return !iosMode() && dialogsHeaderGlass.Bool() }
 
     @JvmField
     val attachmentPanelsGlass = addConfig("FreezgramAttachmentPanelsGlass", ConfigItem.configTypeBool, false)
     @JvmStatic
-    fun attachmentPanelsGlass(): Boolean { ensureLoaded(); return attachmentPanelsGlass.Bool() }
+    fun attachmentPanelsGlass(): Boolean { ensureLoaded(); return !iosMode() && attachmentPanelsGlass.Bool() }
 
     @JvmField
     val giftGlassBlur = addConfig("FreezgramGiftGlassBlur", ConfigItem.configTypeInt, 24)
@@ -607,7 +607,7 @@ object AppearanceConfig {
     @JvmField
     val foldersLiquidGlass = addConfig("FreezgramFoldersLiquidGlass", ConfigItem.configTypeBool, false)
     @JvmStatic
-    fun foldersLiquidGlass(): Boolean { ensureLoaded(); return foldersLiquidGlass.Bool() }
+    fun foldersLiquidGlass(): Boolean { ensureLoaded(); return !iosMode() && foldersLiquidGlass.Bool() }
 
     @JvmField
     val glassEnabled = addConfig("FreezgramGlassEnabled", ConfigItem.configTypeBool, true)
@@ -617,7 +617,7 @@ object AppearanceConfig {
     @JvmField
     val chatActionButtonsGlass = addConfig("FreezgramChatActionButtonsGlass", ConfigItem.configTypeBool, true)
     @JvmStatic
-    fun chatActionButtonsGlass(): Boolean { ensureLoaded(); return chatActionButtonsGlass.Bool() }
+    fun chatActionButtonsGlass(): Boolean { ensureLoaded(); return !iosMode() && chatActionButtonsGlass.Bool() }
 
     @JvmField
     val chatHeaderGlassDim = addConfig("FreezgramChatHeaderGlassDim", ConfigItem.configTypeBool, false)

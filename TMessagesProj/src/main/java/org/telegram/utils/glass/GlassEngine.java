@@ -606,7 +606,7 @@ public class GlassEngine {
         final boolean iosMode = app.exteraless.appearance.AppearanceConfig.iosMode();
         final boolean isBlurEnabled = iosMode ? app.freezgram.LiquidGlassStyle.canDrawGlass()
                 : LiteMode.isEnabled(LiteMode.FLAG_CHAT_BLUR);
-        final boolean isLiquidGlassEnabled = iosMode ? isBlurEnabled : LiteMode.isEnabled(LiteMode.FLAG_LIQUID_GLASS);
+        final boolean isLiquidGlassEnabled = (!iosMode || isBlurEnabled) && LiteMode.isEnabled(LiteMode.FLAG_LIQUID_GLASS);
         final boolean isFreezgramGlassEnabled = !iosMode && isBlurEnabled && !LiteMode.isGlassPowerSaverApplied();
 
         final boolean glassSettingsInvalidated = glassSettings == null

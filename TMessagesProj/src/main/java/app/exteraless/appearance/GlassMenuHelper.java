@@ -137,8 +137,7 @@ public abstract class GlassMenuHelper {
     }
 
     public static void applyDividers(ActionBarPopupWindow.ActionBarPopupWindowLayout popup, Theme.ResourcesProvider provider) {
-        popup.setGlassDividers(() -> app.freezgram.SmallElementsGlass.isEnabled()
-                        && (AppearanceConfig.iosMode() || AppearanceConfig.glassMenuDividers()),
+        popup.setGlassDividers(() -> app.freezgram.SmallElementsGlass.isEnabled() && AppearanceConfig.glassMenuDividers(),
                 Theme.getColor(Theme.key_actionBarDefaultSubmenuItem, provider));
     }
 

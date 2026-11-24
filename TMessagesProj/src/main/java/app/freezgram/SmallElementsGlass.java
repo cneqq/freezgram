@@ -19,15 +19,11 @@ import org.telegram.ui.Components.blur3.utils.Blur3Utils;
 public final class SmallElementsGlass {
     private SmallElementsGlass() {}
     public static boolean isRequested() {
-        return AppearanceConfig.iosMode() || AppearanceConfig.smallElementsGlass();
+        return !AppearanceConfig.iosMode() && AppearanceConfig.smallElementsGlass();
     }
 
     public static boolean isEnabled() {
         return isRequested() && LiquidGlassStyle.canDrawGlass();
-    }
-
-    public static boolean areNotificationsEnabled() {
-        return !AppearanceConfig.iosMode() && isEnabled();
     }
 
     public static int notificationBackgroundColor(int color) {
@@ -35,10 +31,10 @@ public final class SmallElementsGlass {
     }
 
     public static boolean areUnreadCountersEnabled() {
-        return (AppearanceConfig.iosMode() || AppearanceConfig.unreadCountersGlass()) && LiquidGlassStyle.canDrawGlass();
+        return !AppearanceConfig.iosMode() && AppearanceConfig.unreadCountersGlass() && LiquidGlassStyle.canDrawGlass();
     }
     public static boolean areMessageDecorationsEnabled() {
-        return (AppearanceConfig.iosMode() || AppearanceConfig.messageDecorationsGlass()) && LiquidGlassStyle.canDrawGlass();
+        return !AppearanceConfig.iosMode() && AppearanceConfig.messageDecorationsGlass() && LiquidGlassStyle.canDrawGlass();
     }
 
     public static boolean areServiceBubblesEnabled() {
@@ -120,7 +116,7 @@ public final class SmallElementsGlass {
         private final java.util.function.BooleanSupplier enabled;
         private final boolean hideOwner;
         private final LiveGlassBackdrop liveBackdrop = new LiveGlassBackdrop();
-        public NotificationBackdrop() { this(SmallElementsGlass::areNotificationsEnabled, false); }
+        public NotificationBackdrop() { this(SmallElementsGlass::isEnabled, false); }
         public NotificationBackdrop(java.util.function.BooleanSupplier enabled, boolean hideOwner) { this.enabled = enabled; this.hideOwner = hideOwner; }
         private final GlassSourceBitmap bitmapSource = new GlassSourceBitmap();
         private BlurredBackgroundDrawable glass;

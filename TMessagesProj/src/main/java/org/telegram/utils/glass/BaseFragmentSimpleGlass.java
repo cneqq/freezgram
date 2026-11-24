@@ -284,6 +284,7 @@ public class BaseFragmentSimpleGlass {
             final SimpleActionBar simpleActionBar = (SimpleActionBar) header;
             simpleActionBar.setExtraHeight(dp(6));
             final GlassSourceRenderNode backdrop = useFreezgramHeaderGlass && Build.VERSION.SDK_INT >= 33
+                    && !app.exteraless.appearance.AppearanceConfig.iosMode()
                     ? getFreezgramNavigationSource() : null;
             if (backdrop != null) {
                 final BlurredBackgroundDrawableViewFactory headerFactory = factory.withSource(

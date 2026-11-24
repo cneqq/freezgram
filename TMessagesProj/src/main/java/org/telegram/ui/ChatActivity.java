@@ -3017,9 +3017,11 @@ public class ChatActivity extends BaseFragment implements
 
             recommendedAdditionalSizeY = Math.max(0, dp(48) - Math.min(AndroidUtilities.navigationBarHeight, AndroidUtilities.statusBarHeight));
 
+            final GlassSource chatBackdrop = AppearanceConfig.iosMode() ? navbarContentSourceWallpaper
+                    : app.freezgram.SmallElementsGlass.createSource(navbarContentSourceWallpaper);
             glassBackgroundSourceFrostedRenderNode = new GlassSourceRenderNode(navbarContentSourceWallpaper);
             glassBackgroundSourceFrostedRenderNode.setScrollableNoiseSuppressor(scrollableViewNoiseSuppressor, DownscaleScrollableNoiseSuppressor.DRAW_FROSTED_GLASS);
-            glassBackgroundSourceFrostedRenderNode.setUnderSource(app.freezgram.SmallElementsGlass.createSource(navbarContentSourceWallpaper));
+            glassBackgroundSourceFrostedRenderNode.setUnderSource(chatBackdrop);
 
             glassBackgroundDrawableFactoryFrosted = new BlurredBackgroundDrawableViewFactory(glassBackgroundSourceFrostedRenderNode);
             glassBackgroundDrawableFactoryFrosted.setLiquidGlassEffectAllowed(true);
@@ -3027,7 +3029,7 @@ public class ChatActivity extends BaseFragment implements
             if (LiteMode.isEnabled(LiteMode.FLAG_LIQUID_GLASS)) {
                 glassBackgroundSourceRenderNode = new GlassSourceRenderNode(navbarContentSourceWallpaper);
                 glassBackgroundSourceRenderNode.setScrollableNoiseSuppressor(scrollableViewNoiseSuppressor, DownscaleScrollableNoiseSuppressor.DRAW_GLASS);
-                glassBackgroundSourceRenderNode.setUnderSource(app.freezgram.SmallElementsGlass.createSource(navbarContentSourceWallpaper));
+                glassBackgroundSourceRenderNode.setUnderSource(chatBackdrop);
                 glassBackgroundDrawableFactory = new BlurredBackgroundDrawableViewFactory(glassBackgroundSourceRenderNode);
                 glassBackgroundDrawableFactory.setLiquidGlassEffectAllowed(true);
             } else {
@@ -32902,7 +32904,7 @@ public class ChatActivity extends BaseFragment implements
 
             @Override
             public void onShow(Bulletin bulletin) {
-                if (AppearanceConfig.iosMode() || app.freezgram.SmallElementsGlass.areNotificationsEnabled()) {
+                if (AppearanceConfig.iosMode() || app.freezgram.SmallElementsGlass.isEnabled()) {
                     bulletin.getLayout().clearCustomBackground();
                     return;
                 }

@@ -56,8 +56,19 @@ public final class LiquidGlassStyle {
         return optics * 16 + flags;
     }
     public static void configure(BlurredBackgroundDrawable drawable) {
-        drawable.setFreezgramGlass(!AppearanceConfig.iosMode());
-        drawable.setThickness(AndroidUtilities.dp(AppearanceConfig.iosMode() ? AppearanceConfig.iosGlassEdge() : 12));
+        configure(drawable, false);
+    }
+
+    public static void configureIosSurface(BlurredBackgroundDrawable drawable) {
+        configure(drawable, true);
+    }
+
+    private static void configure(BlurredBackgroundDrawable drawable, boolean iosSurface) {
+        boolean iosMode = AppearanceConfig.iosMode();
+        drawable.setFreezgramGlass(!iosMode);
+        drawable.setIosGlass(iosMode && iosSurface);
+        if (iosMode && !iosSurface) return;
+        drawable.setThickness(AndroidUtilities.dp(iosMode ? AppearanceConfig.iosGlassEdge() : 12));
         drawable.setIntensity(refraction() / 100f);
     }
 

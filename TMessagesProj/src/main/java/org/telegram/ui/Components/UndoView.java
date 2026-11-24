@@ -219,7 +219,7 @@ public class UndoView extends FrameLayout implements Theme.Colorable {
     private int hideAnimationType = 1;
     private final app.freezgram.SmallElementsGlass.NotificationBackdrop smallElementBackdrop = new app.freezgram.SmallElementsGlass.NotificationBackdrop();
     @Override public void draw(Canvas canvas) {
-        if (AndroidUtilities.makingGlobalBlurBitmap && app.freezgram.SmallElementsGlass.areNotificationsEnabled()) return;
+        if (AndroidUtilities.makingGlobalBlurBitmap && app.freezgram.SmallElementsGlass.isEnabled()) return;
         super.draw(canvas);
     }
     @Override protected void onDetachedFromWindow() {

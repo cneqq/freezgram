@@ -46,7 +46,7 @@ public final class IosLiquidGlassChatHeader {
 
     public static void refresh(BlurredBackgroundDrawable drawable) {
         if (drawable == null) return;
-        LiquidGlassStyle.configure(drawable);
+        LiquidGlassStyle.configureIosSurface(drawable);
         if (Build.VERSION.SDK_INT >= 33 && drawable != null) {
             ((BlurredBackgroundDrawable) drawable).setLiquidGlassEffectAllowed(isEnabled());
         }

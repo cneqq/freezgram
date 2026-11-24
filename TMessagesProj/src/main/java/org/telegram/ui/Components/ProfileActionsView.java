@@ -239,7 +239,7 @@ public class ProfileActionsView extends View {
         iosCoverColor = cover;
         iosDarkTheme = dark;
         iosActionIconColor = iconColor;
-        iosActionTint = ProfileButtonsGlass.iosSurfaceTint(dark);
+        iosActionTint = usesIosChatActions() ? (dark ? 0x24ffffff : 0x18000000) : ProfileButtonsGlass.iosSurfaceTint(dark);
         invalidate();
     }
 
@@ -296,6 +296,9 @@ public class ProfileActionsView extends View {
     }
 
     private float getItemInset() {
+        if (usesIosChatActions() && activeCount == 3) {
+            return Math.min(dpf2(64), getMeasuredWidth() * .15f);
+        }
         return usesRoundIosActions() ? Math.min(dpf2(36), getMeasuredWidth() * .09f) : xpadding;
     }
 
@@ -304,7 +307,11 @@ public class ProfileActionsView extends View {
     }
 
     private boolean usesRoundIosActions() {
-        return iosLayout && !compactIosActions && mode == MODE_USER;
+        return iosLayout && !compactIosActions && (mode == MODE_USER || usesIosChatActions());
+    }
+
+    public boolean usesIosChatActions() {
+        return iosLayout && (mode == MODE_CHANNEL || mode == MODE_GROUP || mode == MODE_FORUM);
     }
 
     private void getActionBackgroundBounds(RectF row, RectF bounds) {
@@ -389,7 +396,9 @@ public class ProfileActionsView extends View {
                     drawGlass(canvas, iosActionBounds, radius, alpha);
                 }
                 // Apply the tint over the sampled glass so a flat cover still shows the circular button.
-                iosActionPaint.setColor(Theme.multAlpha(iosActionTint, alpha));
+                final int tint = usesIosChatActions() && !app.freezgram.LiquidGlassStyle.canDrawGlass()
+                        ? ColorUtils.compositeColors(iosActionTint, iosCoverColor) : iosActionTint;
+                iosActionPaint.setColor(Theme.multAlpha(tint, alpha));
                 canvas.drawCircle(iosActionBounds.centerX(), iosActionBounds.centerY(), radius, iosActionPaint);
                 iosActionRim.draw(canvas, iosActionBounds, radius, iosCoverColor, alpha);
                 continue;
@@ -486,7 +495,7 @@ public class ProfileActionsView extends View {
 
         final int iconColor = iosCircle ? (parentExpanded >= .75f ? Color.WHITE : iosActionIconColor)
                 : ColorUtils.blendARGB(Color.BLACK, Color.WHITE, originalWhite);
-        final int textColor = ColorUtils.blendARGB(Color.BLACK, Color.WHITE, originalWhite);
+        final int textColor = usesIosChatActions() ? iconColor : ColorUtils.blendARGB(Color.BLACK, Color.WHITE, originalWhite);
         if (lastColorFilter == null || lastColorFilterColor != iconColor) {
             lastColorFilterColor = iconColor;
             lastColorFilter = new PorterDuffColorFilter(iconColor, PorterDuff.Mode.SRC_IN);
@@ -913,6 +922,9 @@ public class ProfileActionsView extends View {
         } else {
             notificationAction.update(isNotificationsEnabled ? ActionButton.NOTIFICATION_MUTE : ActionButton.NOTIFICATION_UNMUTE);
         }
+        if (usesIosChatActions()) {
+            notificationAction.setText(getString(R.string.Sound));
+        }
     }
 
     private void applyVisibleActions() {
@@ -943,6 +955,10 @@ public class ProfileActionsView extends View {
                 insertIfAvailable(out, KEY_NOTIFICATION);
                 break;
             case MODE_CHANNEL:
+                if (usesIosChatActions()) {
+                    applyIosChatActions(out, join);
+                    break;
+                }
                 if (join) {
                     insertIfAvailable(out, KEY_JOIN);
                 } else {
@@ -968,6 +984,10 @@ public class ProfileActionsView extends View {
                 break;
             case MODE_GROUP:
             case MODE_FORUM:
+                if (usesIosChatActions()) {
+                    applyIosChatActions(out, join);
+                    break;
+                }
                 if (join) {
                     insertIfAvailable(out, KEY_JOIN);
                 } else {
@@ -1018,6 +1038,13 @@ public class ProfileActionsView extends View {
             }
             invalidate();
         });
+    }
+
+    private void applyIosChatActions(List<Action> out, boolean join) {
+        insertIfAvailable(out, join ? KEY_JOIN : KEY_MESSAGE);
+        insertIfAvailable(out, KEY_NOTIFICATION);
+        insertIfAvailable(out, KEY_SEARCH);
+        insertIfAvailable(out, KEY_MORE);
     }
 
     private void applyIosUserActions(List<Action> out) {

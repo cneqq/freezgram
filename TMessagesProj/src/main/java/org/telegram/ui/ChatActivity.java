@@ -52236,6 +52236,9 @@ public class ChatActivity extends BaseFragment implements
             + getTopicTabsSideSize(TopicsTabsView.Position.BOTTOM);
 
         chatActivityFadeView.setFadeZoneBottom((int) inputHeight);
+        float composerVisibility = AppearanceConfig.iosMode()
+                ? bottomViewsVisibilityController.getVisibility(MESSAGE_INPUT_CONTAINER) : 0f;
+        chatActivityFadeView.setFadeBottomAlpha(Math.round(255 * (1f - composerVisibility)));
 
         int clipBound = contentView.getMeasuredHeight() - (int) inputHeight + dp(36);
         clipBound = androidx.core.math.MathUtils.clamp(clipBound, 0, contentView.getMeasuredHeight());

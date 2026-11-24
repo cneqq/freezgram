@@ -211,7 +211,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     }
 
     public boolean hasIosPinnedBackground() {
-        return iosChatListSurface && getIsPinned() && !isDialogFolder();
+        return iosChatListSurface && (getIsPinned() || isDialogFolder());
     }
 
     public void useIosProfilePreview() {
@@ -4377,22 +4377,17 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
         canvas.save();
         canvas.translate(0, -rightFragmentOffset * rightFragmentOpenedProgress);
-        if (currentDialogFolderId != 0 && (!SharedConfig.archiveHidden || archiveBackgroundProgress != 0)) {
-            Theme.dialogs_pinnedPaint.setColor(AndroidUtilities.getOffsetColor(0, Theme.getColor(Theme.key_chats_pinnedOverlay, resourcesProvider), archiveBackgroundProgress, 1.0f));
-            Theme.dialogs_pinnedPaint.setAlpha((int) (Theme.dialogs_pinnedPaint.getAlpha() * (1f - rightFragmentOpenedProgress)));
-            // canvas.drawRect(-xOffset, 0, getMeasuredWidth(), getMeasuredHeight() - translateY, Theme.dialogs_pinnedPaint);
-        } else if (getIsPinned() || drawPinBackground) {
-            if (hasIosPinnedBackground() && !isSelected) {
-                Theme.dialogs_pinnedPaint.setColor(app.freezgram.IosChatListColors.pinnedBackground(resourcesProvider));
-                Theme.dialogs_pinnedPaint.setAlpha((int) (255 * (1f - rightFragmentOpenedProgress)));
-                canvas.drawRect(-xOffset, 0, getMeasuredWidth(), getMeasuredHeight() - translateY, Theme.dialogs_pinnedPaint);
-            } else if (iosChatListRow && !iosChatListSurface && !isSelected) {
-                final int base = Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider);
-                final int foreground = Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider);
-                Theme.dialogs_pinnedPaint.setColor(ColorUtils.blendARGB(base, foreground, Theme.isCurrentThemeDark() ? .075f : .045f));
-                Theme.dialogs_pinnedPaint.setAlpha((int) (255 * (1f - rightFragmentOpenedProgress)));
-                canvas.drawRect(-xOffset, 0, getMeasuredWidth(), getMeasuredHeight() - translateY, Theme.dialogs_pinnedPaint);
-            }
+        if (!isSelected && hasIosPinnedBackground()) {
+            Theme.dialogs_pinnedPaint.setColor(app.freezgram.IosChatListColors.pinnedBackground(resourcesProvider));
+            Theme.dialogs_pinnedPaint.setAlpha((int) (255 * (1f - rightFragmentOpenedProgress)));
+            canvas.drawRect(-xOffset, 0, getMeasuredWidth(), getMeasuredHeight() - translateY, Theme.dialogs_pinnedPaint);
+        } else if (!isSelected && iosChatListRow && !iosChatListSurface && !isDialogFolder()
+                && (getIsPinned() || drawPinBackground)) {
+            final int base = Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider);
+            final int foreground = Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider);
+            Theme.dialogs_pinnedPaint.setColor(ColorUtils.blendARGB(base, foreground, Theme.isCurrentThemeDark() ? .075f : .045f));
+            Theme.dialogs_pinnedPaint.setAlpha((int) (255 * (1f - rightFragmentOpenedProgress)));
+            canvas.drawRect(-xOffset, 0, getMeasuredWidth(), getMeasuredHeight() - translateY, Theme.dialogs_pinnedPaint);
         }
         canvas.restore();
 

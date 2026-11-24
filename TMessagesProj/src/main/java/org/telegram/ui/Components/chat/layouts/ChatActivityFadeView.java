@@ -98,6 +98,13 @@ public class ChatActivityFadeView extends View implements Theme.Colorable {
             invalidate();
         }
     }
+
+    public void setFadeBottomAlpha(int alpha) {
+        if (fadeDrawableBottom.getAlpha() != alpha) {
+            fadeDrawableBottom.setAlpha(alpha);
+            invalidate();
+        }
+    }
     
     private void checkBounds() {
         fadeDrawableTop.setBounds(0, 0, getMeasuredWidth(), fadeZoneTop);
@@ -147,12 +154,12 @@ public class ChatActivityFadeView extends View implements Theme.Colorable {
             overlayPaint.setAlpha(fadeDrawableTop.getAlpha());
             canvas.drawRect(0, 0, getMeasuredWidth(), fadeZoneTop, overlayPaint);
         }
-        if (fadeZoneBottom > 0) {
+        if (fadeZoneBottom > 0 && fadeDrawableBottom.getAlpha() > 0) {
             if (overlayShaderBottom == null) {
                 overlayShaderBottom = createOverlayShader(false);
             }
             overlayPaint.setShader(overlayShaderBottom);
-            overlayPaint.setAlpha(0xFF);
+            overlayPaint.setAlpha(fadeDrawableBottom.getAlpha());
             canvas.drawRect(0, getMeasuredHeight() - fadeZoneBottom, getMeasuredWidth(), getMeasuredHeight(), overlayPaint);
         }
     }
@@ -174,7 +181,9 @@ public class ChatActivityFadeView extends View implements Theme.Colorable {
             drawCompactFades(canvas);
         } else {
             fadeDrawableTop.draw(canvas);
-            fadeDrawableBottom.draw(canvas);
+            if (fadeDrawableBottom.getAlpha() > 0) {
+                fadeDrawableBottom.draw(canvas);
+            }
         }
         drawOverlay(canvas);
     }
@@ -204,9 +213,9 @@ public class ChatActivityFadeView extends View implements Theme.Colorable {
             compactFadePaint.setAlpha(fadeDrawableTop.getAlpha());
             canvas.drawRect(0, 0, getMeasuredWidth(), fadeZoneTop, compactFadePaint);
         }
-        if (fadeZoneBottom > 0) {
+        if (fadeZoneBottom > 0 && fadeDrawableBottom.getAlpha() > 0) {
             compactFadePaint.setShader(compactShaderBottom);
-            compactFadePaint.setAlpha(0xFF);
+            compactFadePaint.setAlpha(fadeDrawableBottom.getAlpha());
             canvas.drawRect(0, h - fadeZoneBottom, getMeasuredWidth(), h, compactFadePaint);
         }
     }

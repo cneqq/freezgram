@@ -677,6 +677,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private final static int disable_no_forwards = 47;
     private final static int send_money = 48;
     private final static int search_profile_chat = 49;
+    private final static int add_profile_story = 50;
 
     private final static int event_log = 102;
     private final static int message_filter = 103;
@@ -1444,6 +1445,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (usesIosUserProfile()) {
                     actionsView.setIosCoverColor(getIosProfileCoverColor(),
                             hasColorById ? Color.WHITE : getThemedColor(Theme.key_windowBackgroundWhiteBlueIcon));
+                } else if (usesIosChatProfileActions()) {
+                    actionsView.setIosCoverColor(getIosProfileCoverColor(),
+                            hasColorById ? Color.WHITE : getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
                 }
             }
             if (musicView != null) {
@@ -2805,6 +2809,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     }
                 } else if (id == report) {
                     ReportBottomSheet.openChat(ProfileActivity.this, getDialogId());
+                } else if (id == add_profile_story) {
+                    addProfileStory();
                 } else if (id == edit_channel) {
                     if (userId != 0 && chatId == 0 && !isBot && getContactsController().contactsDict.get(userId) == null) {
                         setUserAlias();
@@ -4035,7 +4041,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             openChat();
                         } else if (chatId != 0) {
                             TLRPC.Chat chatLocal = getMessagesController().getChat(chatId);
-                            if (ChatObject.isForum(chatLocal)) {
+                            if (usesIosChatProfileActions() && getIosProfileSourceChat() != null) {
+                                finishFragment();
+                            } else if (ChatObject.isForum(chatLocal)) {
                                 openForum();
                             } else {
                                 openGroup();
@@ -4063,17 +4071,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         onCallClicked(true);
                         break;
                     case ProfileActionsView.KEY_STORY:
-                        getMessagesController().getMainSettings().edit().putBoolean("story_keep", true).apply();
-                        final AlertDialog progressDialog = new AlertDialog(getContext(), AlertDialog.ALERT_TYPE_SPINNER, resourcesProvider);
-                        progressDialog.showDelayed(200);
-                        MessagesController.getInstance(currentAccount).getStoriesController().canSendStoryFor(getDialogId(), aBoolean -> {
-                            progressDialog.dismiss();
-                            if (aBoolean) {
-                                StoryRecorder.getInstance(getParentActivity(), getCurrentAccount())
-                                    .selectedPeerId(getDialogId())
-                                    .open(null);
-                            }
-                        }, true, resourcesProvider);
+                        addProfileStory();
                         break;
                     case ProfileActionsView.KEY_STOP:
                         onBlockContactClicked(true);
@@ -4175,8 +4173,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             callItem = menu.addItem(call_item, R.drawable.call);
             callItem.setContentDescription(LocaleController.getString(R.string.Call));
         }
-        if (usesIosUserProfile()) {
-            editItem = menu.addItem(usesIosOwnProfile() ? edit_profile : edit_contact, getString(R.string.FreezgramProfileEditShort));
+        if (usesIosUserProfile() || usesIosChatProfileActions()) {
+            final int editId = usesIosChatProfileActions() ? edit_channel : usesIosOwnProfile() ? edit_profile : edit_contact;
+            editItem = menu.addItem(editId, getString(R.string.FreezgramProfileEditShort));
             editItem.getTextView().setTypeface(app.freezgram.IosTypography.Profile.MEDIUM);
             editItem.getTextView().setMaxWidth(dp(92));
             editItem.getTextView().setEllipsize(TextUtils.TruncateAt.END);
@@ -4188,7 +4187,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             editItem = menu.addItem(edit_channel, R.drawable.group_edit_profile);
             editItem.setContentDescription(LocaleController.getString(R.string.Edit));
         }
-        otherItem = menu.addItem(10, usesIosUserProfile() ? R.drawable.baseline_more_horiz_24 : R.drawable.ic_ab_other, resourcesProvider);
+        otherItem = menu.addItem(10, usesIosUserProfile() || usesIosChatProfileActions()
+                ? R.drawable.baseline_more_horiz_24 : R.drawable.ic_ab_other, resourcesProvider);
 
         otherItem.setSubMenuDelegate(new ActionBarMenuItem.ActionBarSubMenuItemDelegate() {
             @Override
@@ -6598,6 +6598,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         return userId != 0 && app.exteraless.appearance.AppearanceConfig.iosMode();
     }
 
+    private boolean usesIosChatProfileActions() {
+        return chatId != 0 && !isTopic && app.exteraless.appearance.AppearanceConfig.iosMode();
+    }
+
     private int getIosProfileCoverColor() {
         if (iosGiftProfileColors != null && iosGiftProfileColors.coverGradient != null) {
             return iosGiftProfileColors.background;
@@ -6717,7 +6721,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     }
 
     private int getProfileActionRowHeight() {
-        if (usesIosUserProfile() && !myProfile) {
+        if (usesIosChatProfileActions() || usesIosUserProfile() && !myProfile) {
             return dp(104);
         }
         return dp(app.exteraless.appearance.AppearanceConfig.iosMode() ? 80 : 74);
@@ -7755,7 +7759,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     }
 
     private ChatActivity getIosProfileSourceChat() {
-        if (parentLayout == null || userId == 0) return null;
+        if (parentLayout == null) return null;
         final List<BaseFragment> stack = parentLayout.getFragmentStack();
         final int index = stack.indexOf(this);
         final int previousIndex = index >= 0 ? index - 1 : stack.size() - 1;
@@ -7771,6 +7775,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         if (chat != null) {
             pendingIosChatSearch = chat;
             finishFragment();
+        } else if (usesIosChatProfileActions()) {
+            openGroup(true);
         } else if (currentEncryptedChat == null) {
             openChat(true);
         }
@@ -7833,12 +7839,17 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     }
 
     private void openGroup() {
-        if (finishFragmentIfPreviousIsChatActivity()) {
+        openGroup(false);
+    }
+
+    private void openGroup(boolean search) {
+        if (!search && finishFragmentIfPreviousIsChatActivity()) {
             return;
         }
 
         Bundle args = new Bundle();
         args.putLong("chat_id", chatId);
+        args.putBoolean("openProfileChatSearch", search);
         if (!getMessagesController().checkCanOpenChat(args, ProfileActivity.this)) {
             return;
         }
@@ -8759,20 +8770,23 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         // the Save button of the reordering takes the right of the header
         final boolean profile = !mediaHeaderVisible && !(sharedMediaLayout != null && sharedMediaLayout.isReordering());
         final boolean photo = isPulledDown;
-        simpleActionBar.setRowTopOffset(profile && usesIosUserProfile() && (photo || iosProfileHeaderExpanded) ? dp(14) : 0);
-        final boolean moreInProfileRow = iosProfileHeaderExpanded && !photo && actionsView != null && actionsView.hasIosMoreButton();
+        final boolean iosChat = usesIosChatProfileActions();
+        final boolean showIosProfileHeader = photo || iosProfileHeaderExpanded;
+        simpleActionBar.setRowTopOffset(profile && (usesIosUserProfile() || iosChat) && showIosProfileHeader ? dp(14) : 0);
+        final boolean moreInProfileRow = actionsView != null && actionsView.hasIosMoreButton()
+                && (iosChat ? showIosProfileHeader : iosProfileHeaderExpanded && !photo);
         final boolean iosContactEdit = usesIosUserProfile() && !myProfile
                 && getContactsController().contactsDict.get(userId) != null;
         final boolean iosEdit = usesIosOwnProfile() && editItemVisible || iosContactEdit
                 || usesIosUserProfile() && !myProfile && addToContactsRow > 0;
-        setHeaderItemShown(callItem, profile && !photo && callItemVisible, animated);
+        setHeaderItemShown(callItem, profile && !photo && callItemVisible && !(iosChat && showIosProfileHeader), animated);
         setHeaderItemShown(videoCallItem, profile && !photo && videoCallItemVisible, animated);
         final boolean showEdit = usesIosUserProfile() ? iosEdit && (photo || iosProfileHeaderExpanded)
-                : !photo && editItemVisible && !moreInProfileRow;
+                : iosChat ? editItemVisible && showIosProfileHeader : !photo && editItemVisible && !moreInProfileRow;
         setHeaderItemShown(editItem, profile && showEdit, animated);
         // the media's ⋮ takes the place of the profile's ⋮ (both the last in the pill): the same button, nothing to animate
         final boolean optionsSwap = sharedMediaLayout != null && sharedMediaLayout.hasSimpleOptions() && !sharedMediaLayout.isReordering();
-        final boolean standaloneEdit = usesIosUserProfile() && showEdit;
+        final boolean standaloneEdit = (usesIosUserProfile() || iosChat) && showEdit;
         final boolean moreMovedToHeader = actionsView != null && actionsView.hasIosMoreInHeader();
         setHeaderItemShown(otherItem, profile && !moreInProfileRow && (!standaloneEdit || moreMovedToHeader),
                 animated && !optionsSwap && !standaloneEdit);
@@ -9422,7 +9436,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
         final int newTop = (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0) + ActionBar.getCurrentActionBarHeight();
         final float diff = calculateHeaderExtraDiff();
-        boolean showExpandedIosHeader = usesIosUserProfile() && diff > .55f;
+        boolean showExpandedIosHeader = (usesIosUserProfile() || usesIosChatProfileActions()) && diff > .55f;
         if (iosProfileHeaderExpanded != showExpandedIosHeader) {
             iosProfileHeaderExpanded = showExpandedIosHeader;
             updateHeaderItems(false);
@@ -12562,6 +12576,20 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
+    private void addProfileStory() {
+        getMessagesController().getMainSettings().edit().putBoolean("story_keep", true).apply();
+        final AlertDialog progressDialog = new AlertDialog(getContext(), AlertDialog.ALERT_TYPE_SPINNER, resourcesProvider);
+        progressDialog.showDelayed(200);
+        getMessagesController().getStoriesController().canSendStoryFor(getDialogId(), canSend -> {
+            progressDialog.dismiss();
+            if (canSend && getParentActivity() != null) {
+                StoryRecorder.getInstance(getParentActivity(), getCurrentAccount())
+                        .selectedPeerId(getDialogId())
+                        .open(null);
+            }
+        }, true, resourcesProvider);
+    }
+
     private void updateMusicPosition() {
         if (musicView == null || onlineTextView == null) {
             return;
@@ -13631,6 +13659,13 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         if (actionsView != null) {
             actionsView.beginApplyingActions();
+            final boolean iosChat = usesIosChatProfileActions();
+            if (iosChat && callItemVisible && !hasVoiceChatItem) {
+                otherItem.addSubItem(call_item, R.drawable.msg_voicechat, getString(R.string.ProfileActionsVoiceChat));
+            }
+            if (iosChat && addStoryAction) {
+                otherItem.addSubItem(add_profile_story, R.drawable.outline_profile_story, getString(R.string.ProfileActionsAddStory));
+            }
             if (actionsView.iosLayout && actionsView.mode == ProfileActionsView.MODE_USER
                     && callItemVisible && videoCallItemVisible) {
                 otherItem.addSubItem(video_call_item, R.drawable.msg_videocall, getString(R.string.VideoCall));
@@ -13647,7 +13682,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             actionsView.set(ProfileActionsView.KEY_GIFT, giftAction);
             actionsView.set(ProfileActionsView.KEY_MORE, actionsView.iosLayout && otherItem.hasSubMenu());
             callItemVisible = videoCallItemVisible = false;
-            if (!discussAction) {
+            if (iosChat) {
+                final TLRPC.Chat chat = getMessagesController().getChat(chatId);
+                final boolean canOpenChat = !ChatObject.isKickedFromChat(chat)
+                        && (!ChatObject.isLeftFromChat(chat) || ChatObject.isPublic(chat));
+                actionsView.set(ProfileActionsView.KEY_SEARCH, canOpenChat);
+                actionsView.set(ProfileActionsView.KEY_MESSAGE, canOpenChat
+                        && (ChatObject.isChannelAndNotMegaGroup(chat) || getIosProfileSourceChat() == null));
+            } else if (!discussAction) {
                 if (isTopic) {
                     actionsView.set(ProfileActionsView.KEY_MESSAGE, true);
                 } else {

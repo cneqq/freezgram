@@ -6,6 +6,7 @@ import static org.telegram.messenger.LocaleController.getString;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
@@ -23,6 +24,7 @@ import android.text.Layout;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -41,6 +43,7 @@ import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.Utilities;
+import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
@@ -51,6 +54,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import app.exteraless.appearance.AppearanceConfig;
 import tw.nekomimi.nekogram.NekoConfig;
 
 @SuppressLint("ViewConstructor")
@@ -109,8 +113,16 @@ public class ProfileActionsView extends View {
     public static final int KEY_MORE = 18;
     public static final int KEY_SEARCH = 19;
 
+    private static final String IOS_ACTION_SLOT_PREFIX = "FreezgramIosProfileActionSlot_";
+    private static final int[] CONFIGURABLE_ACTIONS = {
+            KEY_MESSAGE, KEY_CALL, KEY_VIDEO, KEY_NOTIFICATION, KEY_SEARCH, KEY_GIFT, KEY_SHARE, KEY_MORE
+    };
+
     public final boolean iosLayout;
     private final boolean compactIosActions;
+    private Utilities.Callback<AlertDialog> actionPickerHost;
+    private Theme.ResourcesProvider actionPickerResources;
+    private Runnable onMorePlacementChanged;
 
     private boolean isApplying;
     private boolean isNotificationsEnabled;
@@ -592,9 +604,111 @@ public class ProfileActionsView extends View {
         return dp(compactIosActions ? 11 : 16);
     }
 
+    public void setActionPicker(Theme.ResourcesProvider resourcesProvider, Utilities.Callback<AlertDialog> host,
+                                Runnable onMorePlacementChanged) {
+        actionPickerResources = resourcesProvider;
+        actionPickerHost = host;
+        this.onMorePlacementChanged = onMorePlacementChanged;
+    }
+
+    private boolean canConfigure(Action action) {
+        return actionPickerHost != null && usesRoundIosActions() && action != null
+                && !action.isDeleting && action.slotKey >= 0;
+    }
+
+    private CharSequence getPickerLabel(int key) {
+        return getString(switch (key) {
+            case KEY_MESSAGE -> R.string.FreezgramProfileChat;
+            case KEY_CALL -> R.string.ProfileActionsCall;
+            case KEY_VIDEO -> R.string.VideoCall;
+            case KEY_NOTIFICATION -> R.string.Sound;
+            case KEY_SEARCH -> R.string.Search;
+            case KEY_GIFT -> R.string.Gift2Title;
+            case KEY_SHARE -> R.string.ProfileActionsShare;
+            default -> R.string.FreezgramProfileMore;
+        });
+    }
+
+    private boolean openActionPicker(Action action) {
+        if (!canConfigure(action)) return false;
+        final ArrayList<Integer> options = new ArrayList<>();
+        final ArrayList<CharSequence> labels = new ArrayList<>();
+        for (int key : CONFIGURABLE_ACTIONS) {
+            if (key != action.key && allAvailableActions.contains(key)) {
+                options.add(key);
+                labels.add(getPickerLabel(key));
+            }
+        }
+        labels.add(getString(R.string.FreezgramResetProfileActions));
+        final int slot = action.slotKey;
+        final AlertDialog dialog = new AlertDialog.Builder(getContext(), actionPickerResources)
+                .setTitle(getString(R.string.FreezgramChangeProfileAction))
+                .setItems(labels.toArray(new CharSequence[0]), (d, which) -> {
+                    if (which < options.size()) {
+                        replaceIosAction(slot, options.get(which));
+                    } else {
+                        final SharedPreferences.Editor edit = AppearanceConfig.getPreferences().edit();
+                        for (int key : CONFIGURABLE_ACTIONS) {
+                            edit.remove(IOS_ACTION_SLOT_PREFIX + key);
+                        }
+                        edit.apply();
+                        applyVisibleActions();
+                    }
+                })
+                .setNegativeButton(getString(R.string.Cancel), null)
+                .create();
+        actionPickerHost.run(dialog);
+        return true;
+    }
+
+    private void replaceIosAction(int slot, int key) {
+        if (!usesRoundIosActions() || !allAvailableActions.contains(key)) return;
+        Action previous = null;
+        for (Action action : actions) {
+            if (!action.isDeleting && action.slotKey == slot) {
+                previous = action;
+                break;
+            }
+        }
+        if (previous == null || previous.key == key) return;
+        final SharedPreferences.Editor edit = AppearanceConfig.getPreferences().edit();
+        final Action existing = find(key);
+        if (existing != null && existing.slotKey >= 0) {
+            edit.putInt(IOS_ACTION_SLOT_PREFIX + existing.slotKey, previous.key);
+        }
+        edit.putInt(IOS_ACTION_SLOT_PREFIX + slot, key).apply();
+        applyVisibleActions();
+    }
+
     private Action hit = null;
     private float downX, downY;
     private long downTime;
+    private boolean actionLongPressed;
+    private final Runnable actionLongPress = () -> {
+        if (!canConfigure(hit) || currentHeight < dp(8) || !isShown()) return;
+        hit.bounce.setPressed(false);
+        actionLongPressed = true;
+        if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
+        if (!NekoConfig.disableVibration.Bool()) performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+        openActionPicker(hit);
+    };
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if (usesRoundIosActions()) applyVisibleActions();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        removeCallbacks(actionLongPress);
+        if (hit != null) {
+            hit.bounce.setPressed(false);
+            hit = null;
+        }
+        actionLongPressed = false;
+        super.onDetachedFromWindow();
+    }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -608,6 +722,7 @@ public class ProfileActionsView extends View {
 
         if (eventAction == MotionEvent.ACTION_DOWN) {
             hit = null;
+            actionLongPressed = false;
             int c = actions.size();
             for (int i = 0; i < c; i++) {
                 Action a = actions.get(i);
@@ -617,23 +732,36 @@ public class ProfileActionsView extends View {
                     downY = y;
                     downTime = System.currentTimeMillis();
                     hit.bounce.setPressed(true);
+                    if (canConfigure(hit)) {
+                        postDelayed(actionLongPress, ViewConfiguration.getLongPressTimeout());
+                    }
 //                    try {
 //                        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
 //                    } catch (Exception ignore) {}
                     break;
                 }
             }
+        } else if (event.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN) {
+            removeCallbacks(actionLongPress);
+            if (usesRoundIosActions() && hit != null) {
+                hit.bounce.setPressed(false);
+                hit = null;
+                return true;
+            }
         } else if (eventAction == MotionEvent.ACTION_MOVE) {
             if (hit != null) {
-                if (Math.abs(x - downX) > 20 || Math.abs(y - downY) > 20) {
+                final int slop = usesRoundIosActions() ? ViewConfiguration.get(getContext()).getScaledTouchSlop() : 20;
+                if (Math.abs(x - downX) > slop || Math.abs(y - downY) > slop) {
+                    removeCallbacks(actionLongPress);
                     hit.bounce.setPressed(false);
                     hit = null;
                 }
             }
         } else if (eventAction == MotionEvent.ACTION_UP || eventAction == MotionEvent.ACTION_CANCEL) {
+            removeCallbacks(actionLongPress);
             if (hit != null) {
                 hit.bounce.setPressed(false);
-                if (eventAction == MotionEvent.ACTION_UP && hit.rect.contains(x, y)) {
+                if (eventAction == MotionEvent.ACTION_UP && !actionLongPressed && !hit.isDeleting && hit.rect.contains(x, y)) {
                     if (System.currentTimeMillis() - downTime > 250) {
                         try {
                             if (!NekoConfig.disableVibration.Bool()) performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
@@ -663,7 +791,7 @@ public class ProfileActionsView extends View {
                 return true;
             }
         }
-        return hit != null;
+        return hit != null || actionLongPressed;
     }
 
     @Override
@@ -695,7 +823,11 @@ public class ProfileActionsView extends View {
     }
 
     public boolean hasIosMoreButton() {
-        return iosLayout && mode == MODE_USER && allAvailableActions.contains(KEY_MORE);
+        return usesRoundIosActions() && find(KEY_MORE) != null;
+    }
+
+    public boolean hasIosMoreInHeader() {
+        return usesRoundIosActions() && allAvailableActions.contains(KEY_MORE) && !hasIosMoreButton();
     }
 
     public void setNotifications(boolean enabled) {
@@ -797,12 +929,7 @@ public class ProfileActionsView extends View {
         switch (mode) {
             case MODE_USER:
                 if (iosLayout) {
-                    final boolean search = allAvailableActions.contains(KEY_SEARCH);
-                    if (!search) insertIfAvailable(out, KEY_MESSAGE);
-                    insertIfAvailable(out, allAvailableActions.contains(KEY_CALL) ? KEY_CALL : KEY_VIDEO);
-                    insertIfAvailable(out, KEY_NOTIFICATION);
-                    if (search) insertIfAvailable(out, KEY_SEARCH);
-                    insertIfAvailable(out, KEY_MORE);
+                    applyIosUserActions(out);
                     break;
                 }
                 insertIfAvailable(out, KEY_MESSAGE);
@@ -865,6 +992,7 @@ public class ProfileActionsView extends View {
         }
 
         AndroidUtilities.runOnUIThread(() -> {
+            final boolean hadMore = hasIosMoreButton();
             int oldCount = activeCount;
             activeCount = out.size();
 
@@ -885,8 +1013,48 @@ public class ProfileActionsView extends View {
 
             actions.clear();
             actions.addAll(out);
+            if (onMorePlacementChanged != null && hadMore != hasIosMoreButton()) {
+                onMorePlacementChanged.run();
+            }
             invalidate();
         });
+    }
+
+    private void applyIosUserActions(List<Action> out) {
+        final int call = allAvailableActions.contains(KEY_CALL) ? KEY_CALL : KEY_VIDEO;
+        final int[] slots = allAvailableActions.contains(KEY_SEARCH)
+                ? new int[]{call, KEY_NOTIFICATION, KEY_SEARCH, KEY_MORE}
+                : new int[]{KEY_MESSAGE, call, KEY_NOTIFICATION, KEY_MORE};
+        final SharedPreferences prefs = AppearanceConfig.getPreferences();
+        final int[] selected = {-1, -1, -1, -1};
+        final Set<Integer> assigned = new HashSet<>();
+        for (int index = 0; index < slots.length; index++) {
+            final int slot = slots[index];
+            if (!allAvailableActions.contains(slot)) continue;
+            final int preferred = prefs.getInt(IOS_ACTION_SLOT_PREFIX + slot, -1);
+            if (allAvailableActions.contains(preferred) && assigned.add(preferred)) {
+                selected[index] = preferred;
+            }
+        }
+        for (int i = 0; i < slots.length; i++) {
+            if (selected[i] == -1 && allAvailableActions.contains(slots[i]) && assigned.add(slots[i])) {
+                selected[i] = slots[i];
+            }
+        }
+        for (int i = 0; i < slots.length; i++) {
+            if (!allAvailableActions.contains(slots[i])) continue;
+            if (selected[i] == -1) {
+                for (int slot : slots) {
+                    if (allAvailableActions.contains(slot) && assigned.add(slot)) {
+                        selected[i] = slot;
+                        break;
+                    }
+                }
+            }
+            final Action action = getOrCreate(selected[i]);
+            action.slotKey = slots[i];
+            out.add(action);
+        }
     }
 
     private void insertIfAvailable(List<Action> list, int key) {
@@ -1026,7 +1194,7 @@ public class ProfileActionsView extends View {
     }
 
     public boolean hasCall() {
-        return allAvailableActions.contains(KEY_CALL) && callAction != null;
+        return allAvailableActions.contains(KEY_CALL) && callAction != null && (!usesRoundIosActions() || find(KEY_CALL) != null);
     }
 
     private boolean callAnimationStateLoaded = false;
@@ -1101,6 +1269,7 @@ public class ProfileActionsView extends View {
 
     private class Action {
         int key;
+        int slotKey = -1;
 
         private final ButtonBounce bounce = new ButtonBounce(ProfileActionsView.this);
         final RectF prevRect = new RectF();
@@ -1373,18 +1542,13 @@ public class ProfileActionsView extends View {
                         info.setEnabled(true);
 
                         for (int i = 0; i < actions.size(); ++i) {
-                            info.addChild(ProfileActionsView.this, actions.get(i).key);
+                            final Action action = actions.get(i);
+                            if (!action.isDeleting) info.addChild(ProfileActionsView.this, action.key);
                         }
 
                         return info;
                     } else {
-                        Action action = null;
-                        for (int i = 0; i < actions.size(); ++i) {
-                            if (actions.get(i).key == virtualViewId) {
-                                action = actions.get(i);
-                                break;
-                            }
-                        }
+                        final Action action = find(virtualViewId);
                         if (action == null) return null;
                         if (action.rect.isEmpty()) return null;
 
@@ -1394,6 +1558,11 @@ public class ProfileActionsView extends View {
                         info.setPackageName(getContext().getPackageName());
 
                         info.addAction(AccessibilityNodeInfo.ACTION_CLICK);
+                        if (canConfigure(action)) {
+                            info.setLongClickable(true);
+                            info.addAction(new AccessibilityNodeInfo.AccessibilityAction(
+                                    AccessibilityNodeInfo.ACTION_LONG_CLICK, getString(R.string.FreezgramChangeProfileAction)));
+                        }
                         info.addAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS);
                         info.setClickable(true);
                         info.setFocusable(true);
@@ -1423,13 +1592,7 @@ public class ProfileActionsView extends View {
                         return performAccessibilityAction(action, arguments);
                     }
 
-                    Action button = null;
-                    for (int i = 0; i < actions.size(); ++i) {
-                        if (actions.get(i).key == virtualViewId) {
-                            button = actions.get(i);
-                            break;
-                        }
-                    }
+                    final Action button = find(virtualViewId);
                     if (button == null) return false;
 
                     if (action == AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS) {
@@ -1437,9 +1600,11 @@ public class ProfileActionsView extends View {
                         return true;
                     } else if (action == AccessibilityNodeInfo.ACTION_CLICK) {
                         if (onActionClickListener != null) {
-                            onActionClickListener.onClick(virtualViewId, 0, 0);
+                            onActionClickListener.onClick(virtualViewId, button.rect.left, button.rect.top);
                         }
                         return true;
+                    } else if (action == AccessibilityNodeInfo.ACTION_LONG_CLICK) {
+                        return openActionPicker(button);
                     }
 
                     return false;

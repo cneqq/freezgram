@@ -50,4 +50,6 @@
     <string name="FreezgramIosEditColors">Персональные цвета</string>
     <string name="FreezgramIosEditChannel">Канал</string>
     <string name="FreezgramIosEditAutomationOff">Выкл.</string>
+    <string name="FreezgramChangeProfileAction">Действие кнопки</string>
+    <string name="FreezgramResetProfileActions">Сбросить кнопки профиля</string>
 </resources>

@@ -4008,6 +4008,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         if (actionsView != null) {
             setActionsMode();
             updateNotifications(false);
+            actionsView.setActionPicker(resourcesProvider, this::showDialog, () -> updateHeaderItems(true));
 
             actionsView.setOnActionClickListener((key, x, y) -> {
                 switch (key) {
@@ -8765,7 +8766,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         // the media's ⋮ takes the place of the profile's ⋮ (both the last in the pill): the same button, nothing to animate
         final boolean optionsSwap = sharedMediaLayout != null && sharedMediaLayout.hasSimpleOptions() && !sharedMediaLayout.isReordering();
         final boolean standaloneEdit = usesIosUserProfile() && showEdit;
-        setHeaderItemShown(otherItem, profile && !moreInProfileRow && !standaloneEdit,
+        final boolean moreMovedToHeader = actionsView != null && actionsView.hasIosMoreInHeader();
+        setHeaderItemShown(otherItem, profile && !moreInProfileRow && (!standaloneEdit || moreMovedToHeader),
                 animated && !optionsSwap && !standaloneEdit);
         if (sharedMediaLayout != null) {
             sharedMediaLayout.setSimpleMenuItemsAllowed(mediaHeaderVisible, animated, animated && !optionsSwap);

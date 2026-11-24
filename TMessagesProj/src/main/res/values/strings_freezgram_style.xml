@@ -50,4 +50,6 @@
     <string name="FreezgramIosEditColors">Personal Colors</string>
     <string name="FreezgramIosEditChannel">Channel</string>
     <string name="FreezgramIosEditAutomationOff">Off</string>
+    <string name="FreezgramChangeProfileAction">Change Button Action</string>
+    <string name="FreezgramResetProfileActions">Reset Profile Buttons</string>
 </resources>

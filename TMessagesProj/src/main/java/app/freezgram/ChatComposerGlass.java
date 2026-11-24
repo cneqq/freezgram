@@ -38,9 +38,9 @@ public final class ChatComposerGlass {
         return !forbidden && !menuState && AppearanceConfig.chatComposerStyle() != 1;
     }
 
-    /** Visible field starts 50dp + 7dp drawable padding from the left edge. */
+    /** The field starts at 57dp. Add the text inset inside its visible edge. */
     public static int textLeftInsetDp() {
-        return 57 + emojiRightInsetDp();
+        return 57 + (AppearanceConfig.iosMode() ? 14 : AppearanceConfig.composerContentInset());
     }
     public static int emojiRightInsetDp() {
         return AppearanceConfig.iosMode() ? 0 : AppearanceConfig.composerContentInset();

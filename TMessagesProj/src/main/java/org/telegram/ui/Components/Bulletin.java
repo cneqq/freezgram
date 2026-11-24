@@ -787,7 +787,7 @@ public class Bulletin {
         }
 
         @Override public void draw(Canvas canvas) {
-            if (AndroidUtilities.makingGlobalBlurBitmap && app.freezgram.SmallElementsGlass.isEnabled()) return;
+            if (AndroidUtilities.makingGlobalBlurBitmap && app.freezgram.SmallElementsGlass.areNotificationsEnabled()) return;
             super.draw(canvas);
         }
 
@@ -840,7 +840,8 @@ public class Bulletin {
         public void updateColors() {
             try {
                 if (background != null && background == themeBackground && background instanceof ShapeDrawable) {
-                    ((ShapeDrawable) background).getPaint().setColor(getThemedColor(Theme.key_undo_background));
+                    ((ShapeDrawable) background).getPaint().setColor(app.freezgram.SmallElementsGlass.notificationBackgroundColor(
+                            getThemedColor(Theme.key_undo_background)));
                     invalidate();
                 }
             } catch (Exception e) {
@@ -855,7 +856,8 @@ public class Bulletin {
         public void setBackground(int color, int rounding) {
             smallElementRadius = rounding;
             if (!hasCustomBackground) {
-                background = Theme.createRoundRectDrawable(dp(rounding), color);
+                background = Theme.createRoundRectDrawable(dp(rounding),
+                        app.freezgram.SmallElementsGlass.notificationBackgroundColor(color));
             }
         }
 
@@ -1239,7 +1241,8 @@ public class Bulletin {
 
         @Override
         protected void dispatchDraw(Canvas canvas) {
-            if (bulletin != null && bulletin.allowBlurAnimation && !app.freezgram.SmallElementsGlass.isEnabled()) {
+            if (bulletin != null && bulletin.allowBlurAnimation && !app.exteraless.appearance.AppearanceConfig.iosMode()
+                    && !app.freezgram.SmallElementsGlass.areNotificationsEnabled()) {
                 if (blurVisibilityDrawable == null) {
                     blurVisibilityDrawable = new BlurVisibilityDrawable(this::dispatchDrawImplBlur);
                 }

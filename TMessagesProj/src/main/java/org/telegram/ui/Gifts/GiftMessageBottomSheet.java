@@ -482,6 +482,9 @@ public class GiftMessageBottomSheet extends BottomSheet {
         Bulletin.addDelegate(container, new Bulletin.Delegate() {
             @Override
             public void onShow(Bulletin bulletin) {
+                if (app.exteraless.appearance.AppearanceConfig.iosMode()) {
+                    return;
+                }
                 bulletin.getLayout().setCustomBackground(navbarContentDrawableFactory
                     .create(bulletin.getLayout(), true)
                     .setColorProvider(BlurredBackgroundProviderImpl.bulletin(resourcesProvider))

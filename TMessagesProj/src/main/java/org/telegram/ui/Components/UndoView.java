@@ -219,7 +219,7 @@ public class UndoView extends FrameLayout implements Theme.Colorable {
     private int hideAnimationType = 1;
     private final app.freezgram.SmallElementsGlass.NotificationBackdrop smallElementBackdrop = new app.freezgram.SmallElementsGlass.NotificationBackdrop();
     @Override public void draw(Canvas canvas) {
-        if (AndroidUtilities.makingGlobalBlurBitmap && app.freezgram.SmallElementsGlass.isEnabled()) return;
+        if (AndroidUtilities.makingGlobalBlurBitmap && app.freezgram.SmallElementsGlass.areNotificationsEnabled()) return;
         super.draw(canvas);
     }
     @Override protected void onDetachedFromWindow() {
@@ -343,7 +343,8 @@ public class UndoView extends FrameLayout implements Theme.Colorable {
         textPaint.setColor(getThemedColor(Theme.key_undo_infoColor));
 
         setWillNotDraw(false);
-        backgroundDrawable = Theme.createRoundRectDrawable(AndroidUtilities.dp(10), getThemedColor(Theme.key_undo_background));
+        backgroundDrawable = Theme.createRoundRectDrawable(AndroidUtilities.dp(10),
+                app.freezgram.SmallElementsGlass.notificationBackgroundColor(getThemedColor(Theme.key_undo_background)));
 
         setOnTouchListener((v, event) -> true);
 
@@ -409,7 +410,8 @@ public class UndoView extends FrameLayout implements Theme.Colorable {
             }
             progressPaint.setColor(getThemedColor(Theme.key_undo_infoColor));
             textPaint.setColor(getThemedColor(Theme.key_undo_infoColor));
-            Theme.setDrawableColor(backgroundDrawable, getThemedColor(Theme.key_undo_background));
+            Theme.setDrawableColor(backgroundDrawable,
+                    app.freezgram.SmallElementsGlass.notificationBackgroundColor(getThemedColor(Theme.key_undo_background)));
             invalidate();
             if (undoButton != null) {
                 Theme.setSelectorDrawableColor(undoButton.getBackground(), getThemedColor(Theme.key_undo_cancelColor) & 0x22ffffff, true);

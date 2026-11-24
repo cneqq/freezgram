@@ -26,6 +26,14 @@ public final class SmallElementsGlass {
         return isRequested() && LiquidGlassStyle.canDrawGlass();
     }
 
+    public static boolean areNotificationsEnabled() {
+        return !AppearanceConfig.iosMode() && isEnabled();
+    }
+
+    public static int notificationBackgroundColor(int color) {
+        return AppearanceConfig.iosMode() ? color | 0xff000000 : color;
+    }
+
     public static boolean areUnreadCountersEnabled() {
         return (AppearanceConfig.iosMode() || AppearanceConfig.unreadCountersGlass()) && LiquidGlassStyle.canDrawGlass();
     }
@@ -112,7 +120,7 @@ public final class SmallElementsGlass {
         private final java.util.function.BooleanSupplier enabled;
         private final boolean hideOwner;
         private final LiveGlassBackdrop liveBackdrop = new LiveGlassBackdrop();
-        public NotificationBackdrop() { this(SmallElementsGlass::isEnabled, false); }
+        public NotificationBackdrop() { this(SmallElementsGlass::areNotificationsEnabled, false); }
         public NotificationBackdrop(java.util.function.BooleanSupplier enabled, boolean hideOwner) { this.enabled = enabled; this.hideOwner = hideOwner; }
         private final GlassSourceBitmap bitmapSource = new GlassSourceBitmap();
         private BlurredBackgroundDrawable glass;

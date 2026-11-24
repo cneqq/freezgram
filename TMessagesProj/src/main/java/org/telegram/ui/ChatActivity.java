@@ -32902,7 +32902,7 @@ public class ChatActivity extends BaseFragment implements
 
             @Override
             public void onShow(Bulletin bulletin) {
-                if (app.freezgram.SmallElementsGlass.isEnabled()) {
+                if (AppearanceConfig.iosMode() || app.freezgram.SmallElementsGlass.areNotificationsEnabled()) {
                     bulletin.getLayout().clearCustomBackground();
                     return;
                 }

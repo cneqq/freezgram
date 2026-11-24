@@ -376,8 +376,7 @@ public class ProfileMusicView extends View {
     }
 
     private float getPillWidth(float maxWidth) {
-        final float width = 2 * getPillHorizontalPadding() + getContentWidth(maxWidth);
-        return iosLayout && hasVisibleCompanion() ? Math.min(maxWidth, Math.max(width, dp(leadingView == null ? 154 : 140))) : width;
+        return 2 * getPillHorizontalPadding() + getContentWidth(maxWidth);
     }
 
     @Override
@@ -395,16 +394,24 @@ public class ProfileMusicView extends View {
 
         final int padding = dp(iosLayout ? 18 : 12);
         final int gap = dp(iosLayout ? 8 : 6);
-        final int maxWidth = iosLayout ? Math.min(dp(400), getWidth() - padding * 2) : getWidth() - padding * 2;
+        final int availableWidth = Math.max(0, getWidth() - padding * 2);
+        final int maxWidth = iosLayout ? Math.min(dp(400), availableWidth) : availableWidth;
 
         float containerWidth;
         float left;
         if (hasVisibleCompanion()) {
             ProfileMusicView leading = leadingView != null ? leadingView : this;
             ProfileMusicView trailing = trailingView != null ? trailingView : this;
-            // Reserve the balance first so long song titles cannot push it offscreen.
-            float trailingWidth = trailing.getPillWidth(maxWidth / 2f);
-            float leadingWidth = leading.getPillWidth(Math.max(0, maxWidth - trailingWidth - gap));
+            final float trailingWidth;
+            final float leadingWidth;
+            if (iosLayout) {
+                final float halfRow = Math.max(0, (maxWidth - gap) / 2f);
+                trailingWidth = Math.min(halfRow, Math.max(dp(140), trailing.getPillWidth(halfRow)));
+                leadingWidth = trailingWidth;
+            } else {
+                trailingWidth = trailing.getPillWidth(maxWidth / 2f);
+                leadingWidth = leading.getPillWidth(Math.max(0, maxWidth - trailingWidth - gap));
+            }
             left = (getWidth() - leadingWidth - gap - trailingWidth) / 2f;
             containerWidth = leadingView != null ? trailingWidth : leadingWidth;
             if (leadingView != null) left += leadingWidth + gap;

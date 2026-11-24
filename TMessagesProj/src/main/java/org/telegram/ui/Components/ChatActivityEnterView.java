@@ -192,7 +192,6 @@ import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.Forum.ForumUtilities;
 import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
-import org.telegram.ui.Components.Premium.boosts.BoostRepository;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundColorProviderThemed;
@@ -705,6 +704,7 @@ public class ChatActivityEnterView extends FrameLayout implements
     private ImageView scheduledButton;
     @Nullable
     private ImageView giftButton;
+    private static final int IOS_GIFT_BUTTON_WIDTH = 38;
     private boolean scheduleButtonHidden;
     private AnimatorSet scheduledButtonAnimation;
     @Nullable
@@ -3940,10 +3940,14 @@ public class ChatActivityEnterView extends FrameLayout implements
             @Override
             public void setTranslationX(float translationX) {
                 innerTranslationX = translationX;
+                if (useIosComposerLayout()) {
+                    super.setTranslationX(-dp(app.freezgram.ChatComposerGlass.emojiRightInsetDp()
+                            + DEFAULT_HEIGHT + (composerControlVisible(giftButton) ? IOS_GIFT_BUTTON_WIDTH : 0)));
+                    return;
+                }
                 super.setTranslationX(
                     dp(-DEFAULT_HEIGHT) +
                     innerTranslationX + attachLayoutPaddingTranslationX + attachLayoutTranslationX +
-                    dp(giftButton != null && giftButton.getVisibility() == View.VISIBLE ? -DEFAULT_HEIGHT : 0) * (giftButton == null ? 0 : giftButton.getAlpha()) +
                     dp(botButton != null && botButton.getVisibility() == VISIBLE ? -DEFAULT_HEIGHT : 0) * (botButton == null ? 0 : botButton.getAlpha())
                 );
             }
@@ -3982,55 +3986,19 @@ public class ChatActivityEnterView extends FrameLayout implements
                 super.onLayout(changed, left, top, right, bottom);
                 post(ChatActivityEnterView.this::checkBirthdayHint);
             }
-            @Override
-            public void setAlpha(float alpha) {
-                super.setAlpha(alpha);
-                if (scheduledButton != null) {
-                    scheduledButton.setTranslationX(scheduledButton.getTranslationX());
-                }
-            }
         };
         giftButton.setImageResource(R.drawable.msg_input_gift);
-        ThemeBind.colorFilter(giftButton, Theme.key_glass_defaultIcon, resourcesProvider, PorterDuff.Mode.MULTIPLY);
+        ThemeBind.colorFilter(giftButton, Theme.key_glass_defaultIcon, resourcesProvider, PorterDuff.Mode.SRC_IN);
         giftButton.setVisibility(GONE);
-        giftButton.setContentDescription(getString(R.string.GiftPremium));
+        giftButton.setContentDescription(getString(R.string.Gift2Title));
         giftButton.setScaleType(ImageView.ScaleType.CENTER);
-        ThemeBind.selectorBackground(giftButton, Theme.createSelectorDrawable(getThemedColor(Theme.key_listSelector)), null, ThemeBind.of(Theme.key_listSelector), resourcesProvider);
-        attachLayout.addView(giftButton, 0, LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.CENTER_VERTICAL | Gravity.RIGHT));
+        giftButton.setBackground(Theme.createInsetRoundRectDrawable(getThemedColor(Theme.key_listSelector), dp(17), dp(1), dp(3)));
+        messageEditTextContainer.addView(giftButton, LayoutHelper.createFrame(IOS_GIFT_BUTTON_WIDTH, DEFAULT_HEIGHT, Gravity.BOTTOM | Gravity.RIGHT));
         giftButton.setOnClickListener(v -> {
-            SharedPreferences.Editor edit = MessagesController.getInstance(currentAccount).getMainSettings().edit();
-            if (BirthdayController.isToday(parentFragment.getCurrentUserInfo())) {
-                edit.putBoolean(Calendar.getInstance().get(Calendar.YEAR) + "show_gift_for_" + parentFragment.getDialogId(), false);
-            } else {
-                edit.putBoolean("show_gift_for_" + parentFragment.getDialogId(), false);
-            }
-            if (
-                MessagesController.getInstance(currentAccount).giftAttachMenuIcon &&
-                MessagesController.getInstance(currentAccount).giftTextFieldIcon
-            ) {
-                edit.putBoolean("show_gift_for_" + parentFragment.getDialogId(), false);
-            }
-            edit.apply();
-
-            final TLRPC.UserFull myUserInfo = MessagesController.getInstance(currentAccount).getUserFull(UserConfig.getInstance(currentAccount).getClientUserId());
-            if (!(getParentFragment().getCurrentUserInfo() != null && getParentFragment().getCurrentUserInfo().display_gifts_button || myUserInfo != null && myUserInfo.display_gifts_button)) {
-                AndroidUtilities.updateViewVisibilityAnimated(giftButton, false);
-            }
-
-            TLRPC.User user = getParentFragment().getCurrentUser();
-            if (user == null) return;
-            final boolean birthday = getParentFragment().getCurrentUserInfo() != null && BirthdayController.isToday(getParentFragment().getCurrentUserInfo().birthday);
-            final AlertDialog progressDialog = new AlertDialog(getContext(), AlertDialog.ALERT_TYPE_SPINNER);
-            progressDialog.showDelayed(200);
-            final int reqId = BoostRepository.loadGiftOptions(currentAccount, null, loadedOptions -> {
-                progressDialog.dismiss();
-                loadedOptions = BoostRepository.filterGiftOptions(loadedOptions, 1);
-                loadedOptions = BoostRepository.filterGiftOptionsByBilling(loadedOptions);
-                new GiftSheet(getContext(), currentAccount, user.id, loadedOptions, null).setBirthday(birthday).show();
-            });
-            progressDialog.setOnCancelListener(di -> {
-                parentFragment.getConnectionsManager().cancelRequest(reqId, true);
-            });
+            if (!useIosComposerLayout() || !canShowComposerGift()) return;
+            final TLRPC.User user = parentFragment.getCurrentUser();
+            parentFragment.showDialog(new GiftSheet(getContext(), currentAccount, user.id, null, null)
+                    .setBirthday(BirthdayController.isToday(parentFragment.getCurrentUserInfo())));
         });
     }
 
@@ -9576,7 +9544,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                                 scheduledButton.setVisibility(VISIBLE);
                                 scheduledButton.setTag(1);
                             }
-                            scheduledButton.setTranslationX(dp(botButton != null && botButton.getVisibility() == VISIBLE ? 96 : DEFAULT_HEIGHT) - dp(giftButton != null && giftButton.getVisibility() == VISIBLE ? DEFAULT_HEIGHT : 0));
+                            scheduledButton.setTranslationX(dp(botButton != null && botButton.getVisibility() == VISIBLE ? 96 : DEFAULT_HEIGHT));
                             scheduledButton.setAlpha(1.0f);
                             scheduledButton.setScaleX(1.0f);
                             scheduledButton.setScaleY(1.0f);
@@ -10299,7 +10267,10 @@ public class ChatActivityEnterView extends FrameLayout implements
             layoutParams.rightMargin = Math.max(layoutParams.rightMargin, Math.max(0, doneButton.width() - dp(DEFAULT_HEIGHT)));
         }
         if (useIosComposerLayout()) {
-            layoutParams.rightMargin = Math.max(layoutParams.rightMargin, dp(app.freezgram.ChatComposerGlass.textRightInsetDp(DEFAULT_HEIGHT)));
+            final int giftWidth = composerControlVisible(giftButton) ? IOS_GIFT_BUTTON_WIDTH : 0;
+            final int scheduledWidth = composerControlVisible(scheduledButton) ? DEFAULT_HEIGHT : 0;
+            layoutParams.rightMargin = Math.max(layoutParams.rightMargin,
+                    dp(app.freezgram.ChatComposerGlass.textRightInsetDp(DEFAULT_HEIGHT) + giftWidth + scheduledWidth));
         }
         if (oldRightMargin != layoutParams.rightMargin) {
             messageEditText.setLayoutParams(layoutParams);
@@ -12576,60 +12547,34 @@ public class ChatActivityEnterView extends FrameLayout implements
     }
 
     public void updateGiftButton(boolean animated) {
-        if (true) return; // hide gift button
-
-        final TLRPC.UserFull userInfo = getParentFragment() == null ? null : getParentFragment().getCurrentUserInfo();
-        final TLRPC.UserFull myUserInfo = MessagesController.getInstance(currentAccount).getUserFull(UserConfig.getInstance(currentAccount).getClientUserId());
-        final TLRPC.User user = getParentFragment() == null ? null : getParentFragment().getCurrentUser();
-        final boolean visible =
-            !MessagesController.getInstance(currentAccount).premiumPurchaseBlocked() &&
-            getParentFragment() != null && user != null &&
-            !BuildVars.IS_BILLING_UNAVAILABLE &&
-            (!UserObject.isUserSelf(user) || myUserInfo != null && myUserInfo.display_gifts_button) &&
-            !UserObject.isBot(user) &&
-            !MessagesController.isSupportUser(user) &&
-            userInfo != null &&
-            (
-                (
-                    !user.premium &&
-                    MessagesController.getInstance(currentAccount).giftAttachMenuIcon &&
-                    MessagesController.getInstance(currentAccount).giftTextFieldIcon &&
-                    MessagesController.getInstance(currentAccount).getMainSettings().getBoolean("show_gift_for_" + parentFragment.getDialogId(), true)
-                ) || (
-                    BirthdayController.isToday(userInfo.birthday) &&
-                    MessagesController.getInstance(currentAccount).getMainSettings().getBoolean(Calendar.getInstance().get(Calendar.YEAR) + "show_gift_for_" + parentFragment.getDialogId(), true)
-                ) ||
-                (userInfo.display_gifts_button || myUserInfo != null && myUserInfo.display_gifts_button) && !(
-                    userInfo.disallowed_stargifts != null &&
-                    userInfo.disallowed_stargifts.disallow_premium_gifts &&
-                    userInfo.disallowed_stargifts.disallow_limited_stargifts &&
-                    userInfo.disallowed_stargifts.disallow_unlimited_stargifts &&
-                    userInfo.disallowed_stargifts.disallow_unique_stargifts
-                )
-            ) &&
-            parentFragment != null && parentFragment.getChatMode() == 0;
-
-        if (!visible && birthdayHint != null) {
-            birthdayHint.hide();
+        if (giftButton != null || app.exteraless.appearance.AppearanceConfig.chatComposerStyle() == 1) {
+            requestLayout();
         }
-        if (!visible && giftButton == null) {
-            return;
-        }
-        createGiftButton();
+    }
 
-        AndroidUtilities.updateViewVisibilityAnimated(giftButton, visible, 1f, true, 1f, animated, a -> {
-            if (scheduledButton != null) {
-                scheduledButton.setTranslationX(scheduledButton.getTranslationX());
-            }
-        });
-        if (visible) {
-            checkBirthdayHint();
+    private boolean canShowComposerGift() {
+        if (parentFragment == null || parentFragment.getChatMode() != ChatActivity.MODE_DEFAULT || parentFragment.isSecretChat()) {
+            return false;
         }
+        final TLRPC.User user = parentFragment.getCurrentUser();
+        if (user == null || UserObject.isUserSelf(user) || UserObject.isBot(user) || UserObject.isService(user.id)
+                || MessagesController.isSupportUser(user)) {
+            return false;
+        }
+        final TLRPC.UserFull userInfo = parentFragment.getCurrentUserInfo();
+        final TLRPC.DisallowedGiftsSettings restrictions = userInfo == null ? null : userInfo.disallowed_stargifts;
+        final MessagesController messages = MessagesController.getInstance(currentAccount);
+        final boolean canSendPremium = !messages.premiumPurchaseBlocked() && !BuildVars.IS_BILLING_UNAVAILABLE
+                && (restrictions == null || !restrictions.disallow_premium_gifts);
+        final boolean canSendStarGift = !messages.stargiftsBlocked && (restrictions == null
+                || !restrictions.disallow_limited_stargifts || !restrictions.disallow_unlimited_stargifts
+                || !restrictions.disallow_unique_stargifts);
+        return canSendPremium || canSendStarGift;
     }
 
     private void checkBirthdayHint() {
         if (
-            birthdayHint == null && giftButton != null && giftButton.getRight() != 0 &&
+            birthdayHint == null && composerControlVisible(giftButton) && giftButton.getRight() != 0 &&
             parentFragment != null && BirthdayController.isToday(parentFragment.getCurrentUserInfo()) &&
             MessagesController.getInstance(currentAccount).getMainSettings().getBoolean(Calendar.getInstance().get(Calendar.YEAR) + "bdayhint_" + parentFragment.getDialogId(), true)
         ) {
@@ -12641,7 +12586,8 @@ public class ChatActivityEnterView extends FrameLayout implements
             birthdayHint.setMultilineText(true);
             setBirthdayHintText();
             birthdayHint.setPadding(dp(12), 0, dp(12), 0);
-            birthdayHint.setJointPx(1f, -(getWidth() - dp(12) - (messageEditTextContainer.getX() + attachLayout.getX() + giftButton.getX() + giftButton.getMeasuredWidth() / 2f)));
+            birthdayHint.setJointPx(1f, messageEditTextContainer.getX() + giftButton.getX()
+                    + giftButton.getMeasuredWidth() / 2f - getWidth() + dp(12));
             addView(birthdayHint, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 200, Gravity.TOP, 0, -200 + 8, 0, 0));
             birthdayHint.setOnHiddenListener(() -> removeView(birthdayHint));
             birthdayHint.setDuration(8000);
@@ -16588,7 +16534,25 @@ public class ChatActivityEnterView extends FrameLayout implements
             }
         }
         boolean wasIos = iosComposerLayout;
-        iosComposerLayout = canUseIosComposerLayout(MeasureSpec.getSize(widthMeasureSpec));
+        final int composerWidth = MeasureSpec.getSize(widthMeasureSpec);
+        iosComposerLayout = canUseIosComposerLayout(composerWidth);
+        final boolean showGift = iosComposerLayout && canShowComposerGift()
+                && composerWidth >= dp(app.freezgram.ChatComposerGlass.textLeftInsetDp()
+                + app.freezgram.ChatComposerGlass.textRightInsetDp(DEFAULT_HEIGHT)
+                + DEFAULT_HEIGHT + IOS_GIFT_BUTTON_WIDTH + (composerControlVisible(scheduledButton) ? DEFAULT_HEIGHT : 0) + 24);
+        if (showGift) {
+            createGiftButton();
+        }
+        if (giftButton != null) {
+            if (!showGift && giftButton.getVisibility() == VISIBLE && birthdayHint != null) {
+                birthdayHint.hide();
+            }
+            giftButton.setVisibility(showGift ? VISIBLE : GONE);
+            if (showGift) {
+                ((FrameLayout.LayoutParams) giftButton.getLayoutParams()).rightMargin =
+                        dp(DEFAULT_HEIGHT + app.freezgram.ChatComposerGlass.emojiRightInsetDp());
+            }
+        }
         if (iosComposerLayout || wasIos) {
             FrameLayout.LayoutParams attachmentParams = (FrameLayout.LayoutParams) attachButton.getLayoutParams();
             attachmentParams.gravity = Gravity.BOTTOM | (iosComposerLayout ? Gravity.LEFT : Gravity.RIGHT);
@@ -16600,6 +16564,9 @@ public class ChatActivityEnterView extends FrameLayout implements
             attachButton.setScaleX(iosComposerLayout ? 1f : (attachButtonAlpha > .5f ? 1f : .5f));
             attachButton.setScaleY(attachButton.getScaleX());
             updateAttachButtonTranslationX();
+            if (scheduledButton != null) {
+                scheduledButton.setTranslationX(scheduledButton.getTranslationX());
+            }
             updateFieldRight(lastAttachVisible);
         }
         if (wasIos != iosComposerLayout) updateAudioVideoSendButtonColor();

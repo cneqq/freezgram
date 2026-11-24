@@ -10388,7 +10388,11 @@ public class SharedMediaLayout extends FrameLayout implements Theme.Colorable, N
             View view;
             switch (viewType) {
                 case VIEW_TYPE_GROUP:
-                    view = new ProfileSearchCell(mContext, resourcesProvider);
+                    ProfileSearchCell groupCell = new ProfileSearchCell(mContext, resourcesProvider);
+                    if (profileActivity instanceof ProfileActivity && app.exteraless.appearance.AppearanceConfig.iosMode()) {
+                        groupCell.useProfileGroupColors();
+                    }
+                    view = groupCell;
                     break;
                 case VIEW_TYPE_GROUP_CREATE:
                     ManageChatTextCell createCell = new ManageChatTextCell(mContext);

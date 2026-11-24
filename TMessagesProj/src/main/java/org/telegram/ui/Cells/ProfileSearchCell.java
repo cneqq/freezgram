@@ -199,6 +199,7 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
 
     private boolean customPaints;
     private boolean iosLayout;
+    private boolean useProfileGroupColors;
     private TextPaint namePaint, statusPaint;
     public ProfileSearchCell useCustomPaints() {
         customPaints = true;
@@ -207,6 +208,11 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
 
     public void useIosLayout() {
         iosLayout = true;
+        useCustomPaints();
+    }
+
+    public void useProfileGroupColors() {
+        useProfileGroupColors = true;
         useCustomPaints();
     }
 
@@ -723,7 +729,9 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
                 if (iosLayout) statusPaint.setTypeface(app.freezgram.IosTypography.REGULAR);
             }
             statusPaint.setTextSize(dp(callCellStyle ? 13f : 15));
-            if (currentStatusPaint == Theme.dialogs_offlinePaint) {
+            if (useProfileGroupColors && chat != null) {
+                statusPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
+            } else if (currentStatusPaint == Theme.dialogs_offlinePaint) {
                 statusPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText3, resourcesProvider));
             } else if (currentStatusPaint == Theme.dialogs_onlinePaint) {
                 statusPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText3, resourcesProvider));

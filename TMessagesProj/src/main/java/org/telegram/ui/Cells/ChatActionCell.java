@@ -513,8 +513,10 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                             final boolean iosReceivedGift = app.exteraless.appearance.AppearanceConfig.iosMode()
                                     && !messageObject.isOutOwner() && (messageObject.isAnyGift() || messageObject.isStarGiftAction());
                             final var fireworks = activity.getFireworksOverlay();
-                            if (!iosReceivedGift || SharedConfig.animationsEnabled() && !fireworks.isStarted()) {
-                                fireworks.start(iosReceivedGift);
+                            if (iosReceivedGift) {
+                                if (SharedConfig.animationsEnabled()) fireworks.startGiftConfetti();
+                            } else {
+                                fireworks.start();
                             }
                         }
 

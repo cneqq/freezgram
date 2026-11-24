@@ -28741,11 +28741,11 @@ public class ChatActivity extends BaseFragment implements
                 messagesDict[0].put(messageId, obj);
                 if (AppearanceConfig.iosMode() && animatedFromBottom && chatMode == 0
                         && isFullyVisible && !isPaused && SharedConfig.animationsEnabled()
-                        && fireworksOverlay != null && !fireworksOverlay.isStarted()
+                        && fireworksOverlay != null
                         && messageId > 0 && !obj.isOutOwner() && !obj.isAyuDeleted()
                         && action instanceof TLRPC.TL_messageActionStarGiftUnique gift
                         && !gift.refunded && !gift.upgrade && !gift.craft) {
-                    fireworksOverlay.start(true);
+                    fireworksOverlay.startGiftConfetti();
                 }
                 ArrayList<MessageObject> dayArray;
                 if (isAd && !messages.isEmpty()) {

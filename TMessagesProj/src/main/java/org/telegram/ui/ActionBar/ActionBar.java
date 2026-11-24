@@ -404,6 +404,18 @@ public class ActionBar extends FrameLayout implements FactorAnimator.Target, The
     public boolean getMenuItemGlassRect(ActionBarMenuItem item, RectF out) {
         final int p = dp(6);
         final int s = dp(46);
+        if (iosChatHeaderGlass && item.getParent() == menu && item.getVisibility() != VISIBLE
+                && searchFactor == 0 && getActionModeFactor() == 0) {
+            final ChatAvatarContainer avatarContainer = findGlassAvatarContainer();
+            final View avatar = getGlassMenuAvatarView(avatarContainer);
+            if (avatar != null) {
+                final float cx = avatarContainer.getX() + avatar.getX() + avatar.getWidth() / 2f;
+                final float cy = avatarContainer.getY() + avatar.getY() + avatar.getHeight() / 2f;
+                final float half = dp(app.freezgram.IosLiquidGlassChatHeader.PILL_HEIGHT_DP) / 2f;
+                out.set(cx - half, cy - half, cx + half, cy + half);
+                return false;
+            }
+        }
         if (item.getParent() == menu && glassDrawableMenu != null && !doNotDrawGlassMenu && !glassOnlyBack
                 && searchFactor == 0 && getActionModeFactor() == 0 && !glassDrawableMenu.getBounds().isEmpty()) {
             out.set(glassDrawableMenu.getBounds());

@@ -946,29 +946,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 headerBottom = Math.max(headerBottom, filterTabsView.getY() + filterTabsView.getMeasuredHeight());
             }
             iosChatListHeaderBottom = headerBottom;
-            float pinnedCoverage = 0f;
-            for (ViewPage page : viewPages) {
-                if (page == null || page.listView == null || page.getVisibility() != View.VISIBLE) continue;
-                final float pageOverlap = MathUtils.clamp(1f - Math.abs(page.getX()) / Math.max(1f, getWidth()), 0f, 1f);
-                if (pageOverlap == 0f) continue;
-                final DialogsRecyclerView list = page.listView;
-                final float listY = page.getY() + list.getY();
-                float pinnedTop = Float.POSITIVE_INFINITY;
-                float pinnedBottom = Float.NEGATIVE_INFINITY;
-                for (int i = 0; i < list.getChildCount(); i++) {
-                    View child = list.getChildAt(i);
-                    if (!(child instanceof DialogCell cell) || !cell.hasIosPinnedBackground() || cell.getAlpha() == 0f) continue;
-                    final float rowTop = listY + cell.getY();
-                    pinnedTop = Math.min(pinnedTop, rowTop);
-                    pinnedBottom = Math.max(pinnedBottom, rowTop + cell.getHeight());
-                }
-                final float proximity = 1f - MathUtils.clamp((pinnedTop - headerBottom) / dp(16), 0f, 1f);
-                final float visibleHeight = MathUtils.clamp((pinnedBottom - headerBottom) / dp(28), 0f, 1f);
-                pinnedCoverage += proximity * visibleHeight * pageOverlap * page.getAlpha();
-            }
-            final int listColor = app.freezgram.IosChatListColors.background(resourceProvider);
-            final int pinnedColor = app.freezgram.IosChatListColors.pinnedBackground(resourceProvider);
-            iosChatListBackgroundPaint.setColor(ColorUtils.blendARGB(listColor, pinnedColor, Math.min(1f, pinnedCoverage)));
+            iosChatListBackgroundPaint.setColor(app.freezgram.IosChatListColors.pinnedBackground(resourceProvider));
             canvas.drawRect(0, 0, getWidth(), headerBottom, iosChatListBackgroundPaint);
         }
 

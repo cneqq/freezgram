@@ -29,6 +29,7 @@ import org.telegram.utils.glass.GlassEngine;
 import org.telegram.utils.glass.GlassSettings;
 import org.telegram.utils.glass.fade.GlassFadeBlurredDrawable;
 import org.telegram.utils.glass.source.GlassSource;
+import org.telegram.utils.glass.source.GlassSourceColor;
 import org.telegram.utils.glass.source.GlassSourceCrossfade;
 
 import me.vkryl.core.reference.ReferenceList;
@@ -39,8 +40,7 @@ import me.vkryl.core.reference.ReferenceList;
  * over the expanded photo it is the photo under the button, blurred, more saturated and darker. The header's buttons go over
  * to the glass of the simple screens when the header becomes one.
  * <p>
- * The capture is there with the blur off too: the buttons have no other look over the photo, so they ignore the power saving.
- * Without a capture (before Android 12) the photo under them is darkened as the capture has it, without the blur.
+ * The default layout keeps its photo treatment in power saving. The iOS layout uses a solid button color.
  */
 public final class ProfileButtonsGlass {
     public static int iosRimColor(int cover) {
@@ -60,6 +60,9 @@ public final class ProfileButtonsGlass {
         private int color;
 
         public void draw(Canvas canvas, RectF bounds, float radius, int cover, float alpha) {
+            if (!app.freezgram.LiquidGlassStyle.canDrawGlass()) {
+                return;
+            }
             final int rim = iosRimColor(cover);
             if (gradient == null || rim != color) {
                 color = rim;
@@ -128,6 +131,8 @@ public final class ProfileButtonsGlass {
 
     private final Source actionsSource;
     private final Source headerSource;
+    @Nullable
+    private final GlassSourceColor iosSolidSource;
 
     /** The action buttons and the music pills: no lens, the buttons are flat. */
     public final BlurredBackgroundDrawableViewFactory actionsFactory;
@@ -158,6 +163,8 @@ public final class ProfileButtonsGlass {
         final GlassSource capture = iosLayout && Build.VERSION.SDK_INT >= 33
                 ? simpleGlass.getFreezgramNavigationSource() : null;
         freezgramBackdrop = capture != null ? app.freezgram.SmallElementsGlass.createSource(capture) : null;
+        iosSolidSource = iosLayout ? new GlassSourceColor() : null;
+        updateIosSolidColor();
 
         actionsSource = new Source(null);
         headerSource = new Source(new SettingsSource(simpleGlass.factory));
@@ -180,7 +187,9 @@ public final class ProfileButtonsGlass {
     }
 
     private BlurredBackgroundDrawableViewFactory createFactory(GlassEngine engine, GlassSource source) {
-        final BlurredBackgroundDrawableViewFactory factory = new BlurredBackgroundDrawableViewFactory(source);
+        final BlurredBackgroundDrawableViewFactory factory = iosSolidSource == null
+                ? new BlurredBackgroundDrawableViewFactory(source)
+                : new BlurredBackgroundDrawableViewFactory(source, source, iosSolidSource);
         factory.setGlassEngine(engine);
         factory.setLinkedViewsRef(views);
         factory.setLinkedDrawablesRef(drawables);
@@ -202,12 +211,20 @@ public final class ProfileButtonsGlass {
         if (buttonColor != color || this.hasColorById != hasColorById) {
             buttonColor = color;
             this.hasColorById = hasColorById;
+            updateIosSolidColor();
             invalidate();
         }
     }
 
     public int getButtonColor() {
         return buttonColor;
+    }
+
+    private void updateIosSolidColor() {
+        if (iosSolidSource != null) {
+            int background = Theme.getColor(Theme.key_windowBackgroundWhite);
+            iosSolidSource.setColor(ColorUtils.compositeColors(buttonColor, background | 0xff000000));
+        }
     }
 
     /** 0 over the colored header, 1 over the expanded photo. */

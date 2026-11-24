@@ -6396,6 +6396,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         @Override
         public int getBackgroundColor() {
             if (usesIosUserProfile()) {
+                if (!app.freezgram.LiquidGlassStyle.canDrawGlass()) {
+                    return ProfileButtonsGlass.iosSolidTint(getIosProfileCoverColor());
+                }
                 final int fill = ColorUtils.blendARGB(getIosProfileCoverColor(), Color.BLACK, .25f);
                 return ColorUtils.blendARGB(Theme.multAlpha(fill, .50f), headerMenuGlassColors.getBackgroundColor(), getHeaderSimpleFactor());
             }
@@ -6607,6 +6610,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             return iosGiftProfileColors.background;
         }
         return topView != null && topView.hasColorById ? topView.color1 : getThemedColor(Theme.key_windowBackgroundGray);
+    }
+
+    public int getIosNavigationSolidColor() {
+        return iosGiftProfileColors != null && iosGiftProfileColors.coverGradient != null
+                ? ProfileButtonsGlass.iosSolidTint(iosGiftProfileColors.background)
+                : getThemedColor(Theme.key_windowBackgroundWhite);
     }
 
     private static final class IosGiftProfileColors implements Theme.ResourcesProvider {

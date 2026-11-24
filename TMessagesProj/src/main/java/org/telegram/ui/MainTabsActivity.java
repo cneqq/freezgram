@@ -517,7 +517,11 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
                 ? app.freezgram.IosLiquidGlassNavigation.isEnabled()
                 : true);
 
-        tabsViewBackground = iBlur3FactoryGlass.create(tabsView, BlurredBackgroundProviderImpl.mainTabs(resourceProvider));
+        tabsViewBackground = iBlur3FactoryGlass.create(tabsView,
+                AppearanceConfig.iosMode() && app.freezgram.IosLiquidGlassNavigation.isRequested()
+                        ? app.freezgram.LiquidGlassStyle.navigationColors(resourceProvider,
+                                app.freezgram.IosLiquidGlassNavigation::isEnabled, this::getIosNavigationSolidColor)
+                        : BlurredBackgroundProviderImpl.mainTabs(resourceProvider));
         tabsViewBackground.setRadius(MainTabsUiHelper.getBackgroundRadius());
         tabsViewBackground.setPadding(MainTabsUiHelper.getBackgroundInset());
         if (app.freezgram.IosLiquidGlassNavigation.isRequested()) {
@@ -1735,8 +1739,23 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         }
     }
 
+    private int lastIosNavigationSolidColor;
+
+    private int getIosNavigationSolidColor() {
+        BaseFragment fragment = getCurrentVisibleFragment();
+        return fragment instanceof ProfileActivity profile ? profile.getIosNavigationSolidColor()
+                : getThemedColor(Theme.key_windowBackgroundWhite);
+    }
+
     private void blur3_updateFadeColors() {
         iBlur3SourceColor.setColor(getEstBackgroundColor());
+        if (tabsViewBackground != null && AppearanceConfig.iosMode() && !app.freezgram.IosLiquidGlassNavigation.isEnabled()) {
+            final int color = getIosNavigationSolidColor();
+            if (lastIosNavigationSolidColor != color) {
+                lastIosNavigationSolidColor = color;
+                tabsViewBackground.updateColors();
+            }
+        }
         if (fadeView != null) {
             fadeView.invalidate();
         }

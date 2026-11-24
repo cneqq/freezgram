@@ -52,6 +52,10 @@ public final class ProfileButtonsGlass {
         return dark ? 0x29000000 : 0x45ffffff;
     }
 
+    public static int iosSolidTint(int cover) {
+        return ColorUtils.blendARGB(cover | 0xff000000, Color.BLACK, .18f);
+    }
+
     /** A diagonal highlight shared by the circular actions and the profile pills. */
     public static final class IosRim {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);

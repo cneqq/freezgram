@@ -509,8 +509,13 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                             if (!NekoConfig.disableVibration.Bool()) performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
                         } catch (Exception ignored) {}
 
-                        if (getContext() instanceof LaunchActivity) {
-                            ((LaunchActivity) getContext()).getFireworksOverlay().start();
+                        if (getContext() instanceof LaunchActivity activity) {
+                            final boolean iosReceivedGift = app.exteraless.appearance.AppearanceConfig.iosMode()
+                                    && !messageObject.isOutOwner() && (messageObject.isAnyGift() || messageObject.isStarGiftAction());
+                            final var fireworks = activity.getFireworksOverlay();
+                            if (!iosReceivedGift || SharedConfig.animationsEnabled() && !fireworks.isStarted()) {
+                                fireworks.start(iosReceivedGift);
+                            }
                         }
 
                         if (giftEffectAnimation != null && delegate != null) {
@@ -3812,11 +3817,25 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             backgroundPaint.setAlpha((int) (oldAlpha * floatingAlpha));
             darkenBackgroundPaint.setAlpha((int) (oldAlpha2 * floatingAlpha));
         }
-        if (currentMessageObject == null || !currentMessageObject.isRepostPreview) {
+        final MessageObject messageObject = currentMessageObject;
+        final boolean iosGift = overrideBackground < 0
+                && app.exteraless.appearance.AppearanceConfig.iosMode()
+                && messageObject != null && (messageObject.isAnyGift() || messageObject.isStarGiftAction());
+        final boolean iosDate = overrideBackground < 0 && app.exteraless.appearance.AppearanceConfig.iosMode()
+                && (messageObject != null ? messageObject.type == MessageObject.TYPE_DATE : customDate != 0);
+        final float iosSurfaceAlpha = fromParent ? getAlpha() : 1f;
+        if (messageObject == null || !messageObject.isRepostPreview) {
             if (!drawServiceGlass(canvas, backgroundPath, null, dp(11), false, fromParent)) {
-                canvas.drawPath(backgroundPath, backgroundPaint);
-                if (hasGradientService() && darkenBackgroundPaint.getAlpha() > 0) {
-                    canvas.drawPath(backgroundPath, darkenBackgroundPaint);
+                if (iosGift || iosDate) {
+                    backgroundPath.computeBounds(serviceGlassBounds, true);
+                    if (!serviceGlassBounds.isEmpty()) {
+                        canvas.drawPath(backgroundPath, iosServiceFill(serviceGlassBounds, iosSurfaceAlpha));
+                    }
+                } else {
+                    canvas.drawPath(backgroundPath, backgroundPaint);
+                    if (hasGradientService() && darkenBackgroundPaint.getAlpha() > 0) {
+                        canvas.drawPath(backgroundPath, darkenBackgroundPaint);
+                    }
                 }
                 if (dimAmount > 0) {
                     int wasAlpha = dimPaint.getAlpha();
@@ -3855,7 +3874,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             canvas.restore();
         }
 
-        MessageObject messageObject = currentMessageObject;
         if (hasStarGiftLayout()) {
             float w = starGiftLayout.getWidth() + dp(4 + 4);
             float x = (getWidth() - w) / 2f;
@@ -3866,7 +3884,9 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             }
             backgroundRect.set(AndroidUtilities.rectTmp);
             final float radius = app.exteraless.appearance.AppearanceConfig.iosMode() ? starGiftLayout.cardRadius() + dp(4) : dp(16);
-            if (!drawServiceGlass(canvas, null, backgroundRect, radius, true, fromParent)) {
+            if (iosGift) {
+                canvas.drawRoundRect(backgroundRect, radius, radius, iosServiceFill(backgroundRect, iosSurfaceAlpha));
+            } else if (!drawServiceGlass(canvas, null, backgroundRect, radius, true, fromParent)) {
                 canvas.drawRoundRect(backgroundRect, radius, radius, backgroundPaint);
 
                 if (hasGradientService()) {
@@ -3904,14 +3924,10 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             }
             backgroundRect.set(AndroidUtilities.rectTmp);
 
-            final float radius = dp(usesIosOrdinaryGiftCard(messageObject) ? 24 : 20);
-            final boolean drewGiftSurface = drawServiceGlass(canvas, null, backgroundRect, radius, true, fromParent);
-            final int giftStyle = app.freezgram.GiftGlassStyle.style();
-            if (usesIosOrdinaryGiftCard(messageObject) && overrideBackground < 0
-                    && (giftStyle == app.freezgram.GiftGlassStyle.GLASS
-                    || giftStyle == app.freezgram.GiftGlassStyle.ORDINARY && !app.freezgram.GiftGlassStyle.customOrdinary())) {
-                drawIosGiftFill(canvas, backgroundRect, radius, drewGiftSurface);
-            } else if (!drewGiftSurface) {
+            final float radius = dp(iosGift ? 24 : 20);
+            if (iosGift) {
+                canvas.drawRoundRect(backgroundRect, radius, radius, iosServiceFill(backgroundRect, iosSurfaceAlpha));
+            } else if (!drawServiceGlass(canvas, null, backgroundRect, radius, true, fromParent)) {
                 boolean backgroundDrawn = false;
                 if (messageObject != null && (messageObject.type == MessageObject.TYPE_GIFT_OFFER || messageObject.type == MessageObject.TYPE_SHARING_OFFER)) {
                     if (botInlineButtons != null) {
@@ -3950,30 +3966,29 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
     }
 
     private final Paint iosGiftPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Matrix iosGiftGradientMatrix = new Matrix();
-    private LinearGradient iosGiftGradient;
-    private int iosGiftGradientBase;
-    private int iosGiftGradientAccent;
+    private final Paint iosServicePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Matrix iosServiceGradientMatrix = new Matrix();
+    private int iosServiceColorStart, iosServiceColorEnd;
 
-    private void drawIosGiftFill(Canvas canvas, RectF bounds, float radius, boolean overGlass) {
+    private Paint iosServiceFill(RectF bounds, float alpha) {
         final boolean lightText = ColorUtils.calculateLuminance(getThemedColor(Theme.key_chat_serviceText)) > .5;
-        final int base = getThemedColor(lightText ? Theme.key_actionBarDefaultSubmenuBackground : Theme.key_windowBackgroundWhite);
-        final int readableBase = ColorUtils.blendARGB(lightText ? 0xff1b1b23 : 0xfff5f2fa, base | 0xff000000, .38f);
-        final int accent = getThemedColor(Theme.key_chat_messageLinkIn) | 0xff000000;
-        if (iosGiftGradient == null || readableBase != iosGiftGradientBase || accent != iosGiftGradientAccent) {
-            iosGiftGradientBase = readableBase;
-            iosGiftGradientAccent = accent;
-            iosGiftGradient = new LinearGradient(0, 0, 1, 1,
-                    ColorUtils.blendARGB(readableBase, 0xff885367, .18f),
-                    ColorUtils.blendARGB(readableBase, accent, .10f), Shader.TileMode.CLAMP);
+        final boolean dark = themeDelegate != null ? themeDelegate.isDark() : Theme.isCurrentThemeDark();
+        final int base = getThemedColor(Theme.key_chat_inBubble) | 0xff000000;
+        final float themeWeight = dark == lightText ? .18f : 0f;
+        final int start = ColorUtils.blendARGB(lightText ? 0xff30232d : 0xfff4e9ef, base, themeWeight);
+        final int end = ColorUtils.blendARGB(lightText ? 0xff202131 : 0xffe9e8f5, base, themeWeight);
+        Shader shader = iosServicePaint.getShader();
+        if (shader == null || start != iosServiceColorStart || end != iosServiceColorEnd) {
+            iosServiceColorStart = start;
+            iosServiceColorEnd = end;
+            shader = new LinearGradient(0, 0, 1, 1, start, end, Shader.TileMode.CLAMP);
+            iosServicePaint.setShader(shader);
         }
-        iosGiftGradientMatrix.setScale(bounds.width(), bounds.height());
-        iosGiftGradientMatrix.postTranslate(bounds.left, bounds.top);
-        iosGiftGradient.setLocalMatrix(iosGiftGradientMatrix);
-        iosGiftPaint.setShader(iosGiftGradient);
-        iosGiftPaint.setAlpha(overGlass ? 195 : 255);
-        final float cardRadius = app.freezgram.GiftGlassStyle.cornerRadius(radius);
-        canvas.drawRoundRect(bounds, cardRadius, cardRadius, iosGiftPaint);
+        iosServiceGradientMatrix.setScale(bounds.width(), bounds.height());
+        iosServiceGradientMatrix.postTranslate(bounds.left, bounds.top);
+        shader.setLocalMatrix(iosServiceGradientMatrix);
+        iosServicePaint.setAlpha(Math.round(255 * alpha));
+        return iosServicePaint;
     }
 
     private final Path backgroundPath2 = new Path();

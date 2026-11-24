@@ -428,7 +428,11 @@ public class ProfileMusicView extends View {
         canvas.save();
         canvas.scale(scale, scale, rect.centerX(), getContentCenterY());
 
-        if (glass != null) {
+        final boolean solidIos = iosLayout && !app.freezgram.LiquidGlassStyle.canDrawGlass();
+        if (solidIos) {
+            iosFill.setColor(Theme.multAlpha(ProfileButtonsGlass.iosSolidTint(iosCoverColor), alpha));
+            canvas.drawRoundRect(rect, rect.height() / 2f, rect.height() / 2f, iosFill);
+        } else if (glass != null) {
             final float radius = rect.height() / 2f;
             if (glassRadius != radius) {
                 glassRadius = radius;
@@ -461,7 +465,7 @@ public class ProfileMusicView extends View {
             }
         }
 
-        if (iosLayout) {
+        if (iosLayout && !solidIos) {
             final float radius = rect.height() / 2f;
             iosFill.setColor(Theme.multAlpha(ProfileButtonsGlass.iosSurfaceTint(Theme.isCurrentThemeDark()), alpha));
             canvas.drawRoundRect(rect, radius, radius, iosFill);

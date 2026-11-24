@@ -943,7 +943,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
         private void drawIosChatListHeader(Canvas canvas, float headerBottom) {
             if (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE) {
-                headerBottom = Math.max(headerBottom, filterTabsView.getY() + filterTabsView.getMeasuredHeight());
+                final int bottomInset = app.freezgram.LiquidGlassStyle.canDrawGlass() ? 0 : filterTabsView.getPaddingBottom();
+                headerBottom = Math.max(headerBottom, filterTabsView.getY() + filterTabsView.getMeasuredHeight() - bottomInset);
             }
             iosChatListHeaderBottom = headerBottom;
             iosChatListBackgroundPaint.setColor(app.freezgram.IosChatListColors.pinnedBackground(resourceProvider));
@@ -958,13 +959,19 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (SizeNotifierFrameLayout.drawingBlur) {
                 return super.drawChild(canvas, child, drawingTime);
             }
+            final boolean solidIosHeader = iosChatListHeaderBottom > 0 && !app.freezgram.LiquidGlassStyle.canDrawGlass();
+            if (solidIosHeader && child == topBubblesFadeView) {
+                return true;
+            }
             boolean result;
             if (child == viewPages[0] || (viewPages.length > 1 && child == viewPages[1]) || child == topPanelLayout || child == filterTabsView) {
                 canvas.save();
 
                 final boolean doNotClip = child == topPanelLayout || child == filterTabsView;
                 if (!doNotClip) {
-                    canvas.clipRect(0, -getY() + getActionBarTop() + getActionBarFullHeight(), getMeasuredWidth(), getMeasuredHeight());
+                    float clipTop = -getY() + getActionBarTop() + getActionBarFullHeight();
+                    if (solidIosHeader) clipTop = Math.max(clipTop, iosChatListHeaderBottom);
+                    canvas.clipRect(0, clipTop, getMeasuredWidth(), getMeasuredHeight());
                 }
                 if (slideFragmentProgress != 1f) {
                     if (slideFragmentLite) {

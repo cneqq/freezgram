@@ -1,6 +1,7 @@
 package app.freezgram;
 
 import java.util.function.BooleanSupplier;
+import java.util.function.IntSupplier;
 import android.os.Build;
 import android.view.View;
 import app.exteraless.appearance.AppearanceConfig;
@@ -90,6 +91,11 @@ public final class LiquidGlassStyle {
         return colors(resourcesProvider, enabled, false);
     }
 
+    public static BlurredBackgroundProvider navigationColors(Theme.ResourcesProvider resourcesProvider,
+                                                              BooleanSupplier enabled, IntSupplier solidColor) {
+        return colors(resourcesProvider, enabled, false, false, true, solidColor);
+    }
+
     /** Popups need a visible surface behind labels even at 100% panel transparency. */
     public static BlurredBackgroundProvider surfaceColors(Theme.ResourcesProvider resourcesProvider, BooleanSupplier enabled) {
         return colors(resourcesProvider, enabled, true);
@@ -112,10 +118,20 @@ public final class LiquidGlassStyle {
     }
 
     private static BlurredBackgroundProvider colors(Theme.ResourcesProvider resourcesProvider, BooleanSupplier enabled, boolean surface, boolean header, boolean drawStroke) {
+        return colors(resourcesProvider, enabled, surface, header, drawStroke, null);
+    }
+
+    private static BlurredBackgroundProvider colors(Theme.ResourcesProvider resourcesProvider, BooleanSupplier enabled,
+                                                     boolean surface, boolean header, boolean drawStroke, IntSupplier solidColor) {
         if (AppearanceConfig.iosMode()) {
             return new BlurredBackgroundProviderBuilder(resourcesProvider)
-                    .setBackgroundColor((r, dark) -> Theme.multAlpha(Theme.getColor(Theme.key_windowBackgroundWhite, r),
-                            enabled.getAsBoolean() ? Math.max(surface ? .12f : 0f, overlayAlpha(dark, true)) : 1f))
+                    .setBackgroundColor((r, dark) -> {
+                        int base = Theme.getColor(Theme.key_windowBackgroundWhite, r);
+                        if (!enabled.getAsBoolean()) {
+                            return solidColor != null ? solidColor.getAsInt() : base;
+                        }
+                        return Theme.multAlpha(base, Math.max(surface ? .12f : 0f, overlayAlpha(dark, true)));
+                    })
                     .setStrokeColorTop(drawStroke ? 0x33ffffff : 0, drawStroke ? 0x66ffffff : 0)
                     .setStrokeColorBottom(drawStroke ? 0x33000000 : 0, drawStroke ? 0x22000000 : 0)
                     .setStrokeWidth(AndroidUtilities.dpf2(.8f), AndroidUtilities.dpf2(.6f))

@@ -14927,7 +14927,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             } else {
                                 text = "—";
                             }
-                            containsQr = !myProfile;
+                            containsQr = usesIosUserProfile() ? !TextUtils.isEmpty(username) : !myProfile;
                         } else if (currentChat != null) {
                             TLRPC.Chat chat = getMessagesController().getChat(chatId);
                             username = ChatObject.getPublicUsername(chat);
@@ -15058,9 +15058,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     final boolean iosUsername = position == usernameRow && usesIosUserProfile();
                     detailCell.setLeadingCaption(iosUsername
                             ? getString(R.string.Username).toLowerCase(LocaleController.getInstance().getCurrentLocale()) : null);
-                    final boolean emptyAliasesBeforeId = iosUsername && position + 1 == idDcRow
-                            && TextUtils.isEmpty(detailCell.valueTextView.getText());
-                    detailCell.valueTextView.setVisibility(emptyAliasesBeforeId ? View.GONE : View.VISIBLE);
+                    final boolean emptyAliases = iosUsername && TextUtils.isEmpty(detailCell.valueTextView.getText());
+                    detailCell.valueTextView.setVisibility(emptyAliases ? View.GONE : View.VISIBLE);
                     detailCell.valueTextView.setLineSpacing(iosUsername ? dp(2) : 0, 1f);
                     detailCell.textView.setLoading(loadingSpan);
                     detailCell.valueTextView.setLoading(loadingSpan);

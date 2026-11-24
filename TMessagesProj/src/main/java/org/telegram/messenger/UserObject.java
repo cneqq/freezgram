@@ -174,14 +174,19 @@ public class UserObject {
     }
 
     public static Long getEmojiStatusDocumentId(TLRPC.User user) {
+        return getEmojiStatusDocumentId(getVisualEmojiStatus(user));
+    }
+
+    public static TLRPC.EmojiStatus getVisualEmojiStatus(TLRPC.User user) {
         if (user == null) {
             return null;
         }
-        Long server = getEmojiStatusDocumentId(user.emoji_status);
-        if (server != null && server != 0) {
-            return server;
+        final TLRPC.EmojiStatus local = LocalPremiumStatusHelper.getLocalStatus(user);
+        if (!user.premium && (local instanceof TLRPC.TL_emojiStatusCollectible || local instanceof TLRPC.TL_emojiStatusEmpty)) {
+            return local;
         }
-        return LocalPremiumStatusHelper.getDocumentId(user);
+        final Long serverDocumentId = getEmojiStatusDocumentId(user.emoji_status);
+        return serverDocumentId != null && serverDocumentId != 0 ? user.emoji_status : local;
     }
 
     public static Long getEmojiStatusDocumentId(TLRPC.EmojiStatus emojiStatus) {
@@ -246,8 +251,8 @@ public class UserObject {
     }
 
     public static long getProfileEmojiId(TLRPC.User user) {
-        if (user != null && user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
-            return ((TLRPC.TL_emojiStatusCollectible) user.emoji_status).pattern_document_id;
+        if (getVisualEmojiStatus(user) instanceof TLRPC.TL_emojiStatusCollectible status) {
+            return status.pattern_document_id;
         }
         if (user != null && user.profile_color != null && (user.profile_color.flags & 2) != 0) return user.profile_color.background_emoji_id;
 
@@ -263,8 +268,8 @@ public class UserObject {
     }
 
     public static long getProfileCollectibleId(TLRPC.User user) {
-        if (user != null && user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
-            return ((TLRPC.TL_emojiStatusCollectible) user.emoji_status).collectible_id;
+        if (getVisualEmojiStatus(user) instanceof TLRPC.TL_emojiStatusCollectible status) {
+            return status.collectible_id;
         }
         return 0;
     }

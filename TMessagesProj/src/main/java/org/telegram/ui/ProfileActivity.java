@@ -387,6 +387,7 @@ import tw.nekomimi.nekogram.filters.RegexFiltersSettingActivity;
 import tw.nekomimi.nekogram.filters.ShadowBanListActivity;
 import tw.nekomimi.nekogram.helpers.ChatsHelper;
 import tw.nekomimi.nekogram.helpers.LocalNameHelper;
+import xyz.nextalone.nagram.helper.LocalPremiumStatusHelper;
 import tw.nekomimi.nekogram.helpers.MainTabsHelper;
 import tw.nekomimi.nekogram.helpers.MessageHelper;
 import tw.nekomimi.nekogram.helpers.PasscodeHelper;
@@ -2668,10 +2669,16 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         if (lastFragment instanceof ChatActivity && ((ChatActivity) lastFragment).themeDelegate != null && ((ChatActivity) lastFragment).themeDelegate.getCurrentTheme() != null && !((ChatActivity) lastFragment).themeDelegate.isGiftTheme()) {
             resourcesProvider = lastFragment.getResourceProvider();
         }
+        if (userId != 0 && userId == getUserConfig().getClientUserId()) {
+            final StarsController.GiftsList gifts = StarsController.getInstance(currentAccount).getProfileGiftsList(userId, false);
+            if (gifts != null) {
+                LocalPremiumStatusHelper.recoverCollectible(userId, gifts.gifts);
+            }
+        }
         if (usesIosUserProfile()) {
             iosGiftProfileColors = new IosGiftProfileColors(resourcesProvider);
             final TLRPC.User user = getMessagesController().getUser(userId);
-            iosGiftProfileColors.setStatus(user == null ? null : user.emoji_status);
+            iosGiftProfileColors.setStatus(UserObject.getVisualEmojiStatus(user));
             resourcesProvider = iosGiftProfileColors;
         }
         searchTransitionOffset = 0;
@@ -7552,7 +7559,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         };
         TLRPC.User user = getMessagesController().getUser(userId);
         if (user != null) {
-            popupLayout.setExpireDateHint(DialogObject.getEmojiStatusUntil(user.emoji_status));
+            popupLayout.setExpireDateHint(DialogObject.getEmojiStatusUntil(UserObject.getVisualEmojiStatus(user)));
         }
         if (emojiStatusGiftId != null) {
             popupLayout.setSelected(emojiStatusGiftId);
@@ -10425,6 +10432,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         } else if (id == NotificationCenter.starUserGiftsLoaded) {
             final long dialogId = (long) args[0];
             if (dialogId == getDialogId() && !isSettings()) {
+                if (dialogId == getUserConfig().getClientUserId() && args.length > 1
+                        && args[1] instanceof StarsController.GiftsList list
+                        && LocalPremiumStatusHelper.recoverCollectible(dialogId, list.gifts)) {
+                    updateProfileData(true);
+                }
                 if (sharedMediaRow < 0) {
                     updateRowsIds();
                     updateSelectedMediaTabText();
@@ -12627,27 +12639,33 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             }
             avatarDrawable.setInfo(currentAccount, user);
 
+            final TLRPC.EmojiStatus visualStatus = UserObject.getVisualEmojiStatus(user);
+            final TLRPC.TL_emojiStatusCollectible collectibleStatus = visualStatus instanceof TLRPC.TL_emojiStatusCollectible
+                    ? (TLRPC.TL_emojiStatusCollectible) visualStatus : null;
             final MessagesController.PeerColor wasPeerColor = peerColor;
-            peerColor = MessagesController.PeerColor.fromCollectible(user.emoji_status);
+            peerColor = MessagesController.PeerColor.fromCollectible(visualStatus);
             if (peerColor == null) {
                 final int colorId = UserObject.getProfileColorId(user);
                 final MessagesController.PeerColors peerColors = MessagesController.getInstance(currentAccount).profilePeerColors;
                 peerColor = peerColors == null ? null : peerColors.getColor(colorId);
             }
-            final boolean profileColorsChanged = iosGiftProfileColors != null && iosGiftProfileColors.setStatus(user.emoji_status);
+            final boolean profileColorsChanged = iosGiftProfileColors != null && iosGiftProfileColors.setStatus(visualStatus);
             if (profileColorsChanged) {
                 ThemeBind.updateTree(fragmentView, true);
+                if (topView != null) {
+                    topView.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundGray));
+                }
             }
             if (wasPeerColor != peerColor || profileColorsChanged) {
                 updatedPeerColor();
             }
             if (topView != null) {
-                topView.setBackgroundEmojiId(UserObject.getProfileEmojiId(user), user != null && user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible, true);
+                topView.setBackgroundEmojiId(UserObject.getProfileEmojiId(user), collectibleStatus != null, true);
             }
             if (ratingView != null) {
                 ratingView.updateColors(peerColor);
             }
-            setCollectibleGiftStatus(user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible ? (TLRPC.TL_emojiStatusCollectible) user.emoji_status : null);
+            setCollectibleGiftStatus(collectibleStatus);
 
 
             final ImageLocation imageLocation = ImageLocation.getForUserOrChat(user, ImageLocation.TYPE_BIG);
@@ -12774,16 +12792,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     nameTextView.setRightDrawable2(null);
                     nameTextViewRightDrawable2ContentDescription = null;
                 }
-                Long selfEmojiDocId = (user != null && user.self) ? UserObject.getEmojiStatusDocumentId(user) : null;
-                if (user != null && !MessagesController.isSupportUser(user) && (DialogObject.getEmojiStatusDocumentId(user.emoji_status) != 0 || (user.self && selfEmojiDocId != null && selfEmojiDocId != 0))) {
+                if (!MessagesController.isSupportUser(user) && DialogObject.getEmojiStatusDocumentId(visualStatus) != 0) {
                     rightIconIsStatus = true;
-                    if (user.self && (selfEmojiDocId != null && selfEmojiDocId != 0) && DialogObject.getEmojiStatusDocumentId(user.emoji_status) == 0) {
-                        TLRPC.TL_emojiStatus status = new TLRPC.TL_emojiStatus();
-                        status.document_id = selfEmojiDocId;
-                        nameTextView.setRightDrawable(getEmojiStatusDrawable(status, true, true));
-                    } else {
-                        nameTextView.setRightDrawable(getEmojiStatusDrawable(user.emoji_status, true, true));
-                    }
+                    nameTextView.setRightDrawable(getEmojiStatusDrawable(visualStatus, true, true));
                     nameTextViewRightDrawableContentDescription = LocaleController.getString(R.string.AccDescrPremium);
                 } else if (getMessagesController().isPremiumUser(user)) {
                     rightIconIsPremium = true;
@@ -12811,11 +12822,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (!user.self && getMessagesController().isPremiumUser(user)) {
                     final SimpleTextView textView = nameTextView;
                     nameTextView.setRightDrawableOnClick(v -> {
-                        if (user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
-                            TLRPC.TL_emojiStatusCollectible status = (TLRPC.TL_emojiStatusCollectible) user.emoji_status;
-                            if (status != null) {
-                                Browser.openUrl(getContext(), "https://" + getMessagesController().linkPrefix + "/nft/" + status.slug);
-                            }
+                        if (collectibleStatus != null && !TextUtils.isEmpty(collectibleStatus.slug)) {
+                            Browser.openUrl(getContext(), "https://" + getMessagesController().linkPrefix + "/nft/" + collectibleStatus.slug);
                             return;
                         }
                         PremiumPreviewBottomSheet premiumPreviewBottomSheet = new PremiumPreviewBottomSheet(ProfileActivity.this, currentAccount, user, resourcesProvider);
@@ -16673,7 +16681,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         final TLRPC.Chat chat = chatId != 0 ? getMessagesController().getChat(chatId) : null;
         addNameStickerSet(sets, chat != null ? ChatObject.getProfileEmojiId(chat) : UserObject.getProfileEmojiId(user));
         addNameStickerSet(sets, DialogObject.getEmojiStatusDocumentId(
-                chat != null ? chat.emoji_status : user != null ? user.emoji_status : null));
+                chat != null ? chat.emoji_status : UserObject.getVisualEmojiStatus(user)));
 
         if (!sets.isEmpty()) {
             options.setGapBackgroundColor(getThemedColor(Theme.key_actionBarDefaultSubmenuSeparator));

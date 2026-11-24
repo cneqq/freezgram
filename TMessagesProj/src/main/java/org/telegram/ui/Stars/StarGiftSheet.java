@@ -1235,18 +1235,25 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
     private ColoredImageSpan lockSpan;
     private boolean shownWearInfo;
+    private boolean canWearOnPersonalProfile(TL_stars.TL_starGiftUnique gift) {
+        final UserConfig account = UserConfig.getInstance(currentAccount);
+        return account.isPremium() || account.isPremiumOrLocal()
+                && DialogObject.getPeerDialogId(gift.owner_id) == account.getClientUserId()
+                && account.getClientUserId() != 0 && !gift.burned;
+    }
+
     private void onWearPressed(View v) {
-        if (UserConfig.getInstance(currentAccount).isPremium() && (isWorn(currentAccount, getUniqueGift()) || shownWearInfo)) {
+        final TL_stars.TL_starGiftUnique gift = getUniqueGift();
+        if (gift == null) return;
+        if (canWearOnPersonalProfile(gift) && (isWorn(currentAccount, gift) || shownWearInfo)) {
             toggleWear();
             return;
         }
-        final TL_stars.TL_starGiftUnique gift = getUniqueGift();
-        if (gift == null) return;
         final long owner_id = gift.owner_id != null ? DialogObject.getPeerDialogId(gift.owner_id) : DialogObject.getPeerDialogId(gift.host_id);
         final String product = gift.title + " #" + LocaleController.formatNumber(gift.num, ',');
         wearTitle.setText(LocaleController.formatString(R.string.Gift2WearTitle, product));
         SpannableStringBuilder buttonText = new SpannableStringBuilder(getString(R.string.Gift2WearStart));
-        if (!UserConfig.getInstance(currentAccount).isPremium()) {
+        if (owner_id > 0 && !canWearOnPersonalProfile(gift)) {
             buttonText.append(" l");
             if (lockSpan == null) {
                 lockSpan = new ColoredImageSpan(R.drawable.msg_mini_lock3);
@@ -1270,7 +1277,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         final String product = gift.title + " #" + LocaleController.formatNumber(gift.num, ',');
         wearTitle.setText(LocaleController.formatString(R.string.Gift2WearTitle, product));
         SpannableStringBuilder buttonText = new SpannableStringBuilder(getString(R.string.Gift2WearStart));
-        if (dialogId == UserConfig.getInstance(currentAccount).getClientUserId() && !UserConfig.getInstance(currentAccount).isPremium()) {
+        if (dialogId == UserConfig.getInstance(currentAccount).getClientUserId() && !canWearOnPersonalProfile(gift)) {
             buttonText.append(" l");
             if (lockSpan == null) {
                 lockSpan = new ColoredImageSpan(R.drawable.msg_mini_lock3);
@@ -1290,15 +1297,12 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
     }
 
     public static boolean isWorn(int currentAccount, TL_stars.TL_starGiftUnique gift) {
-        if (gift == null) return false;
+        if (gift == null || gift.id == 0) return false;
         final long dialogId = gift.owner_id != null ? DialogObject.getPeerDialogId(gift.owner_id) : DialogObject.getPeerDialogId(gift.host_id);
         if (dialogId == 0) return false;
         if (dialogId > 0) {
             final TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
-            if (user != null && user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
-                final TLRPC.TL_emojiStatusCollectible status = (TLRPC.TL_emojiStatusCollectible) user.emoji_status;
-                return status.collectible_id == gift.id;
-            }
+            return UserObject.getProfileCollectibleId(user) == gift.id;
         } else {
             final TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
             if (chat != null && chat.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
@@ -1316,13 +1320,13 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         final TL_stars.TL_starGiftUnique gift = getUniqueGift();
         if (gift == null) return;
         MessagesController.getGlobalMainSettings().edit().putInt("statusgiftpage", 3).apply();
-        final boolean worn = !isWorn(currentAccount, getUniqueGift());
-        if (isWorn(currentAccount, getUniqueGift())) {
-            MessagesController.getInstance(currentAccount).updateEmojiStatus(getDialogId(), new TLRPC.TL_emojiStatusEmpty(), null);
+        final long did = getDialogId();
+        final boolean worn = !isWorn(currentAccount, gift);
+        if (!worn) {
+            MessagesController.getInstance(currentAccount).updateEmojiStatus(did, new TLRPC.TL_emojiStatusEmpty(), null);
         } else {
-            final long did = getDialogId();
             if (did >= 0) {
-                if (!UserConfig.getInstance(currentAccount).isPremium()) {
+                if (!canWearOnPersonalProfile(gift)) {
                     getBulletinFactory()
                         .createSimpleBulletinDetail(R.raw.star_premium_2, AndroidUtilities.premiumText(getString(R.string.Gift2ActionWearNeededPremium), () -> {
                             new PremiumFeatureBottomSheet(getDummyFragment(), PremiumPreviewFragment.PREMIUM_FEATURE_EMOJI_STATUS, false).show();
@@ -1359,7 +1363,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             }
             final TLRPC.TL_inputEmojiStatusCollectible status = new TLRPC.TL_inputEmojiStatusCollectible();
             status.collectible_id = gift.id;
-            MessagesController.getInstance(currentAccount).updateEmojiStatus(getDialogId(), status, gift);
+            MessagesController.getInstance(currentAccount).updateEmojiStatus(did, status, gift);
         }
         topView.buttons[1].set(worn ? R.drawable.filled_crown_off : R.drawable.filled_crown_on, getString(worn ? R.string.Gift2ActionWearOff : R.string.Gift2ActionWear), true);
         if (onlyWearInfo) {

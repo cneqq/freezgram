@@ -3112,14 +3112,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
             return;
         }
-        Long emojiStatusId = UserObject.getEmojiStatusDocumentId(user);
+        final TLRPC.EmojiStatus visualStatus = UserObject.getVisualEmojiStatus(user);
+        Long emojiStatusId = UserObject.getEmojiStatusDocumentId(visualStatus);
         statusDrawableGiftId = null;
         if (emojiStatusId != null) {
-            final boolean isCollectible = user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible;
+            final boolean isCollectible = visualStatus instanceof TLRPC.TL_emojiStatusCollectible;
             statusDrawable.set(emojiStatusId, animated);
             statusDrawable.setParticles(isCollectible, animated);
             if (isCollectible) {
-                statusDrawableGiftId = ((TLRPC.TL_emojiStatusCollectible) user.emoji_status).collectible_id;
+                statusDrawableGiftId = ((TLRPC.TL_emojiStatusCollectible) visualStatus).collectible_id;
             }
             actionBar.setRightDrawableOnClick(e -> {
                 if (dialogStoriesCellVisible && dialogStoriesCell != null && !dialogStoriesCell.isExpanded()) {
@@ -6295,8 +6296,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
             }
         };
-        if (user != null && DialogObject.getEmojiStatusUntil(user.emoji_status) > 0) {
-            popupLayout.setExpireDateHint(DialogObject.getEmojiStatusUntil(user.emoji_status));
+        final int statusUntil = DialogObject.getEmojiStatusUntil(UserObject.getVisualEmojiStatus(user));
+        if (statusUntil > 0) {
+            popupLayout.setExpireDateHint(statusUntil);
         }
         if (statusDrawableGiftId != null) {
             popupLayout.setSelected(statusDrawableGiftId);

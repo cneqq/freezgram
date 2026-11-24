@@ -2604,6 +2604,7 @@ public class MessagesController extends BaseController implements NotificationCe
         final TL_stars.starGiftAttributeBackdrop backdrop = findAttribute(gift.attributes, TL_stars.starGiftAttributeBackdrop.class);
         final TL_stars.starGiftAttributePattern pattern = findAttribute(gift.attributes, TL_stars.starGiftAttributePattern.class);
         status.title = gift.title + " #" + gift.num;
+        status.slug = gift.slug;
         if (model != null) {
             status.document_id = model.document.id;
         }
@@ -2633,6 +2634,18 @@ public class MessagesController extends BaseController implements NotificationCe
             new_emoji_status = emojiStatusCollectibleFromGift((TL_stars.TL_starGiftUnique) gift);
         }
 
+        if (myself && !getUserConfig().isPremium() && NekoConfig.localPremium.Bool()) {
+            final long userId = getUserConfig().getClientUserId();
+            LocalPremiumStatusHelper.apply(userId, new_emoji_status, true);
+            final TLRPC.User user = getUserConfig().getCurrentUser();
+            if (user != null) {
+                updateEmojiStatusUntilUpdate(userId, UserObject.getVisualEmojiStatus(user));
+                getNotificationCenter().postNotificationName(NotificationCenter.userEmojiStatusUpdated, user);
+            }
+            getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_EMOJI_STATUS);
+            return;
+        }
+
         TLObject r;
         if (myself) {
             TL_account.updateEmojiStatus req = new TL_account.updateEmojiStatus();
@@ -2644,7 +2657,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 user.emoji_status = new_emoji_status;
                 getNotificationCenter().postNotificationName(NotificationCenter.userEmojiStatusUpdated, user);
             }
-            LocalPremiumStatusHelper.apply(new_emoji_status);
+            LocalPremiumStatusHelper.apply(getUserConfig().getClientUserId(), new_emoji_status, false);
         } else {
             TLRPC.TL_channels_updateEmojiStatus req = new TLRPC.TL_channels_updateEmojiStatus();
             req.channel = getInputChannel(-dialogId);

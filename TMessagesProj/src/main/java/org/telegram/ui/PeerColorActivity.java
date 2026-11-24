@@ -258,7 +258,8 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
                     TLRPC.User user = getUserConfig().getCurrentUser();
                     selectedColor = UserObject.getProfileColorId(user);
                     selectedEmoji = UserObject.getProfileEmojiId(user);
-                    selectedEmojiCollectible = user != null && user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible ? (TLRPC.TL_emojiStatusCollectible) user.emoji_status : null;
+                    final TLRPC.EmojiStatus visualStatus = UserObject.getVisualEmojiStatus(user);
+                    selectedEmojiCollectible = visualStatus instanceof TLRPC.TL_emojiStatusCollectible status ? status : null;
                     selectedPeerCollectible = null;
                 }
             } else {
@@ -919,9 +920,11 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
                     final boolean c = eq(me.color instanceof TLRPC.TL_peerColorCollectible ? (TLRPC.TL_peerColorCollectible) me.color : null, selectedPeerCollectible);
                     return !(a && b && c);
                 } else {
-                    final boolean a = selectedColor == (me.emoji_status instanceof TLRPC.TL_emojiStatusCollectible ? -1 : UserObject.getProfileColorId(me));
-                    final boolean b = selectedEmoji == (me.emoji_status instanceof TLRPC.TL_emojiStatusCollectible ? 0 : UserObject.getOnlyProfileEmojiId(me));
-                    final boolean c = eq(me.emoji_status instanceof TLRPC.TL_emojiStatusCollectible ? (TLRPC.TL_emojiStatusCollectible) me.emoji_status : null , selectedEmojiCollectible);
+                    final TLRPC.EmojiStatus visualStatus = UserObject.getVisualEmojiStatus(me);
+                    final boolean isCollectible = visualStatus instanceof TLRPC.TL_emojiStatusCollectible;
+                    final boolean a = selectedColor == (isCollectible ? -1 : UserObject.getProfileColorId(me));
+                    final boolean b = selectedEmoji == (isCollectible ? 0 : UserObject.getOnlyProfileEmojiId(me));
+                    final boolean c = eq(isCollectible ? visualStatus : null, selectedEmojiCollectible);
                     return !(a && b && c);
                 }
             }
@@ -2037,7 +2040,8 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
                 }
                 if (getUserConfig().isPremium()) getConnectionsManager().sendRequest(req, null);
             }
-            if (!eq(me.emoji_status, profilePage.selectedEmojiCollectible) && (profilePage.selectedEmojiCollectible != null || DialogObject.isEmojiStatusCollectible(me.emoji_status))) {
+            final TLRPC.EmojiStatus visualStatus = UserObject.getVisualEmojiStatus(me);
+            if (!eq(visualStatus, profilePage.selectedEmojiCollectible) && (profilePage.selectedEmojiCollectible != null || DialogObject.isEmojiStatusCollectible(visualStatus))) {
                 TLRPC.EmojiStatus new_emoji_status = new TLRPC.TL_emojiStatusEmpty();
                 TL_stars.TL_starGiftUnique gift = null;
                 if (profilePage.selectedEmojiCollectible != null) {
@@ -2458,8 +2462,8 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
             if (color1Drawable != null) {
                 color1Drawable.setView(null);
             }
-            if (user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
-                color1Drawable = PeerColorDrawable.from((TLRPC.TL_emojiStatusCollectible) user.emoji_status);
+            if (UserObject.getVisualEmojiStatus(user) instanceof TLRPC.TL_emojiStatusCollectible status) {
+                color1Drawable = PeerColorDrawable.from(status);
             } else {
                 color1Drawable = UserObject.getProfileColorId(user) >= 0 ? PeerColorDrawable.fromProfile(currentAccount, UserObject.getProfileColorId(user)).setRadius(dp(11)) : null;
             }
@@ -3368,7 +3372,7 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
                 imageReceiver.setForUserOrChat(user, avatarDrawable);
 
                 botVerificationId = DialogObject.getBotVerificationIcon(user);
-                emojiStatusId = user != null ? DialogObject.getEmojiStatusDocumentId(user.emoji_status) : 0;
+                emojiStatusId = DialogObject.getEmojiStatusDocumentId(UserObject.getVisualEmojiStatus(user));
             }
             try {
                 title = Emoji.replaceEmoji(title, null, false);

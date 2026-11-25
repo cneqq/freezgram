@@ -498,6 +498,11 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
         avatarOptionsMenuItem = menuItem;
     }
 
+    public boolean hasSavedMessagesAvatarOptions() {
+        return parentFragment != null && app.exteraless.appearance.AppearanceConfig.iosMode()
+                && parentFragment.isSavedMessagesSidebar() && !isPreviewMode();
+    }
+
     private boolean hasAvatarOptionsMenu() {
         return avatarOptionsMenuItem != null && avatarOptionsMenuItem.hasSubMenu();
     }

@@ -2266,8 +2266,39 @@ public class ActionBar extends FrameLayout implements FactorAnimator.Target, The
         return castShadows;
     }
 
+    private View savedMessagesAvatarTouchTarget;
+
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
+        final int action = ev.getActionMasked();
+        if (action == MotionEvent.ACTION_DOWN) {
+            savedMessagesAvatarTouchTarget = null;
+            if (iosChatHeaderGlass && searchFactor == 0 && getActionModeFactor() == 0) {
+                final ChatAvatarContainer container = findGlassAvatarContainer();
+                if (container != null && container.hasSavedMessagesAvatarOptions()) {
+                    final View avatar = getGlassMenuAvatarView(container);
+                    if (avatar != null && avatar.isClickable()) {
+                        final float x = ev.getX() - container.getX() - avatar.getX();
+                        final float y = ev.getY() - container.getY() - avatar.getY();
+                        if (x >= 0 && x < avatar.getWidth() && y >= 0 && y < avatar.getHeight()) {
+                            savedMessagesAvatarTouchTarget = avatar;
+                        }
+                    }
+                }
+            }
+        }
+        final View avatar = savedMessagesAvatarTouchTarget;
+        if (avatar != null && avatar.getParent() instanceof ChatAvatarContainer container) {
+            // The visible avatar can extend past its WRAP_CONTENT parent in the iOS header.
+            final MotionEvent avatarEvent = MotionEvent.obtain(ev);
+            avatarEvent.offsetLocation(-container.getX() - avatar.getX(), -container.getY() - avatar.getY());
+            final boolean handled = avatar.dispatchTouchEvent(avatarEvent);
+            avatarEvent.recycle();
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL || !handled) {
+                savedMessagesAvatarTouchTarget = null;
+            }
+            if (handled || action != MotionEvent.ACTION_DOWN) return true;
+        }
         if (chatAvatarContainer != null && glassMode) {
             if (ev.getAction() == MotionEvent.ACTION_DOWN) {
                 final int x = (int) ev.getX();

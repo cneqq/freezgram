@@ -269,7 +269,11 @@ public class ChannelRecommendationsCell {
             canvas.save();
             final float ox = (cell.getWidth() - serviceText.getWidth()) / 2f;
             AndroidUtilities.rectTmp.set(ox + serviceTextLeft - dp(8.66f), dp(4), ox + serviceTextRight + dp(8.66f), dp(4 + 3.33f + 3.33f) + serviceTextHeight);
-            cell.drawServiceBackground(canvas, AndroidUtilities.rectTmp, dp(11), 1f);
+            if (app.exteraless.appearance.AppearanceConfig.iosMode()) {
+                cell.drawIosServicePill(canvas, AndroidUtilities.rectTmp, dp(11), false);
+            } else {
+                cell.drawServiceBackground(canvas, AndroidUtilities.rectTmp, dp(11), 1f);
+            }
             canvas.translate(ox, dp(4 + 3.33f));
             serviceTextPaint.setColor(cell.getThemedColor(Theme.key_chat_serviceText));
             serviceText.draw(canvas);

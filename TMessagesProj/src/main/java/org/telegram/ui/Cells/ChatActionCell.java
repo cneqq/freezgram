@@ -3972,13 +3972,19 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
     private final Matrix iosServiceGradientMatrix = new Matrix();
     private int iosServiceColorStart, iosServiceColorEnd;
 
+    static int iosServiceColor(boolean lightText, boolean dark, int bubbleColor, float position) {
+        final int start = lightText ? 0xff30232d : 0xfff4e9ef;
+        final int end = lightText ? 0xff202131 : 0xffe9e8f5;
+        final int tint = ColorUtils.blendARGB(start, end, position);
+        return ColorUtils.blendARGB(tint, bubbleColor | 0xff000000, dark == lightText ? .18f : 0f);
+    }
+
     private Paint iosServiceFill(RectF bounds, float alpha) {
         final boolean lightText = ColorUtils.calculateLuminance(getThemedColor(Theme.key_chat_serviceText)) > .5;
         final boolean dark = themeDelegate != null ? themeDelegate.isDark() : Theme.isCurrentThemeDark();
         final int base = getThemedColor(Theme.key_chat_inBubble) | 0xff000000;
-        final float themeWeight = dark == lightText ? .18f : 0f;
-        final int start = ColorUtils.blendARGB(lightText ? 0xff30232d : 0xfff4e9ef, base, themeWeight);
-        final int end = ColorUtils.blendARGB(lightText ? 0xff202131 : 0xffe9e8f5, base, themeWeight);
+        final int start = iosServiceColor(lightText, dark, base, 0f);
+        final int end = iosServiceColor(lightText, dark, base, 1f);
         Shader shader = iosServicePaint.getShader();
         if (shader == null || start != iosServiceColorStart || end != iosServiceColorEnd) {
             iosServiceColorStart = start;

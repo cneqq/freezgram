@@ -44,6 +44,7 @@ import androidx.dynamicanimation.animation.SpringForce;
 
 import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.BotFullscreenButtons;
 import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.ContactsController;
@@ -700,7 +701,7 @@ public class BotWebViewAttachedSheet implements NotificationCenter.NotificationC
 
         actionBarShadow = ContextCompat.getDrawable(getContext(), R.drawable.header_shadow).mutate();
 
-        actionBar = new ActionBar(getContext(), resourcesProvider) {
+        actionBar = new BotWebViewActionBar(getContext(), resourcesProvider) {
             @Override
             protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
                 super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -893,6 +894,7 @@ public class BotWebViewAttachedSheet implements NotificationCenter.NotificationC
 
     private void updateActionBarColors() {
         if (!overrideBackgroundColor) {
+            actionBar.setSubtitleColor(Theme.multAlpha(getColor(Theme.key_windowBackgroundWhiteBlackText), .65f));
             backDrawable.setColor(getColor(Theme.key_windowBackgroundWhiteBlackText));
             backDrawable.setRotatedColor(getColor(Theme.key_windowBackgroundWhiteBlackText));
             actionBar.setTitleColor(getColor(Theme.key_windowBackgroundWhiteBlackText));
@@ -1021,6 +1023,9 @@ public class BotWebViewAttachedSheet implements NotificationCenter.NotificationC
             title = Emoji.replaceEmoji(title, tp.getFontMetricsInt(), false);
         } catch (Exception ignore) {}
         actionBar.setTitle(title);
+        if (BotWebViewActionBar.usesIosStyle()) {
+            actionBar.setSubtitle(LocaleController.getString(R.string.FreezgramMiniAppSubtitle));
+        }
         TLRPC.UserFull userInfo = MessagesController.getInstance(currentAccount).getUserFull(botId);
         if (userbot != null && userbot.verified || userInfo != null && userInfo.user != null && userInfo.user.verified) {
             verifiedDrawable = getContext().getResources().getDrawable(R.drawable.verified_profile).mutate();
@@ -1071,8 +1076,17 @@ public class BotWebViewAttachedSheet implements NotificationCenter.NotificationC
             }
         }
 
-        menu.addItem(R.id.menu_collapse_bot, R.drawable.arrow_more);
-        ActionBarMenuItem otherItem = optionsItem = menu.addItem(0, R.drawable.ic_ab_other);
+        final boolean iosHeader = BotWebViewActionBar.usesIosStyle();
+        if (!iosHeader) {
+            menu.addItem(R.id.menu_collapse_bot, R.drawable.arrow_more);
+        }
+        ActionBarMenuItem otherItem = optionsItem = iosHeader
+                ? menu.addItem(0, new BotFullscreenButtons.OptionsIcon(getContext(), BotWebViewActionBar.usesIosStyle()))
+                : menu.addItem(0, R.drawable.ic_ab_other);
+        ((BotWebViewActionBar) actionBar).setOptionsButton(otherItem);
+        if (iosHeader) {
+            otherItem.addSubItem(R.id.menu_collapse_bot, R.drawable.arrow_more, LocaleController.getString(R.string.PipMinimize));
+        }
         otherItem.addSubItem(R.id.menu_open_bot, R.drawable.msg_bot, LocaleController.getString(R.string.BotWebViewOpenBot));
         settingsItem = otherItem.addSubItem(R.id.menu_settings, R.drawable.msg_settings, LocaleController.getString(R.string.BotWebViewSettings));
         settingsItem.setVisibility(View.GONE);
@@ -1688,7 +1702,7 @@ public class BotWebViewAttachedSheet implements NotificationCenter.NotificationC
             canvas.drawRect(AndroidUtilities.rectTmp, dimPaint);
 
             actionBarPaint.setColor(actionBarColor);
-            float radius = dp(16) * (AndroidUtilities.isTablet() ? 1f : 1f - actionBarTransitionProgress);
+            float radius = dp(BotWebViewActionBar.usesIosStyle() ? 26 : 16) * (AndroidUtilities.isTablet() ? 1f : 1f - actionBarTransitionProgress);
             AndroidUtilities.rectTmp.set(swipeContainer.getLeft(), lerp(swipeContainer.getTranslationY(), 0, actionBarTransitionProgress), swipeContainer.getRight(), swipeContainer.getTranslationY() + dp(24) + radius);
             canvas.drawRoundRect(AndroidUtilities.rectTmp, radius, radius, actionBarPaint);
 
@@ -1776,7 +1790,7 @@ public class BotWebViewAttachedSheet implements NotificationCenter.NotificationC
             canvas.save();
 
             clipPath.rewind();
-            float radius = dp(16) * (AndroidUtilities.isTablet() ? 1f : 1f - actionBarTransitionProgress);
+            float radius = dp(BotWebViewActionBar.usesIosStyle() ? 26 : 16) * (AndroidUtilities.isTablet() ? 1f : 1f - actionBarTransitionProgress);
             final float r = lerp(radius, dp(18), progress);
             rect.set(clipRect);
             if (opening) {

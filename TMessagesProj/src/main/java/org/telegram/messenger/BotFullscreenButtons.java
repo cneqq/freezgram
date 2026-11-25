@@ -375,6 +375,7 @@ public class BotFullscreenButtons extends View {
 
         private final long start;
         private final Drawable drawable;
+        private final boolean horizontal;
         private final Paint downloadPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Path downloadPath = new Path();
 
@@ -382,6 +383,11 @@ public class BotFullscreenButtons extends View {
         private final AnimatedFloat animatedDownloading = new AnimatedFloat(this::invalidateSelf, 0, 420, CubicBezierInterpolator.EASE_OUT_QUINT);
 
         public OptionsIcon(Context context) {
+            this(context, false);
+        }
+
+        public OptionsIcon(Context context, boolean horizontal) {
+            this.horizontal = horizontal;
             start = System.currentTimeMillis();
             drawable = context.getResources().getDrawable(R.drawable.ic_ab_other).mutate();
 
@@ -400,7 +406,14 @@ public class BotFullscreenButtons extends View {
         @Override
         public void draw(@NonNull Canvas canvas) {
             drawable.setBounds(getBounds());
-            drawable.draw(canvas);
+            if (horizontal) {
+                canvas.save();
+                canvas.rotate(90, getBounds().exactCenterX(), getBounds().exactCenterY());
+                drawable.draw(canvas);
+                canvas.restore();
+            } else {
+                drawable.draw(canvas);
+            }
 
             final float downloadAlpha = this.animatedDownloading.set(downloading);
             if (downloadAlpha > 0) {

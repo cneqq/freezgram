@@ -932,7 +932,7 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
 
         actionBarShadow = ContextCompat.getDrawable(getContext(), R.drawable.header_shadow).mutate();
 
-        actionBar = new ActionBar(context, resourcesProvider) {
+        actionBar = new BotWebViewActionBar(context, resourcesProvider) {
             @Override
             protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
                 if (AndroidUtilities.isTablet() && !AndroidUtilities.isInMultiwindow && !AndroidUtilities.isSmallTablet()) {
@@ -1118,6 +1118,7 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
 
     private void updateActionBarColors() {
         if (!overrideActionBarColor) {
+            actionBar.setSubtitleColor(Theme.multAlpha(getColor(Theme.key_windowBackgroundWhiteBlackText), .65f));
             actionBar.setTitleColor(getColor(Theme.key_windowBackgroundWhiteBlackText));
             actionBar.setItemsColor(getColor(Theme.key_windowBackgroundWhiteBlackText), false);
             actionBar.setItemsBackgroundColor(getColor(Theme.key_actionBarWhiteSelector), false);
@@ -1452,6 +1453,9 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
             title = Emoji.replaceEmoji(title, tp.getFontMetricsInt(), false);
         } catch (Exception ignore) {}
         actionBar.setTitle(title);
+        if (BotWebViewActionBar.usesIosStyle()) {
+            actionBar.setSubtitle(LocaleController.getString(R.string.FreezgramMiniAppSubtitle));
+        }
         final TLRPC.UserFull userInfo = fakeWebView ? null : MessagesController.getInstance(currentAccount).getUserFull(botId);
         if (userbot != null && userbot.verified || userInfo != null && userInfo.user != null && userInfo.user.verified) {
             verifiedDrawable = getContext().getResources().getDrawable(R.drawable.verified_profile).mutate();
@@ -1523,10 +1527,11 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
             }
         }
 
-        if (onVerifiedAge == null) {
+        if (onVerifiedAge == null && !BotWebViewActionBar.usesIosStyle()) {
             menu.addItem(R.id.menu_collapse_bot, R.drawable.arrow_more);
         }
-        optionsItem = menu.addItem(0, optionsIcon = new BotFullscreenButtons.OptionsIcon(getContext()));
+        optionsItem = menu.addItem(0, optionsIcon = new BotFullscreenButtons.OptionsIcon(getContext(), BotWebViewActionBar.usesIosStyle()));
+        ((BotWebViewActionBar) actionBar).setOptionsButton(optionsItem);
         optionsItem.setOnClickListener(v -> {
             openOptions();
         });
@@ -1791,6 +1796,11 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
             options.dismiss();
         }
         final ItemOptions o = options = ItemOptions.makeOptions(windowView, resourcesProvider, fullscreen ? fullscreenButtons : optionsItem, true);
+        o.addIf(onVerifiedAge == null && BotWebViewActionBar.usesIosStyle(),
+                R.drawable.arrow_more, LocaleController.getString(R.string.PipMinimize), () -> {
+                    forceExpnaded = true;
+                    dismiss(true, null);
+                });
         final BotDownloads botDownloads = BotDownloads.get(getContext(), currentAccount, botId);
         fileItems.clear();
         if (botDownloads.hasFiles()) {
@@ -2705,7 +2715,7 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
                 final int bottomTabsHeight = bottomTabs != null ? bottomTabs.getHeight(true) : 0;
 
                 actionBarPaint.setColor(actionBarColor);
-                float radius = AndroidUtilities.dp(16) * (AndroidUtilities.isTablet() ? 1f : 1f - actionBarTransitionProgress);
+                float radius = dp(BotWebViewActionBar.usesIosStyle() ? 26 : 16) * (AndroidUtilities.isTablet() ? 1f : 1f - actionBarTransitionProgress);
                 AndroidUtilities.rectTmp.set(lerp(swipeContainer.getLeft(), 0, fullscreenProgress), lerp(swipeContainer.getTranslationY(), 0, actionBarTransitionProgress), swipeContainer.getRight(), swipeContainer.getTranslationY() + AndroidUtilities.dp(24) + radius);
                 canvas.drawRoundRect(AndroidUtilities.rectTmp, radius, radius, actionBarPaint);
 

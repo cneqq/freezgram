@@ -18835,6 +18835,19 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return false;
     }
 
+    private final Paint iosServicePillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+    void drawIosServicePill(Canvas canvas, RectF rect, float radius, boolean pressed) {
+        final int textColor = getThemedColor(Theme.key_chat_serviceText);
+        final boolean lightText = ColorUtils.calculateLuminance(textColor) > .5;
+        int color = ChatActionCell.iosServiceColor(lightText, isDark(), getThemedColor(Theme.key_chat_inBubble), .5f);
+        if (pressed) {
+            color = ColorUtils.blendARGB(color, textColor, .12f);
+        }
+        iosServicePillPaint.setColor(color);
+        canvas.drawRoundRect(rect, radius, radius, iosServicePillPaint);
+    }
+
     public void drawServiceBackground(Canvas canvas, RectF rect, float radius, float alpha) {
         applyServiceShaderMatrix();
         if (alpha != 1f) {
@@ -19823,7 +19836,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
             boolean glassShare = drawSideButton == 1 && app.freezgram.SmallElementsGlass.isEnabled()
                     && delegate != null && delegate.drawShareButtonGlass(this, canvas, rect);
-            if (!glassShare) {
+            if (drawSideButton == 1 && app.exteraless.appearance.AppearanceConfig.iosMode()) {
+                drawIosServicePill(canvas, rect, dp(16), sideButtonPressed);
+            } else if (!glassShare) {
                 applyServiceShaderMatrix();
                 if (drawSideButton == SIDE_BUTTON_SPONSORED_CLOSE && drawSideButton2 == SIDE_BUTTON_SPONSORED_MORE && sideButtonPressed) {
                     if (sideButtonPath1 == null) {

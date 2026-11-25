@@ -4723,6 +4723,21 @@ public class ChatActivity extends BaseFragment implements
 
             @Override
             protected boolean onAvatarClick() {
+                if (AppearanceConfig.iosMode() && isSavedMessagesSidebar()) {
+                    ItemOptions options = ItemOptions.makeOptions(ChatActivity.this, getAvatarImageView());
+                    if (getMessagesController().getSavedMessagesController().hasDialogs()) {
+                        options.add(R.drawable.msg_topics, getString(R.string.SavedViewAsChats),
+                                () -> actionBar.actionBarMenuOnItemClick.onItemClick(view_as_topics));
+                    }
+                    options.add(R.drawable.ic_upward, getString(R.string.ToTheBeginning),
+                            () -> actionBar.actionBarMenuOnItemClick.onItemClick(to_the_beginning));
+                    if (NaConfig.INSTANCE.getChatMenuItemClearDeleted().Bool() && NaConfig.INSTANCE.getEnableSaveDeletedMessages().Bool()) {
+                        options.add(R.drawable.msg_clear, getString(R.string.ClearDeleted),
+                                () -> nkbtn_onclick_actionbar(nkbtn_clearDeleted));
+                    }
+                    options.show();
+                    return true;
+                }
                 if (isTitleCentered()) {
                     if (headerItem != null) {
                         if (attachItem != null && chatActivityEnterView != null && chatActivityEnterView.hasText() && TextUtils.isEmpty(chatActivityEnterView.getSlowModeTimer()) && (currentChat == null || ChatObject.canSendPlain(currentChat))) {
@@ -5184,14 +5199,6 @@ public class ChatActivity extends BaseFragment implements
                 feeItemGap.setVisibility(View.GONE);
                 feeItemText.setVisibility(View.GONE);
             }
-        } else if (chatMode == MODE_SAVED && AppearanceConfig.iosMode() && isSavedMessagesSidebar()) {
-            headerItem = menu.addItem(chat_menu_options, otherIcon);
-            headerItem.lazilyAddSubItem(to_the_beginning, R.drawable.ic_upward, getString(R.string.ToTheBeginning));
-            if (NaConfig.INSTANCE.getChatMenuItemClearDeleted().Bool() && NaConfig.INSTANCE.getEnableSaveDeletedMessages().Bool()) {
-                headerItem.lazilyAddSubItem(nkbtn_clearDeleted, R.drawable.msg_clear, getString(R.string.ClearDeleted));
-            }
-            headerItem.setForceHidden(true);
-            avatarContainer.setAvatarOptionsMenuItem(headerItem);
         } else if (chatMode == MODE_EDIT_BUSINESS_LINK) {
             headerItem = menu.addItem(chat_menu_options, otherIcon);
             updateTopicsPanelItem();

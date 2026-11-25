@@ -227,7 +227,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             @Override
             public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
                 super.onInitializeAccessibilityNodeInfo(info);
-                final boolean opensOptions = (savedOptions || usesIosHeaderGeometry()) && hasAvatarOptionsMenu();
+                final boolean opensOptions = savedOptions || usesIosHeaderGeometry() && hasAvatarOptionsMenu();
                 if (avatarClickable && (opensOptions || getImageReceiver().hasNotThumb())) {
                     info.setText(getString(R.string.AccDescrProfilePicture));
                     info.addAction(new AccessibilityNodeInfo.AccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK,
@@ -368,13 +368,8 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
                 ScaleStateListAnimator.apply(avatarImageView, .05f, 1.2f);
             }
             avatarImageView.setOnClickListener(v -> {
-                if ((savedOptions || usesIosHeaderGeometry()) && hasAvatarOptionsMenu()) {
-                    if (savedOptions) {
-                        if (canOpenAvatarOptionsMenu() && (!usesIosHeaderGeometry() || !openAvatarOptionsMenu())) {
-                            avatarOptionsMenuItem.toggleSubMenu(parentFragment.getActionBar(), avatarImageView);
-                        }
-                        return;
-                    }
+                if (savedOptions && onAvatarClick()) return;
+                if (usesIosHeaderGeometry() && hasAvatarOptionsMenu()) {
                     openAvatarOptionsMenu();
                     return;
                 }

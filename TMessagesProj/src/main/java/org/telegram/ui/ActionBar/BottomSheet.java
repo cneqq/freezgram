@@ -1163,21 +1163,27 @@ public class BottomSheet extends Dialog implements BaseFragment.AttachedSheet {
      * the rows dismissing it pour it back into the button. Without the button laid out, as a popup.
      */
     public void showSimpleMenu(View button, ItemOptions options) {
-        if (!(options.getLayout() instanceof ActionBarPopupWindow.ActionBarPopupWindowLayout) || !button.isLaidOut() || !container.isAttachedToWindow()) {
+        if (!tryShowSimpleMenu(button, options)) {
             options.show();
-            return;
+        }
+    }
+
+    protected void bindSimpleMenuAnchor(View button) {
+        button.setTag(R.id.freezgram_anchor_menu_presenter,
+                (ItemOptions.AnchorMenuPresenter) options -> tryShowSimpleMenu(button, options));
+    }
+
+    private boolean tryShowSimpleMenu(View button, ItemOptions options) {
+        if (!(options.getLayout() instanceof ActionBarPopupWindow.ActionBarPopupWindowLayout)
+                || !button.isLaidOut() || !container.isAttachedToWindow()) {
+            return false;
         }
         final SimpleActionBarMenuOverlay overlay = getSimpleMenuOverlay();
-        if (overlay.isOpened()) {
-            return;
-        }
         if (simpleButtonMenuHost == null) {
             simpleButtonMenuHost = new SimpleButtonMenuHost(overlay, simpleMenuGlass, resourcesProvider);
         }
         simpleButtonMenuHost.setButton(button);
-        // without a popup window ItemOptions#dismiss only runs this
-        options.setOnDismiss(() -> overlay.close(true));
-        overlay.open(simpleButtonMenuHost, (ActionBarPopupWindow.ActionBarPopupWindowLayout) options.getLayout());
+        return options.showInOverlay(overlay, simpleButtonMenuHost);
     }
 
     /** Whether a glass menu of this sheet is on screen (opening, open or closing). */

@@ -65,6 +65,8 @@ import org.telegram.ui.ActionBar.ActionBarPopupWindow;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.INavigationLayout;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.ActionBar.MenuOverlayHost;
+import org.telegram.ui.ActionBar.SimpleActionBarMenuOverlay;
 import org.telegram.ui.ActionBar.ThemeBind;
 import org.telegram.ui.Cells.SharedPhotoVideoCell2;
 import org.telegram.ui.Cells.TextCell;
@@ -973,6 +975,9 @@ public class ItemOptions {
         return addSpaceGap(true);
     }
     public ItemOptions addSpaceGap(boolean vertical) {
+        if (vertical && scrimView != null && scrimView.getTag(R.id.freezgram_anchor_menu_presenter) instanceof AnchorMenuPresenter) {
+            return addGap();
+        }
         if (!(layout instanceof LinearLayout)) {
             layout = new LinearLayout(context);
             ((LinearLayout) layout).setOrientation(vertical ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
@@ -1415,6 +1420,34 @@ public class ItemOptions {
         this.offsetByContainer = true;
         return this;
     }
+    @FunctionalInterface
+    public interface AnchorMenuPresenter {
+        boolean show(ItemOptions options);
+    }
+
+    private SimpleActionBarMenuOverlay anchorOverlay;
+
+    public boolean showInOverlay(SimpleActionBarMenuOverlay overlay, MenuOverlayHost host) {
+        if (!(layout instanceof ActionBarPopupWindow.ActionBarPopupWindowLayout)) {
+            return false;
+        }
+        if (getItemsCount() == 0 || overlay.getVisibility() == View.VISIBLE) {
+            return true;
+        }
+        setupSelectors();
+        anchorOverlay = overlay;
+        overlay.open(host, (ActionBarPopupWindow.ActionBarPopupWindowLayout) layout);
+        overlay.setOnClosed(() -> {
+            anchorOverlay = null;
+            if (dismissListener != null) {
+                Runnable listener = dismissListener;
+                dismissListener = null;
+                listener.run();
+            }
+        });
+        return true;
+    }
+
     public ItemOptions show() {
         if (actionBarPopupWindow != null || linearLayout != null) {
             return this;
@@ -1422,6 +1455,13 @@ public class ItemOptions {
 
         if (getItemsCount() <= 0) {
             return this;
+        }
+
+        if (scrimView != null) {
+            Object presenter = scrimView.getTag(R.id.freezgram_anchor_menu_presenter);
+            if (presenter instanceof AnchorMenuPresenter && ((AnchorMenuPresenter) presenter).show(this)) {
+                return this;
+            }
         }
 
         setupSelectors();
@@ -2047,7 +2087,7 @@ public class ItemOptions {
     }
 
     public boolean isShown() {
-        return actionBarPopupWindow != null && actionBarPopupWindow.isShowing();
+        return anchorOverlay != null || actionBarPopupWindow != null && actionBarPopupWindow.isShowing();
     }
 
     public ItemOptions setOnDismiss(Runnable dismissListener) {
@@ -2060,7 +2100,9 @@ public class ItemOptions {
             dontDismiss = false;
             return;
         }
-        if (actionBarPopupWindow != null) {
+        if (anchorOverlay != null) {
+            anchorOverlay.close(true);
+        } else if (actionBarPopupWindow != null) {
             actionBarPopupWindow.dismiss();
         } else if (dismissListener != null) {
             dismissListener.run();

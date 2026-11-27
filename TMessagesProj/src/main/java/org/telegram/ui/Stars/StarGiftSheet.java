@@ -624,6 +624,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         topView = new TopView(context, resourcesProvider, this::onBackPressed, this::onMenuPressed, v -> openCrafting(true), this::onTransferClick, this::onWearPressed, this::onSharePressed, this::onResellPressed, this::onUpdatePriceClick);
         if (iosGiftLayout) {
             topView.useIosGiftControls();
+            bindSimpleMenuAnchor(topView.optionsView);
         }
         topView.craftTopView.helpButton.setOnClickListener(v -> {
             if (v.getAlpha() < 1) return;
@@ -1167,7 +1168,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             .setDimAlpha(0)
             .translate(containerLocation[0] + backgroundPaddingLeft, -dp(2));
         if (iosGiftLayout) {
-            options.setRoundRadius(24).setMinWidth(212);
+            options.setMinWidth(212).animateFromAnchor();
         }
         showSimpleMenu(btn, options);
     }
@@ -8155,6 +8156,10 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
     @Override
     public void onBackPressed() {
+        if (isSimpleMenuShown()) {
+            getSimpleMenuOverlay().close(true);
+            return;
+        }
         if (currentPage.is(PAGE_CRAFTING) && topView != null && topView.craftTopView != null) {
             if (topView.craftTopView.crafting) {
                 return;

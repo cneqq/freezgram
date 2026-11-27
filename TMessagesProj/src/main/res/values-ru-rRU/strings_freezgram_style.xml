@@ -52,5 +52,5 @@
     <string name="FreezgramIosEditAutomationOff">Выкл.</string>
     <string name="FreezgramChangeProfileAction">Действие кнопки</string>
     <string name="FreezgramResetProfileActions">Сбросить кнопки профиля</string>
-    <string name="FreezgramMiniAppSubtitle">мини аппка</string>
+    <string name="FreezgramMiniAppSubtitle">мини-приложение</string>
 </resources>

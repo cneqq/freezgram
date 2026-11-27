@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.SystemClock;
 
-import com.exteragram.messenger.api.model.ProfileStatus;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
@@ -32,8 +30,6 @@ import okhttp3.Response;
 
 public final class FreezgramCommunity {
     private static final String API = "https://gift.cneqq.com/freezgram/api/";
-    private static final String EXTERA_PROFILES_URL = "https://api.exteragram.app/api/v1/profiles";
-    private static final long MAX_EXTERA_PROFILES_BYTES = 4 * 1024 * 1024;
     private static final String ACTIVITY_ENABLED = "activity_opt_in";
     private static final String BADGES = "badges";
     private static final long MAX_ID = (1L << 52) - 1;
@@ -44,8 +40,6 @@ public final class FreezgramCommunity {
     private static final Map<Long, Long> lastActivity = new HashMap<>();
     private static BadgeList badges;
     private static long nextBadgeFetch;
-    private static long nextExteraFetch;
-    private static volatile Map<Long, ProfileStatus> exteraRoles = Collections.emptyMap();
     private static final Map<Long, Call> activityCalls = new HashMap<>();
 
     private FreezgramCommunity() {}
@@ -101,57 +95,6 @@ public final class FreezgramCommunity {
                         badges = updated;
                         nextBadgeFetch = SystemClock.elapsedRealtime() + TimeUnit.MINUTES.toMillis(15);
                     }
-                } catch (Exception ignored) {
-                    // Keep the last valid list on network or format errors.
-                }
-            }
-        });
-    }
-
-    public static ProfileStatus getExteraRole(long dialogId) {
-        return exteraRoles.get(dialogId);
-    }
-
-    public static synchronized void refreshExteraRoles() {
-        long now = SystemClock.elapsedRealtime();
-        if (now < nextExteraFetch) return;
-        nextExteraFetch = now + TimeUnit.MINUTES.toMillis(1);
-        HTTP.newCall(new Request.Builder().url(EXTERA_PROFILES_URL).build()).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException error) {}
-
-            @Override
-            public void onResponse(Call call, Response response) {
-                try (Response closeable = response) {
-                    if (!response.isSuccessful() || response.body() == null) return;
-                    byte[] payload = response.peekBody(MAX_EXTERA_PROFILES_BYTES + 1).bytes();
-                    if (payload.length > MAX_EXTERA_PROFILES_BYTES) return;
-                    JSONArray profiles = new JSONArray(new String(payload, java.nio.charset.StandardCharsets.UTF_8));
-                    Map<Long, ProfileStatus> updated = new HashMap<>();
-                    for (int i = 0; i < profiles.length(); i++) {
-                        JSONObject profile = profiles.optJSONObject(i);
-                        if (profile == null) continue;
-                        long id = profile.optLong("id");
-                        if (id <= 0 || id > MAX_ID) continue;
-                        String type = profile.optString("type");
-                        if (!"USER".equals(type) && !"CHAT".equals(type)) continue;
-                        long dialogId = "CHAT".equals(type) ? -id : id;
-                        switch (profile.optString("status")) {
-                            case "DEVELOPER":
-                                updated.put(dialogId, ProfileStatus.DEVELOPER);
-                                break;
-                            case "SUPPORTER":
-                                updated.putIfAbsent(dialogId, ProfileStatus.SUPPORTER);
-                                break;
-                        }
-                    }
-                    boolean changed;
-                    synchronized (FreezgramCommunity.class) {
-                        changed = !exteraRoles.equals(updated);
-                        exteraRoles = updated;
-                        nextExteraFetch = SystemClock.elapsedRealtime() + TimeUnit.MINUTES.toMillis(15);
-                    }
-                    if (changed) AndroidUtilities.runOnUIThread(FreezgramCommunity::updateBadges);
                 } catch (Exception ignored) {
                     // Keep the last valid list on network or format errors.
                 }

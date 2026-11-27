@@ -9,7 +9,6 @@
 package org.telegram.ui;
 
 import app.freezgram.badges.FreezgramBadges;
-import app.freezgram.network.FreezgramCommunity;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.dpf2;
@@ -284,9 +283,6 @@ import org.telegram.ui.Components.ProfileGalleryView;
 import org.telegram.ui.Components.ProfileGooeyView;
 import org.telegram.ui.Components.ProfileMusicView;
 import app.exteraless.components.ProfileMusicCard;
-import com.exteragram.messenger.api.dto.BadgeDTO;
-import com.exteragram.messenger.api.model.ProfileStatus;
-import com.exteragram.messenger.badges.BadgesController;
 import org.telegram.ui.Components.ProfileBalanceView;
 import org.telegram.ui.Wallet.ProfileWalletCardDialog;
 import org.telegram.ui.Components.RLottieDrawable;
@@ -430,7 +426,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private Long emojiStatusGiftId;
     private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable emojiStatusDrawable;
     private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable botVerificationDrawable;
-    private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable badgeDrawable;
     private Drawable verifiedCheckDrawable;
     private CrossfadeDrawable verifiedCrossfadeDrawable;
     private CrossfadeDrawable premiumCrossfadeDrawable;
@@ -3628,9 +3623,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (botVerificationDrawable != null) {
                     botVerificationDrawable.attach();
                 }
-                if (badgeDrawable != null) {
-                    badgeDrawable.attach();
-                }
             }
 
             @Override
@@ -3642,9 +3634,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
                 if (botVerificationDrawable != null) {
                     botVerificationDrawable.detach();
-                }
-                if (badgeDrawable != null) {
-                    badgeDrawable.detach();
                 }
             }
         };
@@ -10632,9 +10621,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         if (profileMusicCardStyle != app.exteraless.appearance.AppearanceConfig.profileMusicCard()) {
             updateListAnimated(false);
         }
-        if (userId != 0 || (chatId != 0 && !isTopic)) {
-            FreezgramCommunity.refreshExteraRoles();
-        }
         if (pendingInterfaceUpdateMask != 0) {
             final int mask = pendingInterfaceUpdateMask;
             pendingInterfaceUpdateMask = 0;
@@ -12502,19 +12488,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         return emojiStatusDrawable;
     }
 
-    private Drawable getBadgeDrawable(BadgeDTO badge, boolean animated) {
-        if (badgeDrawable == null) {
-            badgeDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(nameTextView, AndroidUtilities.dp(24), AnimatedEmojiDrawable.CACHE_TYPE_KEYBOARD);
-            if (fragmentViewAttached) {
-                badgeDrawable.attach();
-            }
-        }
-        badgeDrawable.set(badge.getDocumentId(), animated);
-        badgeDrawable.setParticles(false, animated);
-        updateEmojiStatusDrawableColor();
-        return badgeDrawable;
-    }
-
     private float lastEmojiStatusProgress;
 
     private void updateEmojiStatusDrawableColor() {
@@ -12534,9 +12507,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
         if (botVerificationDrawable != null) {
             botVerificationDrawable.setColor(ColorUtils.blendARGB(ColorUtils.blendARGB(fromColor, 0x99ffffff, progress), getThemedColor(Theme.key_player_actionBarTitle), mediaHeaderAnimationProgress));
-        }
-        if (badgeDrawable != null) {
-            badgeDrawable.setColor(ColorUtils.blendARGB(ColorUtils.blendARGB(fromColor, 0x99ffffff, progress), getThemedColor(Theme.key_player_actionBarTitle), mediaHeaderAnimationProgress));
         }
         animatedStatusView.setColor(color);
         lastEmojiStatusProgress = progress;
@@ -12667,8 +12637,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             if (user == null) {
                 return;
             }
-            ProfileStatus exteraRole = !user.scam && !user.fake && !user.verified
-                    ? FreezgramCommunity.getExteraRole(user.id) : null;
             shortStatus = user.photo != null && user.photo.personal;
             TLRPC.FileLocation photoBig = null;
             if (user.photo != null) {
@@ -12813,18 +12781,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 Drawable leftIcon = currentEncryptedChat != null ? getLockIconDrawable() : null;
                 boolean rightIconIsPremium = false, rightIconIsStatus = false;
                 nameTextView.setRightDrawableOutside(false);
-                BadgeDTO userBadge = BadgesController.INSTANCE.getBadge(user);
-                nameTextView.setRightDrawable2OnClick(null);
                 if (user.scam || user.fake) {
                     nameTextView.setRightDrawable2(getScamDrawable(user.scam ? 0 : 1));
                     nameTextViewRightDrawable2ContentDescription = LocaleController.getString(R.string.ScamMessage);
                 } else if (user.verified) {
                     nameTextView.setRightDrawable2(getVerifiedCrossfadeDrawable());
                     nameTextViewRightDrawable2ContentDescription = LocaleController.getString(R.string.AccDescrVerified);
-                } else if (userBadge != null) {
-                    nameTextView.setRightDrawable2(getBadgeDrawable(userBadge, true));
-                    nameTextView.setRightDrawable2OnClick(v -> BadgesController.INSTANCE.showBadgeBulletin(this, userBadge, user, resourcesProvider, currentAccount));
-                    nameTextViewRightDrawable2ContentDescription = userBadge.getText();
                 } else {
                     nameTextView.setRightDrawable2(null);
                     nameTextViewRightDrawable2ContentDescription = null;
@@ -12948,8 +12910,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 flagSecure.invalidate();
             }
 
-            ProfileStatus exteraRole = !isTopic && !chat.scam && !chat.fake && !chat.verified
-                    ? FreezgramCommunity.getExteraRole(-chat.id) : null;
             final MessagesController.PeerColor wasPeerColor = peerColor;
             peerColor = MessagesController.PeerColor.fromCollectible(chat.emoji_status);
             if (peerColor == null) {
@@ -13083,19 +13043,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 nameTextView.setRightDrawableOutside(false);
                 nameTextView.setRightDrawableOnClick(null);
                 nameTextViewRightDrawable2ContentDescription = null;
-                BadgeDTO chatBadge = BadgesController.INSTANCE.getBadge(chat);
-                nameTextView.setRightDrawable2OnClick(null);
                 if (chat.scam || chat.fake) {
                     nameTextView.setRightDrawable2(getScamDrawable(chat.scam ? 0 : 1));
                     nameTextViewRightDrawableContentDescription = LocaleController.getString(R.string.ScamMessage);
                 } else if (chat.verified) {
                     nameTextView.setRightDrawable2(getVerifiedCrossfadeDrawable());
                     nameTextViewRightDrawableContentDescription = LocaleController.getString(R.string.AccDescrVerified);
-                } else if (chatBadge != null) {
-                    nameTextView.setRightDrawable2(getBadgeDrawable(chatBadge, true));
-                    final TLRPC.Chat badgeChat = chat;
-                    nameTextView.setRightDrawable2OnClick(v -> BadgesController.INSTANCE.showBadgeBulletin(this, chatBadge, badgeChat, resourcesProvider, currentAccount));
-                    nameTextViewRightDrawableContentDescription = chatBadge.getText();
                 } else {
                     nameTextView.setRightDrawable2(null);
                     nameTextViewRightDrawableContentDescription = null;
